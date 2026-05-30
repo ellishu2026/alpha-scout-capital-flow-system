@@ -1,5 +1,15 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.2.1 Dashboard Tab Behavior
+
+- Made dashboard tabs clickable while keeping the compact layout.
+- `All` remains the default view and shows the final Top 11 from the V1.2 market scan.
+- `Fixed List` now uses an independent fixed-watchlist live snapshot instead of reusing or filtering the market scan result.
+- `Market Cap $50B-$300B` and `Price > $800` filter only within the current All Top 11 result.
+- `Overlap` filters only within All for symbols satisfying two or more of fixed-list membership, mid-cap range, and high-price rules.
+- Header now shows the active view and displayed row count.
+- Validation remains lint/build only; no localhost API validation.
+
 ## V1.2 Market Universe Scan
 
 - Introduced Market Universe Scan as the default live yahoo-finance2 snapshot mode.

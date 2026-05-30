@@ -42,8 +42,8 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     count: snapshot.count,
     message: liveMode
       ? usedLiveSnapshot
-        ? `V1.2 yahoo-finance2 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`
-        : "V1.2 yahoo-finance2 refresh failed; returned mock snapshot fallback."
+        ? `V1.2.1 yahoo-finance2 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`
+        : "V1.2.1 yahoo-finance2 refresh failed; returned mock snapshot fallback."
       : "V1.0 mock snapshot refresh completed. Live yahoo-finance2 ingestion is not enabled.",
     snapshot,
   };
