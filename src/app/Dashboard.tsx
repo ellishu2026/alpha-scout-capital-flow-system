@@ -160,7 +160,23 @@ function rankChangeClass(changeType?: StockCandidate["changeType"]) {
 }
 
 function hasUnavailableFinancials(candidate: StockCandidate) {
-  return candidate.fcf === 0 && candidate.fcfQoqChange === 0;
+  return (
+    candidate.financialDataSource !== "SEC" &&
+    candidate.fcf === 0 &&
+    candidate.fcfQoqChange === 0
+  );
+}
+
+function financialDataLabel(candidate: StockCandidate) {
+  if (candidate.financialDataSource === "SEC") {
+    return "SEC";
+  }
+
+  if (candidate.financialDataSource === "N/A") {
+    return "N/A";
+  }
+
+  return "Fallback";
 }
 
 function getPersistenceLabel(snapshot: SnapshotResponse) {
@@ -281,7 +297,7 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
       </td>
       <td className="px-1.5 py-1.5">
         <span className="inline-flex rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold text-slate-600 ring-1 ring-slate-200">
-          {getDataStatusLabel(candidate.dataStatus)}
+          {financialDataLabel(candidate)}
         </span>
       </td>
     </tr>
@@ -361,7 +377,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.4.1
+                AlphaScout Capital Flow System V1.3
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

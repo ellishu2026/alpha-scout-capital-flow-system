@@ -14,6 +14,8 @@ export type SnapshotMode = "MARKET_SCAN" | "FIXED_WATCHLIST" | "MOCK";
 
 export type PersistenceStatus = "SAVED" | "DISABLED" | "FAILED";
 
+export type FinancialDataSource = "SEC" | "FALLBACK" | "N/A";
+
 export type StockCandidate = {
   rank: number;
   previousRank?: number | null;
@@ -41,6 +43,11 @@ export type StockCandidate = {
   capitalFlowChangeRatio: number;
   signal: string;
   dataStatus: DataStatus;
+  financialDataSource?: FinancialDataSource;
+  financialUpdatedAt?: string;
+  currentMargin?: number | null;
+  previousMargin?: number | null;
+  previousFcf?: number | null;
 };
 
 export type SnapshotResponse = {

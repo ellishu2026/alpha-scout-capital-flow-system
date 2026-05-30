@@ -1,5 +1,16 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3 SEC Financial Data Integration
+
+- Added SEC CompanyFacts financial data integration for normal operating companies.
+- Introduced FCF calculation from operating cash flow minus absolute CapEx.
+- Introduced margin calculation using operating income over revenue, with net income fallback.
+- SEC-derived FCF, FCF QoQ, margin change, margin score, and FCF score replace financial fallback when reliable data is available.
+- Financial fallback is preserved when SEC data is unavailable or unreliable.
+- ETF-like tickers such as SOXL and SMH remain `N/A` for financial data.
+- Snapshot persistence from V1.4.1 is retained.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.4.1 Supabase Persistence Diagnostics
 
 - Added structured Supabase persistence error reporting for snapshot upserts.

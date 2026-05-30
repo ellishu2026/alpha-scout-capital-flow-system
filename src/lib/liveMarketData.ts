@@ -1,6 +1,5 @@
 import {
   getMockCandidateFallback,
-  getMockFinancialFallback,
   previousRankMap,
 } from "@/data/mockSnapshot";
 import {
@@ -10,6 +9,11 @@ import {
   getRankChangeType,
   getSignal,
 } from "@/lib/scoring";
+import {
+  buildSecFinancialSnapshot,
+  getFinancialFallback,
+  type FinancialSnapshot,
+} from "@/lib/secFinancialData";
 import {
   FIXED_WATCHLIST_SYMBOLS,
   MARKET_SCAN_SYMBOLS,
@@ -22,7 +26,7 @@ const MID_CAP_MAX = 300_000_000_000;
 const HIGH_PRICE_MIN = 800;
 const TOP_CANDIDATE_LIMIT = 11;
 const QUOTE_CONCURRENCY = 8;
-const CANDLE_CONCURRENCY = 6;
+const CANDLE_CONCURRENCY = 4;
 
 type LiveQuote = {
   symbol: string;
@@ -139,6 +143,20 @@ function fallbackFlows(symbol: string): CapitalFlows {
   };
 }
 
+async function resolveFinancials(symbol: string): Promise<FinancialSnapshot> {
+  try {
+    const secFinancials = await buildSecFinancialSnapshot(symbol);
+
+    if (secFinancials) {
+      return secFinancials;
+    }
+  } catch {
+    // SEC data is best-effort; keep live market snapshots resilient.
+  }
+
+  return getFinancialFallback(symbol);
+}
+
 export async function fetchLiveQuote(symbol: string): Promise<LiveQuote> {
   const quote = await yahooFinance.quote(symbol);
 
@@ -243,7 +261,7 @@ function classifyPool(quote: LiveQuote): StockPool | null {
   return null;
 }
 
-function buildCandidateFromParts({
+async function buildCandidateFromParts({
   symbol,
   quote,
   flows,
@@ -255,9 +273,9 @@ function buildCandidateFromParts({
   flows: CapitalFlows;
   pool: StockPool;
   usedMarketFallback: boolean;
-}): StockCandidate {
+}): Promise<StockCandidate> {
   const mockCandidate = getMockCandidateFallback(symbol);
-  const financials = getMockFinancialFallback(symbol);
+  const financials = await resolveFinancials(symbol);
   const capitalFlowScore = calculateCapitalFlowScore(flows);
   const compositeScore = calculateCompositeScore(
     financials.marginScore,
@@ -323,7 +341,7 @@ async function buildFixedWatchlistCandidateWithMeta(symbol: string): Promise<{
 
   return {
     usedFallback,
-    candidate: buildCandidateFromParts({
+    candidate: await buildCandidateFromParts({
       symbol,
       quote,
       flows: flows ?? fallbackFlows(symbol),
@@ -385,7 +403,7 @@ async function buildScanCandidateFromQuote({
 
   return {
     usedFallback,
-    candidate: buildCandidateFromParts({
+    candidate: await buildCandidateFromParts({
       symbol,
       quote,
       flows: flows ?? fallbackFlows(symbol),
