@@ -1,5 +1,14 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3.2 SEC CIK Mapping Fallback
+
+- Added a static CIK fallback map for key market universe and fixed-list operating companies.
+- Static CIK lookup now runs before the SEC ticker map request, avoiding `company_tickers.json` 403 failures for covered symbols.
+- Improved SEC User-Agent default for both ticker map and CompanyFacts requests.
+- MSFT, CRWD, GOOGL, ADBE, SHOP, URI, and other covered symbols should now reach CompanyFacts directly.
+- SEC debug output now reports whether CompanyFacts was fetched.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3.1 SEC Financial Enrichment Coverage
 
 - Fixed SEC enrichment coverage for both Market Scan and Fixed List candidate construction.

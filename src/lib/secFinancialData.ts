@@ -49,6 +49,80 @@ const secTickerMapUrl = "https://www.sec.gov/files/company_tickers.json";
 const secCompanyFactsBaseUrl = "https://data.sec.gov/api/xbrl/companyfacts";
 const etfLikeTickers = new Set(["SOXL", "SMH"]);
 const quarterLikePeriods = new Set(["Q1", "Q2", "Q3", "Q4", "FY"]);
+const staticTickerCikMap: Record<string, string> = {
+  MSFT: "789019",
+  GOOGL: "1652044",
+  GOOG: "1652044",
+  NVDA: "1045810",
+  AMD: "2488",
+  CRWD: "1535527",
+  ADBE: "796343",
+  SHOP: "1594805",
+  NOW: "1373715",
+  APP: "1751008",
+  ANET: "1596532",
+  LLY: "59478",
+  VRT: "1674101",
+  RKLB: "1819994",
+  IONQ: "1824920",
+  ASML: "937966",
+  FICO: "814547",
+  MELI: "1099590",
+  URI: "1067701",
+  ORCL: "1341439",
+  META: "1326801",
+  TSLA: "1318605",
+  AMZN: "1018724",
+  NFLX: "1065280",
+  CRM: "1108524",
+  PANW: "1327567",
+  DDOG: "1561550",
+  SNOW: "1640147",
+  INTU: "896878",
+  LRCX: "707549",
+  KLAC: "319201",
+  MPWR: "1280452",
+  MU: "723125",
+  AMAT: "6951",
+  UNH: "731766",
+  COIN: "1679788",
+  MSTR: "1050446",
+  BLK: "1364742",
+  MA: "1141391",
+  V: "1403161",
+  SPGI: "64040",
+  AON: "315293",
+  ROP: "882835",
+  CPRT: "900075",
+  AXON: "1069183",
+  DELL: "1571996",
+  HPE: "1645590",
+  WDC: "106040",
+  STX: "1137789",
+  CAT: "18230",
+  DE: "315189",
+  GE: "40545",
+  CEG: "1868275",
+  ETN: "1551182",
+  PH: "76334",
+  RCL: "884887",
+  TTD: "1671933",
+  NET: "1477333",
+  MDB: "1441816",
+  HUBS: "1404655",
+  TEAM: "1650372",
+  VRTX: "875320",
+  REGN: "872589",
+  ISRG: "1035267",
+  BKNG: "1075531",
+  MTD: "1037646",
+  TDG: "1260221",
+  AZO: "866787",
+  CMG: "1058090",
+  WING: "1636222",
+  CAVA: "1600620",
+  HIMS: "1773751",
+};
 
 const revenueTags = [
   "Revenues",
@@ -74,7 +148,7 @@ const companyFactsCache = new Map<string, CompanyFacts>();
 function getSecUserAgent() {
   return (
     process.env.SEC_USER_AGENT ??
-    "AlphaScout Capital Flow System by Ellis"
+    "AlphaScout Capital Flow System by Ellis contact ellis@example.com"
   );
 }
 
@@ -284,9 +358,20 @@ export async function fetchSecTickerMap() {
 }
 
 export async function getCikForTicker(ticker: string) {
-  const tickerMap = await fetchSecTickerMap();
+  const normalizedTicker = normalizeTicker(ticker);
+  const staticCik = staticTickerCikMap[normalizedTicker];
 
-  return tickerMap.get(normalizeTicker(ticker)) ?? null;
+  if (staticCik) {
+    return padCik(staticCik);
+  }
+
+  try {
+    const tickerMap = await fetchSecTickerMap();
+
+    return tickerMap.get(normalizedTicker) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchCompanyFacts(cik: string) {
@@ -425,7 +510,24 @@ export async function buildSecFinancialDebug(ticker: string) {
     };
   }
 
-  const companyFacts = await fetchCompanyFacts(cik);
+  let companyFacts: CompanyFacts;
+
+  try {
+    companyFacts = await fetchCompanyFacts(cik);
+  } catch (error) {
+    return {
+      ticker: normalizedTicker,
+      cikFound: true,
+      cik,
+      companyFactsFetched: false,
+      financialDataSource: "N/A" as const,
+      error:
+        error instanceof Error
+          ? error.message
+          : "SEC_COMPANYFACTS_REQUEST_FAILED",
+    };
+  }
+
   const financials = extractQuarterlyFinancials(companyFacts);
 
   if (!financials) {
@@ -433,6 +535,7 @@ export async function buildSecFinancialDebug(ticker: string) {
       ticker: normalizedTicker,
       cikFound: true,
       cik,
+      companyFactsFetched: true,
       financialDataSource: "N/A" as const,
       error: "SEC_EXTRACTION_UNAVAILABLE",
       availableTags: summarizeAvailableTags(companyFacts),
@@ -443,6 +546,7 @@ export async function buildSecFinancialDebug(ticker: string) {
     ticker: normalizedTicker,
     cikFound: true,
     cik,
+    companyFactsFetched: true,
     financialDataSource: financials.financialDataSource,
     fcf: financials.fcf,
     fcfQoqChange: financials.fcfQoqChange,

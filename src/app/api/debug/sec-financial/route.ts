@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       ok: false,
       ticker,
       cikFound: false,
+      companyFactsFetched: false,
       financialDataSource: "N/A",
       error: errorMessage(error),
     });
