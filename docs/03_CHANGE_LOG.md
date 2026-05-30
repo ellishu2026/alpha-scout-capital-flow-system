@@ -1,5 +1,14 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3.1 SEC Financial Enrichment Coverage
+
+- Fixed SEC enrichment coverage for both Market Scan and Fixed List candidate construction.
+- Improved SEC CompanyFacts tag extraction for revenue, income, operating cash flow, and CapEx variants.
+- Current FCF can now be used even when QoQ FCF is unavailable.
+- Added a CRON_SECRET-protected `/api/debug/sec-financial?ticker=...` endpoint for production SEC diagnostics.
+- Clarified compact financial data labels: `SEC`, `Fallback`, and `N/A`.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3 SEC Financial Data Integration
 
 - Added SEC CompanyFacts financial data integration for normal operating companies.

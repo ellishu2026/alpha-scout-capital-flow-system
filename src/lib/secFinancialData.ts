@@ -1,6 +1,9 @@
 import "server-only";
 
-import { getMockFinancialFallback } from "@/data/mockSnapshot";
+import {
+  getMockCandidateFallback,
+  getMockFinancialFallback,
+} from "@/data/mockSnapshot";
 import type { FinancialDataSource } from "@/types/stock";
 
 type SecTickerMapEntry = {
@@ -30,15 +33,16 @@ type CompanyFacts = {
 export type FinancialSnapshot = {
   marginScore: number;
   fcfScore: number;
-  marginChange: number;
+  marginChange: number | null;
   fcf: number;
-  fcfQoqChange: number;
-  cashFlowChangeRatio: number;
+  fcfQoqChange: number | null;
+  cashFlowChangeRatio: number | null;
   financialDataSource: FinancialDataSource;
   financialUpdatedAt?: string;
   currentMargin?: number | null;
   previousMargin?: number | null;
   previousFcf?: number | null;
+  financialError?: string;
 };
 
 const secTickerMapUrl = "https://www.sec.gov/files/company_tickers.json";
@@ -52,12 +56,16 @@ const revenueTags = [
   "SalesRevenueNet",
 ];
 const operatingIncomeTags = ["OperatingIncomeLoss"];
-const netIncomeTags = ["NetIncomeLoss"];
-const operatingCashFlowTags = ["NetCashProvidedByUsedInOperatingActivities"];
+const netIncomeTags = ["NetIncomeLoss", "ProfitLoss"];
+const operatingCashFlowTags = [
+  "NetCashProvidedByUsedInOperatingActivities",
+  "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+];
 const capexTags = [
   "PaymentsToAcquirePropertyPlantAndEquipment",
   "PaymentsToAcquireProductiveAssets",
   "CapitalExpendituresIncurredButNotYetPaid",
+  "PaymentsToAcquireBusinessesNetOfCashAcquiredAndPurchasesOfIntangibleAssets",
 ];
 
 let tickerMapCache: Map<string, string> | null = null;
@@ -66,7 +74,7 @@ const companyFactsCache = new Map<string, CompanyFacts>();
 function getSecUserAgent() {
   return (
     process.env.SEC_USER_AGENT ??
-    "AlphaScout Capital Flow System by Ellis / contact: ellis@example.com"
+    "AlphaScout Capital Flow System by Ellis"
   );
 }
 
@@ -94,6 +102,10 @@ function factSortTime(fact: SecFactUnit) {
   return new Date(fact.end ?? fact.filed ?? 0).getTime();
 }
 
+function filedSortTime(fact: SecFactUnit) {
+  return new Date(fact.filed ?? fact.end ?? 0).getTime();
+}
+
 function getUsdFacts(companyFacts: CompanyFacts, tags: string[]) {
   const usGaap = companyFacts.facts?.["us-gaap"];
 
@@ -108,7 +120,11 @@ function getUsdFacts(companyFacts: CompanyFacts, tags: string[]) {
     if (usdFacts?.length) {
       const facts = usdFacts
         .filter(isQuarterLikeFact)
-        .sort((a, b) => factSortTime(b) - factSortTime(a));
+        .sort(
+          (a, b) =>
+            factSortTime(b) - factSortTime(a) ||
+            filedSortTime(b) - filedSortTime(a),
+        );
 
       if (facts.length) {
         return facts;
@@ -134,7 +150,20 @@ function nearestFactValue(
       typeof fact.val === "number",
   );
 
-  return exact?.val ?? null;
+  if (exact?.val != null) {
+    return exact.val;
+  }
+
+  const targetTime = factSortTime(target);
+  const nearest = facts
+    .filter((fact) => factSortTime(fact) <= targetTime)
+    .sort(
+      (a, b) =>
+        Math.abs(factSortTime(a) - targetTime) -
+        Math.abs(factSortTime(b) - targetTime),
+    )[0];
+
+  return nearest?.val ?? facts[0]?.val ?? null;
 }
 
 function percentChange(current: number | null, previous: number | null) {
@@ -157,7 +186,7 @@ function scoreFcf(currentFcf: number, fcfQoqChange: number | null) {
   }
 
   if (fcfQoqChange == null) {
-    return 75;
+    return 72;
   }
 
   if (fcfQoqChange >= 20) {
@@ -177,7 +206,7 @@ function scoreFcf(currentFcf: number, fcfQoqChange: number | null) {
 
 function scoreMargin(marginChange: number | null) {
   if (marginChange == null) {
-    return 65;
+    return 70;
   }
 
   if (marginChange >= 5) {
@@ -197,6 +226,31 @@ function scoreMargin(marginChange: number | null) {
   }
 
   return 45;
+}
+
+export function summarizeAvailableTags(companyFacts: CompanyFacts) {
+  const usGaap = companyFacts.facts?.["us-gaap"];
+
+  if (!usGaap) {
+    return {
+      revenueTags: [],
+      operatingIncomeTags: [],
+      netIncomeTags: [],
+      operatingCashFlowTags: [],
+      capexTags: [],
+    };
+  }
+
+  const present = (tags: string[]) =>
+    tags.filter((tag) => Boolean(usGaap[tag]?.units?.USD?.length));
+
+  return {
+    revenueTags: present(revenueTags),
+    operatingIncomeTags: present(operatingIncomeTags),
+    netIncomeTags: present(netIncomeTags),
+    operatingCashFlowTags: present(operatingCashFlowTags),
+    capexTags: present(capexTags),
+  };
 }
 
 export async function fetchSecTickerMap() {
@@ -274,7 +328,7 @@ export function extractQuarterlyFinancials(
   const currentRevenueFact = revenueFacts[0];
   const previousRevenueFact = revenueFacts[1];
 
-  if (!currentRevenueFact?.val || !previousRevenueFact?.val) {
+  if (!currentRevenueFact?.val) {
     return null;
   }
 
@@ -300,10 +354,6 @@ export function extractQuarterlyFinancials(
       : null;
   const fcfQoqChange = percentChange(currentFcf, previousFcf);
 
-  if (previousFcf == null || fcfQoqChange == null) {
-    return null;
-  }
-
   const currentIncome =
     nearestFactValue(operatingIncomeFacts, currentRevenueFact) ??
     nearestFactValue(netIncomeFacts, currentRevenueFact);
@@ -313,7 +363,7 @@ export function extractQuarterlyFinancials(
   const currentMargin =
     currentIncome != null ? (currentIncome / currentRevenueFact.val) * 100 : null;
   const previousMargin =
-    previousIncome != null
+    previousIncome != null && previousRevenueFact?.val
       ? (previousIncome / previousRevenueFact.val) * 100
       : null;
   const marginChange =
@@ -324,10 +374,10 @@ export function extractQuarterlyFinancials(
   return {
     marginScore: scoreMargin(marginChange),
     fcfScore: scoreFcf(currentFcf, fcfQoqChange),
-    marginChange: marginChange ?? 0,
+    marginChange,
     fcf: currentFcf,
-    fcfQoqChange: fcfQoqChange ?? 0,
-    cashFlowChangeRatio: fcfQoqChange ?? 0,
+    fcfQoqChange,
+    cashFlowChangeRatio: fcfQoqChange,
     financialDataSource: "SEC",
     financialUpdatedAt: currentRevenueFact.filed,
     currentMargin,
@@ -352,13 +402,67 @@ export async function buildSecFinancialSnapshot(ticker: string) {
   return extractQuarterlyFinancials(companyFacts);
 }
 
+export async function buildSecFinancialDebug(ticker: string) {
+  const normalizedTicker = normalizeTicker(ticker);
+
+  if (etfLikeTickers.has(normalizedTicker)) {
+    return {
+      ticker: normalizedTicker,
+      cikFound: false,
+      financialDataSource: "N/A" as const,
+      error: "ETF_OR_SPECIAL_TICKER",
+    };
+  }
+
+  const cik = await getCikForTicker(normalizedTicker);
+
+  if (!cik) {
+    return {
+      ticker: normalizedTicker,
+      cikFound: false,
+      financialDataSource: "N/A" as const,
+      error: "CIK_NOT_FOUND",
+    };
+  }
+
+  const companyFacts = await fetchCompanyFacts(cik);
+  const financials = extractQuarterlyFinancials(companyFacts);
+
+  if (!financials) {
+    return {
+      ticker: normalizedTicker,
+      cikFound: true,
+      cik,
+      financialDataSource: "N/A" as const,
+      error: "SEC_EXTRACTION_UNAVAILABLE",
+      availableTags: summarizeAvailableTags(companyFacts),
+    };
+  }
+
+  return {
+    ticker: normalizedTicker,
+    cikFound: true,
+    cik,
+    financialDataSource: financials.financialDataSource,
+    fcf: financials.fcf,
+    fcfQoqChange: financials.fcfQoqChange,
+    marginChange: financials.marginChange,
+    fcfScore: financials.fcfScore,
+    marginScore: financials.marginScore,
+    financialUpdatedAt: financials.financialUpdatedAt,
+    availableTags: summarizeAvailableTags(companyFacts),
+  };
+}
+
 export async function getFinancialFallback(
   ticker: string,
 ): Promise<FinancialSnapshot> {
   const fallback = getMockFinancialFallback(ticker);
-  const source: FinancialDataSource = etfLikeTickers.has(normalizeTicker(ticker))
-    ? "N/A"
-    : "FALLBACK";
+  const hasFallback = getMockCandidateFallback(ticker) != null;
+  const source: FinancialDataSource =
+    etfLikeTickers.has(normalizeTicker(ticker)) || !hasFallback
+      ? "N/A"
+      : "FALLBACK";
 
   return {
     ...fallback,
@@ -366,5 +470,6 @@ export async function getFinancialFallback(
     currentMargin: null,
     previousMargin: null,
     previousFcf: null,
+    financialError: source === "N/A" ? "SEC_UNAVAILABLE" : undefined,
   };
 }

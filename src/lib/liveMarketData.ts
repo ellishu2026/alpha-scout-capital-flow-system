@@ -150,11 +150,19 @@ async function resolveFinancials(symbol: string): Promise<FinancialSnapshot> {
     if (secFinancials) {
       return secFinancials;
     }
+
+    return {
+      ...(await getFinancialFallback(symbol)),
+      financialError: "SEC_UNAVAILABLE",
+    };
   } catch {
     // SEC data is best-effort; keep live market snapshots resilient.
   }
 
-  return getFinancialFallback(symbol);
+  return {
+    ...(await getFinancialFallback(symbol)),
+    financialError: "SEC_REQUEST_FAILED",
+  };
 }
 
 export async function fetchLiveQuote(symbol: string): Promise<LiveQuote> {

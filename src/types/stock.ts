@@ -28,7 +28,7 @@ export type StockCandidate = {
   marketCap: number;
   price: number;
   fcf: number;
-  fcfQoqChange: number;
+  fcfQoqChange: number | null;
   capitalFlow3D: number;
   capitalFlow5D: number;
   capitalFlow9D: number;
@@ -38,8 +38,8 @@ export type StockCandidate = {
   marginScore: number;
   fcfScore: number;
   capitalFlowScore: number;
-  marginChange: number;
-  cashFlowChangeRatio: number;
+  marginChange: number | null;
+  cashFlowChangeRatio: number | null;
   capitalFlowChangeRatio: number;
   signal: string;
   dataStatus: DataStatus;
@@ -48,6 +48,7 @@ export type StockCandidate = {
   currentMargin?: number | null;
   previousMargin?: number | null;
   previousFcf?: number | null;
+  financialError?: string;
 };
 
 export type SnapshotResponse = {

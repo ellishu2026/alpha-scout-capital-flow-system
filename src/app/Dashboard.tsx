@@ -69,7 +69,11 @@ function isOverlap(candidate: StockCandidate) {
   return overlapCount >= 2;
 }
 
-function toneForValue(value: number) {
+function toneForValue(value: number | null | undefined) {
+  if (value == null) {
+    return "text-slate-500";
+  }
+
   if (value > 0) {
     return "font-semibold text-emerald-700";
   }
