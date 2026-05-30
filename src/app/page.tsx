@@ -217,7 +217,9 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
           candidate.cashFlowChangeRatio,
         )}`}
       >
-        {formatPercent(candidate.cashFlowChangeRatio)}
+        {financialsUnavailable
+          ? "N/A"
+          : formatPercent(candidate.cashFlowChangeRatio)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(
@@ -256,18 +258,29 @@ export default async function Home() {
   const movementSummary = snapshot.movementSummary;
   const isLiveSnapshot =
     snapshot.status === "LIVE_MARKET" || snapshot.status === "PARTIAL_LIVE";
+  const snapshotMode = snapshot.mode ?? (isLiveSnapshot ? "FIXED_WATCHLIST" : "MOCK");
+  const isMarketScan = snapshotMode === "MARKET_SCAN";
+  const isFixedWatchlist = snapshotMode === "FIXED_WATCHLIST";
   const summaryCards = [
     {
       label: "Universe",
-      value: isLiveSnapshot ? "Fixed Watchlist" : "2 Pools",
-      detail: isLiveSnapshot
+      value: isMarketScan
+        ? "Market Scan"
+        : isFixedWatchlist
+          ? "Fixed Watchlist"
+          : "2 Pools",
+      detail: isMarketScan
+        ? "Market cap $50B-$300B or price > $800"
+        : isFixedWatchlist
         ? "11 symbols from yahoo-finance2 quote and daily candles"
         : "$50B-$300B market cap and price above $800",
     },
     {
       label: "Top 11",
       value: `${snapshot.count} Candidates`,
-      detail: isLiveSnapshot
+      detail: isMarketScan
+        ? `${snapshot.candidateCount ?? snapshot.count} passed quote filter from ${snapshot.scannedCount ?? "seed"} symbols`
+        : isFixedWatchlist
         ? "Fixed watchlist ranked by composite score"
         : "Merged, deduplicated, and ranked by composite score",
     },
@@ -295,7 +308,7 @@ export default async function Home() {
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.1.1
+                AlphaScout Capital Flow System V1.2
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -376,7 +389,8 @@ export default async function Home() {
                 key={tab.label}
                 type="button"
                 className={`whitespace-nowrap rounded border px-2 py-1 text-[11px] font-medium transition-colors ${
-                  tab.pool === "WATCHLIST"
+                  (isMarketScan && tab.pool == null) ||
+                  (isFixedWatchlist && tab.pool === "WATCHLIST")
                     ? "border-slate-900 bg-slate-900 text-white"
                     : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                 }`}

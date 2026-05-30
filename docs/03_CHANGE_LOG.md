@@ -1,5 +1,17 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.2 Market Universe Scan
+
+- Introduced Market Universe Scan as the default live yahoo-finance2 snapshot mode.
+- Added a maintainable seed universe instead of true full-market discovery for V1.2.
+- Quote data is fetched first, then the market cap `$50B-$300B` and price `> $800` rules are applied before candle requests.
+- Candidate pools now classify as `MID_CAP`, `HIGH_PRICE`, or `OVERLAP`, then merge, deduplicate, score, sort, and return the Top 11.
+- Daily candles remain the source for the signed dollar volume capital flow proxy.
+- Fixed watchlist live snapshot is retained as a fallback if market scan fails completely.
+- Mock snapshot remains the final fallback if live market scan and fixed watchlist both fail.
+- Financial data still uses fallback values while financial statement parsing remains unimplemented.
+- Validation must use `npm run lint`, `npm run build`, and the production URL. Do not use localhost API validation or `curl http://localhost:3000`.
+
 ## V1.1.1 Data Quality Display Cleanup
 
 - Updated compact numeric display for V1.1.1 without changing ingestion, scoring, API routes, or refresh behavior.

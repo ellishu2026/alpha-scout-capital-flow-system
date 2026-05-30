@@ -10,24 +10,19 @@ import {
   getRankChangeType,
   getSignal,
 } from "@/lib/scoring";
-import type { SnapshotResponse, StockCandidate } from "@/types/stock";
+import {
+  FIXED_WATCHLIST_SYMBOLS,
+  MARKET_SCAN_SYMBOLS,
+} from "@/lib/marketUniverse";
+import type { SnapshotResponse, StockCandidate, StockPool } from "@/types/stock";
 import YahooFinance from "yahoo-finance2";
 
-export const LIVE_UNIVERSE_SYMBOLS = [
-  "SOXL",
-  "SMH",
-  "NVDA",
-  "AMD",
-  "VRT",
-  "MSFT",
-  "GOOGL",
-  "DXYZ",
-  "RKLB",
-  "LLY",
-  "IONQ",
-] as const;
-
-type LiveUniverseSymbol = (typeof LIVE_UNIVERSE_SYMBOLS)[number];
+const MID_CAP_MIN = 50_000_000_000;
+const MID_CAP_MAX = 300_000_000_000;
+const HIGH_PRICE_MIN = 800;
+const TOP_CANDIDATE_LIMIT = 11;
+const QUOTE_CONCURRENCY = 8;
+const CANDLE_CONCURRENCY = 6;
 
 type LiveQuote = {
   symbol: string;
@@ -56,7 +51,7 @@ const yahooFinance = new YahooFinance({
   suppressNotices: ["yahooSurvey", "ripHistorical"],
 });
 
-const fallbackCompanyNames: Record<LiveUniverseSymbol, string> = {
+const fallbackCompanyNames: Record<string, string> = {
   SOXL: "Direxion Daily Semiconductor Bull 3X Shares",
   SMH: "VanEck Semiconductor ETF",
   NVDA: "NVIDIA Corporation",
@@ -78,12 +73,23 @@ const zeroFlows: CapitalFlows = {
   capitalFlow5W: 0,
 };
 
-function isLiveUniverseSymbol(symbol: string): symbol is LiveUniverseSymbol {
-  return LIVE_UNIVERSE_SYMBOLS.includes(symbol as LiveUniverseSymbol);
-}
-
 function numberOrNull(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  mapper: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = [];
+
+  for (let index = 0; index < items.length; index += limit) {
+    const batch = items.slice(index, index + limit);
+    results.push(...(await Promise.all(batch.map((item) => mapper(item)))));
+  }
+
+  return results;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -143,7 +149,7 @@ export async function fetchLiveQuote(symbol: string): Promise<LiveQuote> {
         ? quote.longName
         : typeof quote.shortName === "string"
           ? quote.shortName
-          : fallbackCompanyNames[isLiveUniverseSymbol(symbol) ? symbol : "NVDA"],
+          : fallbackCompanyNames[symbol] ?? symbol,
     price: numberOrNull(quote.regularMarketPrice),
     marketCap: numberOrNull(quote.marketCap),
     regularMarketVolume: numberOrNull(quote.regularMarketVolume),
@@ -216,12 +222,79 @@ export function calculateSignedCapitalFlows(
   };
 }
 
-async function buildLiveCandidateWithMeta(symbol: LiveUniverseSymbol): Promise<{
+function classifyPool(quote: LiveQuote): StockPool | null {
+  const marketCap = quote.marketCap ?? 0;
+  const price = quote.price ?? 0;
+  const isMidCap = marketCap >= MID_CAP_MIN && marketCap <= MID_CAP_MAX;
+  const isHighPrice = price > HIGH_PRICE_MIN;
+
+  if (isMidCap && isHighPrice) {
+    return "OVERLAP";
+  }
+
+  if (isMidCap) {
+    return "MID_CAP";
+  }
+
+  if (isHighPrice) {
+    return "HIGH_PRICE";
+  }
+
+  return null;
+}
+
+function buildCandidateFromParts({
+  symbol,
+  quote,
+  flows,
+  pool,
+  usedMarketFallback,
+}: {
+  symbol: string;
+  quote: LiveQuote | null;
+  flows: CapitalFlows;
+  pool: StockPool;
+  usedMarketFallback: boolean;
+}): StockCandidate {
+  const mockCandidate = getMockCandidateFallback(symbol);
+  const financials = getMockFinancialFallback(symbol);
+  const capitalFlowScore = calculateCapitalFlowScore(flows);
+  const compositeScore = calculateCompositeScore(
+    financials.marginScore,
+    financials.fcfScore,
+    capitalFlowScore,
+  );
+
+  return {
+    rank: 0,
+    ticker: symbol,
+    companyName:
+      quote?.companyName ??
+      mockCandidate?.companyName ??
+      fallbackCompanyNames[symbol] ??
+      symbol,
+    pool,
+    marketCap: quote ? (quote.marketCap ?? 0) : (mockCandidate?.marketCap ?? 0),
+    price: quote ? (quote.price ?? 0) : (mockCandidate?.price ?? 0),
+    ...financials,
+    ...flows,
+    compositeScore,
+    capitalFlowScore,
+    capitalFlowChangeRatio: calculateCapitalFlowChangeRatio(flows),
+    signal: getSignal(
+      compositeScore,
+      financials.marginScore,
+      financials.fcfScore,
+      capitalFlowScore,
+    ),
+    dataStatus: usedMarketFallback ? "PARTIAL_LIVE" : "LIVE_MARKET",
+  };
+}
+
+async function buildFixedWatchlistCandidateWithMeta(symbol: string): Promise<{
   candidate: StockCandidate;
   usedFallback: boolean;
 }> {
-  const mockCandidate = getMockCandidateFallback(symbol);
-  const financials = getMockFinancialFallback(symbol);
   let usedFallback = false;
 
   let quote: LiveQuote | null = null;
@@ -244,68 +317,88 @@ async function buildLiveCandidateWithMeta(symbol: LiveUniverseSymbol): Promise<{
     usedFallback = true;
   }
 
-  const resolvedFlows = flows ?? fallbackFlows(symbol);
-  const capitalFlowScore = calculateCapitalFlowScore(resolvedFlows);
-  const compositeScore = calculateCompositeScore(
-    financials.marginScore,
-    financials.fcfScore,
-    capitalFlowScore,
-  );
-
   if (!quote?.price || !quote?.marketCap) {
     usedFallback = true;
   }
 
   return {
     usedFallback,
-    candidate: {
-      rank: 0,
-      ticker: symbol,
-      companyName:
-        quote?.companyName ?? mockCandidate?.companyName ?? fallbackCompanyNames[symbol],
-      // V1.1 is fixed-watchlist mode; no legacy market-cap or price pool filter applies.
+    candidate: buildCandidateFromParts({
+      symbol,
+      quote,
+      flows: flows ?? fallbackFlows(symbol),
       pool: "WATCHLIST",
-      marketCap: quote?.marketCap ?? mockCandidate?.marketCap ?? 0,
-      price: quote?.price ?? mockCandidate?.price ?? 0,
-      ...financials,
-      ...resolvedFlows,
-      compositeScore,
-      capitalFlowScore,
-      capitalFlowChangeRatio: calculateCapitalFlowChangeRatio(resolvedFlows),
-      signal: getSignal(
-        compositeScore,
-        financials.marginScore,
-        financials.fcfScore,
-        capitalFlowScore,
-      ),
-      dataStatus: usedFallback ? "PARTIAL_LIVE" : "LIVE_MARKET",
-    },
+      usedMarketFallback: usedFallback,
+    }),
   };
 }
 
-export async function buildLiveCandidate(
-  symbol: LiveUniverseSymbol,
-): Promise<StockCandidate> {
-  const { candidate } = await buildLiveCandidateWithMeta(symbol);
-
-  return candidate;
+async function fetchQuoteForScan(symbol: string): Promise<{
+  symbol: string;
+  quote: LiveQuote | null;
+  pool: StockPool | null;
+  failed: boolean;
+}> {
+  try {
+    const quote = await fetchLiveQuote(symbol);
+    return {
+      symbol,
+      quote,
+      pool: classifyPool(quote),
+      failed: !quote.price || !quote.marketCap,
+    };
+  } catch {
+    return {
+      symbol,
+      quote: null,
+      pool: null,
+      failed: true,
+    };
+  }
 }
 
-export async function buildLiveMarketSnapshot(): Promise<SnapshotResponse> {
-  const results = await Promise.all(
-    LIVE_UNIVERSE_SYMBOLS.map((symbol) => buildLiveCandidateWithMeta(symbol)),
-  );
+async function buildScanCandidateFromQuote({
+  symbol,
+  quote,
+  pool,
+}: {
+  symbol: string;
+  quote: LiveQuote;
+  pool: StockPool;
+}): Promise<{
+  candidate: StockCandidate;
+  usedFallback: boolean;
+}> {
+  let flows: CapitalFlows | null = null;
+  let usedFallback = false;
 
-  const liveCount = results.filter((result) => !result.usedFallback).length;
+  try {
+    const candles = await fetchHistoricalDailyCandles(symbol, 45);
+    flows = calculateSignedCapitalFlows(candles);
 
-  if (liveCount === 0) {
-    throw new Error("Live yahoo-finance2 ingestion failed for all symbols.");
+    if (candles.length < 26) {
+      usedFallback = true;
+    }
+  } catch {
+    usedFallback = true;
   }
 
-  const rankedCandidates = results
-    .map((result) => result.candidate)
+  return {
+    usedFallback,
+    candidate: buildCandidateFromParts({
+      symbol,
+      quote,
+      flows: flows ?? fallbackFlows(symbol),
+      pool,
+      usedMarketFallback: usedFallback,
+    }),
+  };
+}
+
+function rankCandidates(candidates: StockCandidate[], limit: number) {
+  return candidates
     .sort((a, b) => b.compositeScore - a.compositeScore)
-    .slice(0, LIVE_UNIVERSE_SYMBOLS.length)
+    .slice(0, limit)
     .map((candidate, index) => {
       const currentRank = index + 1;
       const previousRank = previousRankMap[candidate.ticker] ?? null;
@@ -319,8 +412,10 @@ export async function buildLiveMarketSnapshot(): Promise<SnapshotResponse> {
         changeType: getRankChangeType(currentRank, previousRank),
       };
     });
+}
 
-  const movementSummary = rankedCandidates.reduce(
+function buildMovementSummary(candidates: StockCandidate[]) {
+  return candidates.reduce(
     (summary, candidate) => {
       if (candidate.changeType === "NEW") summary.newCount += 1;
       if (candidate.changeType === "UP") summary.upCount += 1;
@@ -336,16 +431,111 @@ export async function buildLiveMarketSnapshot(): Promise<SnapshotResponse> {
       sameCount: 0,
     },
   );
+}
+
+export async function buildFixedWatchlistSnapshot(): Promise<SnapshotResponse> {
+  const symbols = Array.from(new Set(FIXED_WATCHLIST_SYMBOLS));
+  const results = await mapWithConcurrency(
+    symbols,
+    CANDLE_CONCURRENCY,
+    buildFixedWatchlistCandidateWithMeta,
+  );
+
+  const liveCount = results.filter((result) => !result.usedFallback).length;
+
+  if (liveCount === 0) {
+    throw new Error("Live fixed watchlist ingestion failed for all symbols.");
+  }
+
+  const rankedCandidates = rankCandidates(
+    results.map((result) => result.candidate),
+    TOP_CANDIDATE_LIMIT,
+  );
 
   return {
     updatedAt: new Date().toISOString(),
     dataMode: "Daily Close Snapshot",
     refreshMode: "Auto Daily Refresh",
-    status: results.some((result) => result.usedFallback)
-      ? "PARTIAL_LIVE"
-      : "LIVE_MARKET",
+    mode: "FIXED_WATCHLIST",
+    status: "PARTIAL_LIVE",
     count: rankedCandidates.length,
-    movementSummary,
+    scannedCount: symbols.length,
+    candidateCount: rankedCandidates.length,
+    failedCount: results.filter((result) => result.usedFallback).length,
+    movementSummary: buildMovementSummary(rankedCandidates),
     items: rankedCandidates,
   };
 }
+
+export async function buildMarketScanSnapshot(): Promise<SnapshotResponse> {
+  const symbols = Array.from(new Set(MARKET_SCAN_SYMBOLS));
+  const quoteResults = await mapWithConcurrency(
+    symbols,
+    QUOTE_CONCURRENCY,
+    fetchQuoteForScan,
+  );
+  const quoteFilteredCandidates = quoteResults.filter(
+    (
+      result,
+    ): result is {
+      symbol: string;
+      quote: LiveQuote;
+      pool: StockPool;
+      failed: boolean;
+    } => result.quote != null && result.pool != null,
+  );
+
+  if (quoteFilteredCandidates.length === 0) {
+    throw new Error("Market scan quote filter returned no candidates.");
+  }
+
+  const scanResults = await mapWithConcurrency(
+    quoteFilteredCandidates,
+    CANDLE_CONCURRENCY,
+    buildScanCandidateFromQuote,
+  );
+
+  const rankedCandidates = rankCandidates(
+    scanResults.map((result) => result.candidate),
+    TOP_CANDIDATE_LIMIT,
+  );
+
+  if (rankedCandidates.length === 0) {
+    throw new Error("Market scan returned no ranked candidates.");
+  }
+
+  const selectedTickers = new Set(
+    rankedCandidates.map((candidate) => candidate.ticker),
+  );
+  const selectedResults = scanResults.filter((result) =>
+    selectedTickers.has(result.candidate.ticker),
+  );
+  const quoteFailedCount = quoteResults.filter((result) => result.failed).length;
+  const candleFallbackCount = selectedResults.filter(
+    (result) => result.usedFallback,
+  ).length;
+
+  return {
+    updatedAt: new Date().toISOString(),
+    dataMode: "Daily Close Snapshot",
+    refreshMode: "Auto Daily Refresh",
+    mode: "MARKET_SCAN",
+    status: "PARTIAL_LIVE",
+    count: rankedCandidates.length,
+    scannedCount: symbols.length,
+    candidateCount: quoteFilteredCandidates.length,
+    failedCount: quoteFailedCount + candleFallbackCount,
+    movementSummary: buildMovementSummary(rankedCandidates),
+    items: rankedCandidates,
+  };
+}
+
+export async function buildLiveCandidate(
+  symbol: string,
+): Promise<StockCandidate> {
+  const { candidate } = await buildFixedWatchlistCandidateWithMeta(symbol);
+
+  return candidate;
+}
+
+export const buildLiveMarketSnapshot = buildFixedWatchlistSnapshot;

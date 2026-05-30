@@ -10,6 +10,8 @@ export type DataStatus =
 
 export type RankChangeType = "NEW" | "UP" | "DOWN" | "SAME";
 
+export type SnapshotMode = "MARKET_SCAN" | "FIXED_WATCHLIST" | "MOCK";
+
 export type StockCandidate = {
   rank: number;
   previousRank?: number | null;
@@ -43,8 +45,12 @@ export type SnapshotResponse = {
   updatedAt: string;
   dataMode: "Daily Close Snapshot";
   refreshMode: "Auto Daily Refresh";
+  mode?: SnapshotMode;
   status: DataStatus;
   count: number;
+  scannedCount?: number;
+  candidateCount?: number;
+  failedCount?: number;
   movementSummary?: {
     newCount: number;
     upCount: number;

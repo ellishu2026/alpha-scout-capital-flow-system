@@ -440,6 +440,7 @@ export const mockSnapshot: SnapshotResponse = {
   updatedAt: new Date("2026-05-30T16:00:00.000Z").toISOString(),
   dataMode: "Daily Close Snapshot",
   refreshMode: "Auto Daily Refresh",
+  mode: "MOCK",
   status: "MOCK",
   count: rankedCandidates.length,
   movementSummary,
