@@ -1,65 +1,397 @@
-import Image from "next/image";
+import { mockSnapshot } from "@/data/mockSnapshot";
+import {
+  formatCurrency,
+  formatLargeCurrency,
+  formatMarketCap,
+  formatPercent,
+  getDataStatusLabel,
+  getPoolLabel,
+} from "@/lib/scoring";
+import type { StockCandidate, StockPool } from "@/types/stock";
+
+const tabs: { label: string; pool?: StockPool }[] = [
+  { label: "All" },
+  { label: "Market Cap $50B-$300B", pool: "MID_CAP" },
+  { label: "Price > $800", pool: "HIGH_PRICE" },
+  { label: "Overlap", pool: "OVERLAP" },
+];
+
+const summaryCards = [
+  {
+    label: "Universe",
+    value: "2 Pools",
+    detail: "$50B-$300B market cap and price above $800",
+  },
+  {
+    label: "Top 11",
+    value: `${mockSnapshot.count} Candidates`,
+    detail: "Merged, deduplicated, and ranked by composite score",
+  },
+  {
+    label: "Scoring Model",
+    value: "30 / 40 / 30",
+    detail: "Margin, FCF, and capital flow weighted scoring",
+  },
+  {
+    label: "Data Status",
+    value: getDataStatusLabel(mockSnapshot.status),
+    detail: "V1.0 skeleton using deterministic mock snapshot data",
+  },
+];
+
+const tableHeaders = [
+  "Rank",
+  "Chg",
+  "Ticker",
+  "Pool",
+  "Market Cap",
+  "Price",
+  "FCF",
+  "FCF QoQ %",
+  "Flow 3D",
+  "Flow 5D",
+  "Flow 9D",
+  "Flow 3W",
+  "Flow 5W",
+  "Composite",
+  "Margin Δ",
+  "FCF Δ",
+  "Flow Δ",
+  "Signal",
+  "Data",
+];
+
+function toneForValue(value: number) {
+  if (value > 0) {
+    return "font-semibold text-emerald-700";
+  }
+
+  if (value < 0) {
+    return "font-semibold text-rose-700";
+  }
+
+  return "text-slate-500";
+}
+
+function poolClass(pool: StockPool) {
+  const classes: Record<StockPool, string> = {
+    MID_CAP: "bg-sky-50 text-sky-700 ring-sky-200",
+    HIGH_PRICE: "bg-violet-50 text-violet-700 ring-violet-200",
+    OVERLAP: "bg-amber-50 text-amber-800 ring-amber-200",
+  };
+
+  return classes[pool];
+}
+
+function scoreClass(score: number) {
+  if (score >= 85) {
+    return "bg-emerald-50 font-bold text-emerald-800 ring-emerald-200";
+  }
+
+  if (score >= 75) {
+    return "bg-blue-50 font-bold text-blue-800 ring-blue-200";
+  }
+
+  if (score >= 65) {
+    return "bg-amber-50 font-semibold text-amber-800 ring-amber-200";
+  }
+
+  return "bg-rose-50 font-semibold text-rose-800 ring-rose-200";
+}
+
+function compactSignal(signal: string) {
+  const labels: Record<string, string> = {
+    "Strong Accumulation": "Strong",
+    Accumulation: "Accum.",
+    Watchlist: "Watch",
+    Watch: "Watch",
+    Neutral: "Neutral",
+    "Weak / Avoid": "Weak",
+  };
+
+  return labels[signal] ?? signal;
+}
+
+function signalClass(signal: string) {
+  const label = compactSignal(signal);
+
+  if (label === "Strong") {
+    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  }
+
+  if (label === "Accum.") {
+    return "bg-blue-50 text-blue-700 ring-blue-200";
+  }
+
+  if (label === "Watch") {
+    return "bg-amber-50 text-amber-800 ring-amber-200";
+  }
+
+  if (label === "Weak") {
+    return "bg-rose-50 text-rose-700 ring-rose-200";
+  }
+
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function rankChangeClass(changeType?: StockCandidate["changeType"]) {
+  if (changeType === "NEW") {
+    return "bg-violet-50 text-violet-700 ring-violet-200";
+  }
+
+  if (changeType === "UP") {
+    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  }
+
+  if (changeType === "DOWN") {
+    return "bg-rose-50 text-rose-700 ring-rose-200";
+  }
+
+  return "bg-slate-100 text-slate-500 ring-slate-200";
+}
+
+function TableRow({ candidate }: { candidate: StockCandidate }) {
+  const numericCell = "px-1.5 py-1.5 text-left text-[10px] tabular-nums";
+
+  return (
+    <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50/80">
+      <td className="px-1.5 py-1.5 text-left text-[10px] font-semibold tabular-nums text-slate-900">
+        #{candidate.rank}
+      </td>
+      <td className="px-1.5 py-1.5">
+        <span
+          className={`inline-flex min-w-8 justify-center rounded px-1 py-0.5 text-[9px] font-bold tabular-nums ring-1 ${rankChangeClass(
+            candidate.changeType,
+          )}`}
+        >
+          {candidate.changeLabel ?? "—"}
+        </span>
+      </td>
+      <td className="px-1.5 py-1.5 text-[11px] font-bold text-slate-950">
+        {candidate.ticker}
+      </td>
+      <td className="px-1.5 py-1.5">
+        <span
+          className={`inline-flex whitespace-nowrap rounded px-1 py-0.5 text-[9px] font-semibold ring-1 ${poolClass(
+            candidate.pool,
+          )}`}
+        >
+          {getPoolLabel(candidate.pool)}
+        </span>
+      </td>
+      <td className={`${numericCell} text-slate-700`}>
+        {formatMarketCap(candidate.marketCap)}
+      </td>
+      <td className={`${numericCell} text-slate-700`}>
+        {formatCurrency(candidate.price)}
+      </td>
+      <td className={`${numericCell} text-slate-700`}>
+        {formatLargeCurrency(candidate.fcf)}
+      </td>
+      <td className={`${numericCell} ${toneForValue(candidate.fcfQoqChange)}`}>
+        {formatPercent(candidate.fcfQoqChange)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow3D)}`}
+      >
+        {formatLargeCurrency(candidate.capitalFlow3D)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow5D)}`}
+      >
+        {formatLargeCurrency(candidate.capitalFlow5D)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow9D)}`}
+      >
+        {formatLargeCurrency(candidate.capitalFlow9D)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow3W)}`}
+      >
+        {formatLargeCurrency(candidate.capitalFlow3W)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow5W)}`}
+      >
+        {formatLargeCurrency(candidate.capitalFlow5W)}
+      </td>
+      <td className="px-1.5 py-1.5 text-left">
+        <span
+          className={`inline-flex min-w-10 justify-center rounded px-1 py-0.5 text-[10px] tabular-nums ring-1 ${scoreClass(
+            candidate.compositeScore,
+          )}`}
+        >
+          {candidate.compositeScore.toFixed(1)}
+        </span>
+      </td>
+      <td className={`${numericCell} ${toneForValue(candidate.marginChange)}`}>
+        {formatPercent(candidate.marginChange)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(
+          candidate.cashFlowChangeRatio,
+        )}`}
+      >
+        {formatPercent(candidate.cashFlowChangeRatio)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(
+          candidate.capitalFlowChangeRatio,
+        )}`}
+      >
+        {formatPercent(candidate.capitalFlowChangeRatio)}
+      </td>
+      <td className="px-1.5 py-1.5">
+        <span
+          className={`inline-flex rounded px-1 py-0.5 text-[9px] font-semibold ring-1 ${signalClass(
+            candidate.signal,
+          )}`}
+        >
+          {compactSignal(candidate.signal)}
+        </span>
+      </td>
+      <td className="px-1.5 py-1.5">
+        <span className="inline-flex rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold text-slate-600 ring-1 ring-slate-200">
+          {getDataStatusLabel(candidate.dataStatus)}
+        </span>
+      </td>
+    </tr>
+  );
+}
 
 export default function Home() {
+  const updatedAt = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(new Date(mockSnapshot.updatedAt));
+  const movementSummary = mockSnapshot.movementSummary;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-white text-slate-950">
+      <section className="border-b border-slate-200 bg-slate-50">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-2.5 py-2.5 sm:px-3 lg:px-4">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Daily Close Snapshot
+              </p>
+              <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
+                AlphaScout Capital Flow System V1.0
+              </h1>
+              <p className="mt-0.5 text-xs text-slate-600">
+                Capital-flow-driven US stock candidate selection dashboard
+              </p>
+            </div>
+            <div className="grid gap-x-3 gap-y-0.5 rounded border border-slate-200 bg-white px-2.5 py-2 text-[11px] shadow-sm sm:grid-cols-4 lg:min-w-[620px]">
+              <div>
+                <span className="text-slate-500">Data Mode</span>
+                <p className="font-medium text-slate-950">{mockSnapshot.dataMode}</p>
+              </div>
+              <div>
+                <span className="text-slate-500">Refresh Mode</span>
+                <p className="font-medium text-slate-950">
+                  {mockSnapshot.refreshMode}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-500">Last Updated</span>
+                <p className="font-medium text-slate-950">{updatedAt} UTC</p>
+              </div>
+              <div>
+                <span className="text-slate-500">Selected</span>
+                <p className="font-medium text-slate-950">Top 11</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-0.5 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <span className="font-medium text-slate-700">Scoring</span>
+            <span className="text-slate-600">
+              Margin 30% · FCF 40% · Capital Flow 30%
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="mx-auto w-full max-w-[1600px] px-2.5 py-2.5 sm:px-3 lg:px-4">
+        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+          {summaryCards.map((card) => (
+            <article
+              key={card.label}
+              className="rounded border border-slate-200 bg-white px-2.5 py-2 shadow-sm"
+            >
+              <p className="text-[11px] font-medium text-slate-500">{card.label}</p>
+              <p className="mt-0.5 text-base font-semibold text-slate-950">
+                {card.value}
+              </p>
+              <p className="mt-0.5 truncate text-[11px] leading-3 text-slate-600">
+                {card.detail}
+              </p>
+            </article>
+          ))}
         </div>
-      </main>
-    </div>
+
+        <div className="mt-2.5 flex flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h2 className="text-base font-semibold text-slate-950">
+                Ranked Candidates
+              </h2>
+              {movementSummary ? (
+                <p className="text-[11px] font-medium text-slate-500">
+                  New {movementSummary.newCount} · Up {movementSummary.upCount} ·
+                  Down {movementSummary.downCount} · Same{" "}
+                  {movementSummary.sameCount}
+                </p>
+              ) : null}
+            </div>
+            <p className="text-[11px] text-slate-600">
+              Composite score sorted descending after pool merge and deduplication.
+            </p>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+            {tabs.map((tab, index) => (
+              <button
+                key={tab.label}
+                type="button"
+                className={`whitespace-nowrap rounded border px-2 py-1 text-[11px] font-medium transition-colors ${
+                  index === 0
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-1.5 overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+          <div className="max-h-[calc(100vh-205px)] overflow-auto">
+            <table className="w-full min-w-[1180px] border-collapse text-left">
+              <thead className="sticky top-0 z-10 bg-slate-50">
+                <tr>
+                  {tableHeaders.map((header) => (
+                    <th
+                      key={header}
+                      className="whitespace-nowrap border-b border-slate-200 px-1.5 py-1.5 text-left text-[9px] font-bold uppercase text-slate-500"
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {mockSnapshot.items.map((candidate) => (
+                  <TableRow key={candidate.ticker} candidate={candidate} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
