@@ -27,9 +27,37 @@ export async function buildLatestSnapshot(): Promise<SnapshotResponse> {
   };
 }
 
+async function buildFixedSnapshotForLatest() {
+  if (process.env.YAHOO_FINANCE_ENABLED !== "true") {
+    return undefined;
+  }
+
+  try {
+    return await buildFixedWatchlistSnapshot();
+  } catch {
+    return undefined;
+  }
+}
+
+export async function buildLatestSnapshotWithFixed(): Promise<SnapshotResponse> {
+  const [snapshot, fixedSnapshot] = await Promise.all([
+    buildLatestSnapshot(),
+    buildFixedSnapshotForLatest(),
+  ]);
+
+  if (!fixedSnapshot) {
+    return snapshot;
+  }
+
+  return {
+    ...snapshot,
+    fixedSnapshot,
+  };
+}
+
 export async function refreshDailySnapshot(): Promise<RefreshResult> {
   const liveMode = process.env.YAHOO_FINANCE_ENABLED === "true";
-  const snapshot = await buildLatestSnapshot();
+  const snapshot = await buildLatestSnapshotWithFixed();
   const usedLiveSnapshot =
     snapshot.status === "LIVE_MARKET" || snapshot.status === "PARTIAL_LIVE";
 
@@ -42,8 +70,8 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     count: snapshot.count,
     message: liveMode
       ? usedLiveSnapshot
-        ? `V1.2.1 yahoo-finance2 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`
-        : "V1.2.1 yahoo-finance2 refresh failed; returned mock snapshot fallback."
+        ? `V1.2.2 yahoo-finance2 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`
+        : "V1.2.2 yahoo-finance2 refresh failed; returned mock snapshot fallback."
       : "V1.0 mock snapshot refresh completed. Live yahoo-finance2 ingestion is not enabled.",
     snapshot,
   };

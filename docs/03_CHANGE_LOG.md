@@ -1,5 +1,14 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.2.2 Independent Fixed List View
+
+- Latest snapshot response now includes an optional independent `fixedSnapshot` alongside the main market scan snapshot.
+- `Fixed List` displays the fixed-watchlist snapshot rows for SOXL, SMH, NVDA, AMD, VRT, MSFT, GOOGL, DXYZ, RKLB, LLY, and IONQ.
+- `All` remains the V1.2 market scan Top 11 and is still the default active tab.
+- `Market Cap $50B-$300B`, `Price > $800`, and `Overlap` continue filtering only within All.
+- All and Fixed List are independent views and may overlap by ticker.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.2.1 Dashboard Tab Behavior
 
 - Made dashboard tabs clickable while keeping the compact layout.

@@ -58,6 +58,7 @@ export type SnapshotResponse = {
     sameCount: number;
   };
   items: StockCandidate[];
+  fixedSnapshot?: SnapshotResponse;
 };
 
 export type RefreshResult = {
