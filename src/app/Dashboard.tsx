@@ -163,6 +163,18 @@ function hasUnavailableFinancials(candidate: StockCandidate) {
   return candidate.fcf === 0 && candidate.fcfQoqChange === 0;
 }
 
+function getPersistenceLabel(snapshot: SnapshotResponse) {
+  if (snapshot.persistenceStatus === "SAVED") {
+    return "Saved";
+  }
+
+  if (snapshot.persistenceStatus === "FAILED") {
+    return "Fallback";
+  }
+
+  return "Not Saved";
+}
+
 function TableRow({ candidate }: { candidate: StockCandidate }) {
   const numericCell = "px-1.5 py-1.5 text-left text-[10px] tabular-nums";
   const financialsUnavailable = hasUnavailableFinancials(candidate);
@@ -286,9 +298,6 @@ export function Dashboard({
   const [activeTab, setActiveTab] = useState<TabId>("ALL");
   const activeTabLabel =
     tabs.find((tab) => tab.id === activeTab)?.label ?? "All";
-  const isLiveSnapshot =
-    allSnapshot.status === "LIVE_MARKET" ||
-    allSnapshot.status === "PARTIAL_LIVE";
   const updatedAt = new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -317,6 +326,8 @@ export function Dashboard({
     activeTab === "FIXED_LIST"
       ? fixedSnapshot?.movementSummary
       : allSnapshot.movementSummary;
+  const droppedSymbols =
+    activeTab === "FIXED_LIST" ? [] : (allSnapshot.droppedSymbols ?? []);
   const summaryCards = [
     {
       label: "Universe",
@@ -336,9 +347,7 @@ export function Dashboard({
     {
       label: "Data Status",
       value: getDataStatusLabel(allSnapshot.status),
-      detail: isLiveSnapshot
-        ? "Live market data with financial fallback"
-        : "V1.0 skeleton using deterministic mock snapshot data",
+      detail: `Snapshot: ${getPersistenceLabel(allSnapshot)}`,
     },
   ];
 
@@ -352,7 +361,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.2.2
+                AlphaScout Capital Flow System V1.4
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -378,7 +387,8 @@ export function Dashboard({
               <div>
                 <span className="text-slate-500">Selected</span>
                 <p className="font-medium text-slate-950">
-                  Top {allSnapshot.count} · {getDataStatusLabel(allSnapshot.status)}
+                  Top {allSnapshot.count} ·{" "}
+                  {getDataStatusLabel(allSnapshot.status)}
                 </p>
               </div>
             </div>
@@ -424,6 +434,9 @@ export function Dashboard({
                   New {movementSummary.newCount} · Up {movementSummary.upCount} ·
                   Down {movementSummary.downCount} · Same{" "}
                   {movementSummary.sameCount}
+                  {droppedSymbols.length > 0
+                    ? ` · Dropped ${droppedSymbols.join(", ")}`
+                    : ""}
                 </p>
               ) : null}
             </div>

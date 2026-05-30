@@ -1,5 +1,16 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.4 Snapshot Persistence and Real Rank Movement
+
+- Added Supabase-backed snapshot persistence through `public.alpha_scout_snapshots`.
+- Introduced server-only Supabase admin access using `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- Market Scan and Fixed List snapshots are saved separately by mode.
+- Latest snapshot reads prefer the latest saved `MARKET_SCAN` snapshot when Supabase is configured.
+- Real rank movement now compares current rows against the previous saved snapshot by ticker.
+- Dropped symbols are recorded when previous snapshot tickers no longer appear in the current Top 11.
+- Dashboard shows compact snapshot persistence status and dropped symbols near movement summary.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.2.2 Independent Fixed List View
 
 - Latest snapshot response now includes an optional independent `fixedSnapshot` alongside the main market scan snapshot.

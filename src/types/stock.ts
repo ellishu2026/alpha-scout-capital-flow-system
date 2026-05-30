@@ -12,6 +12,8 @@ export type RankChangeType = "NEW" | "UP" | "DOWN" | "SAME";
 
 export type SnapshotMode = "MARKET_SCAN" | "FIXED_WATCHLIST" | "MOCK";
 
+export type PersistenceStatus = "SAVED" | "DISABLED" | "FAILED";
+
 export type StockCandidate = {
   rank: number;
   previousRank?: number | null;
@@ -51,6 +53,9 @@ export type SnapshotResponse = {
   scannedCount?: number;
   candidateCount?: number;
   failedCount?: number;
+  persistenceStatus?: PersistenceStatus;
+  previousSnapshotFound?: boolean;
+  droppedSymbols?: string[];
   movementSummary?: {
     newCount: number;
     upCount: number;
@@ -68,6 +73,9 @@ export type RefreshResult = {
   refreshMode: "Auto Daily Refresh";
   status: DataStatus;
   count: number;
+  persistenceStatus?: PersistenceStatus;
+  previousSnapshotFound?: boolean;
+  droppedSymbols?: string[];
   message: string;
   snapshot: SnapshotResponse;
 };
