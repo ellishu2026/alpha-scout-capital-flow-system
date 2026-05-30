@@ -4,7 +4,11 @@ import {
   getMockCandidateFallback,
   getMockFinancialFallback,
 } from "@/data/mockSnapshot";
-import type { FinancialDataSource } from "@/types/stock";
+import type {
+  FinancialDataSource,
+  SelectedFinancialPeriod,
+  SelectedFinancialPeriods,
+} from "@/types/stock";
 
 type SecTickerMapEntry = {
   cik_str: number;
@@ -18,6 +22,10 @@ type SecFactUnit = {
   filed?: string;
   end?: string;
   val?: number;
+};
+
+type TaggedSecFactUnit = SecFactUnit & {
+  tag: string;
 };
 
 type SecFact = {
@@ -43,12 +51,16 @@ export type FinancialSnapshot = {
   previousMargin?: number | null;
   previousFcf?: number | null;
   financialError?: string;
+  selectedFinancialPeriods?: SelectedFinancialPeriods;
+  staleDataRejected?: boolean;
 };
 
 const secTickerMapUrl = "https://www.sec.gov/files/company_tickers.json";
 const secCompanyFactsBaseUrl = "https://data.sec.gov/api/xbrl/companyfacts";
 const etfLikeTickers = new Set(["SOXL", "SMH"]);
 const quarterLikePeriods = new Set(["Q1", "Q2", "Q3", "Q4", "FY"]);
+const staleDataWindowMonths = 24;
+const closePeriodWindowMs = 45 * 24 * 60 * 60 * 1000;
 const staticTickerCikMap: Record<string, string> = {
   MSFT: "789019",
   GOOGL: "1652044",
@@ -180,64 +192,219 @@ function filedSortTime(fact: SecFactUnit) {
   return new Date(fact.filed ?? fact.end ?? 0).getTime();
 }
 
-function getUsdFacts(companyFacts: CompanyFacts, tags: string[]) {
+function freshnessCutoffTime(now = new Date()) {
+  const cutoff = new Date(now);
+  cutoff.setMonth(cutoff.getMonth() - staleDataWindowMonths);
+
+  return cutoff.getTime();
+}
+
+function isFreshFact(fact: SecFactUnit, now = new Date()) {
+  if (!fact.end) {
+    return false;
+  }
+
+  return factSortTime(fact) >= freshnessCutoffTime(now);
+}
+
+function toDebugFact(
+  fact: TaggedSecFactUnit | null | undefined,
+): SelectedFinancialPeriod | undefined {
+  if (!fact) {
+    return undefined;
+  }
+
+  return {
+    tag: fact.tag,
+    end: fact.end,
+    filed: fact.filed,
+    form: fact.form,
+    fp: fact.fp,
+    val: fact.val,
+  };
+}
+
+function collectUsdFacts(companyFacts: CompanyFacts, tags: string[]) {
   const usGaap = companyFacts.facts?.["us-gaap"];
 
   if (!usGaap) {
     return [];
   }
 
+  const seen = new Set<string>();
+  const facts: TaggedSecFactUnit[] = [];
+
   for (const tag of tags) {
     const units = usGaap[tag]?.units;
     const usdFacts = units?.USD;
 
     if (usdFacts?.length) {
-      const facts = usdFacts
-        .filter(isQuarterLikeFact)
-        .sort(
-          (a, b) =>
-            factSortTime(b) - factSortTime(a) ||
-            filedSortTime(b) - filedSortTime(a),
-        );
+      for (const fact of usdFacts) {
+        if (!isQuarterLikeFact(fact)) {
+          continue;
+        }
 
-      if (facts.length) {
-        return facts;
+        const key = [
+          tag,
+          fact.form,
+          fact.fp,
+          fact.end,
+          fact.filed,
+          fact.val,
+        ].join("|");
+
+        if (!seen.has(key)) {
+          seen.add(key);
+          facts.push({ ...fact, tag });
+        }
       }
     }
   }
 
-  return [];
+  return facts.sort(
+    (a, b) =>
+      factSortTime(b) - factSortTime(a) ||
+      filedSortTime(b) - filedSortTime(a),
+  );
 }
 
-function nearestFactValue(
-  facts: SecFactUnit[],
+function collectFreshFacts(companyFacts: CompanyFacts, tags: string[]) {
+  const allFacts = collectUsdFacts(companyFacts, tags);
+  const facts = allFacts.filter((fact) => isFreshFact(fact));
+
+  return {
+    facts,
+    staleDataRejected: allFacts.length > 0 && facts.length === 0,
+  };
+}
+
+function areClosePeriods(a: SecFactUnit, b: SecFactUnit) {
+  if (!a.end || !b.end) {
+    return false;
+  }
+
+  return Math.abs(factSortTime(a) - factSortTime(b)) <= closePeriodWindowMs;
+}
+
+function compatiblePreviousPeriod(
+  current: SecFactUnit,
+  previous: SecFactUnit,
+) {
+  if (current.fp === "FY") {
+    return previous.fp === "FY";
+  }
+
+  return previous.fp !== "FY";
+}
+
+function findCloseFact<T extends SecFactUnit>(
+  facts: T[],
   target: SecFactUnit | undefined,
 ) {
   if (!target) {
     return null;
   }
 
-  const exact = facts.find(
-    (fact) =>
-      fact.end === target.end &&
-      fact.fp === target.fp &&
-      typeof fact.val === "number",
-  );
+  const exact = facts.find((fact) => fact.end === target.end);
 
-  if (exact?.val != null) {
-    return exact.val;
+  if (exact) {
+    return exact;
   }
 
-  const targetTime = factSortTime(target);
-  const nearest = facts
-    .filter((fact) => factSortTime(fact) <= targetTime)
+  return (
+    facts
+      .filter((fact) => areClosePeriods(fact, target))
+      .sort(
+        (a, b) =>
+          Math.abs(factSortTime(a) - factSortTime(target)) -
+            Math.abs(factSortTime(b) - factSortTime(target)) ||
+          filedSortTime(b) - filedSortTime(a),
+      )[0] ?? null
+  );
+}
+
+function findCurrentPair(
+  anchorFacts: TaggedSecFactUnit[],
+  matchFacts: TaggedSecFactUnit[],
+) {
+  for (const anchor of anchorFacts) {
+    const match = findCloseFact(matchFacts, anchor);
+
+    if (match) {
+      return { anchor, match };
+    }
+  }
+
+  return null;
+}
+
+function findPreviousPair(
+  currentAnchor: TaggedSecFactUnit,
+  anchorFacts: TaggedSecFactUnit[],
+  matchFacts: TaggedSecFactUnit[],
+) {
+  const olderAnchors = anchorFacts.filter(
+    (fact) =>
+      factSortTime(fact) < factSortTime(currentAnchor) &&
+      compatiblePreviousPeriod(currentAnchor, fact),
+  );
+
+  for (const anchor of olderAnchors) {
+    const match = findCloseFact(matchFacts, anchor);
+
+    if (match) {
+      return { anchor, match };
+    }
+  }
+
+  return null;
+}
+
+function findMarginPair(
+  revenueFacts: TaggedSecFactUnit[],
+  operatingIncomeFacts: TaggedSecFactUnit[],
+  netIncomeFacts: TaggedSecFactUnit[],
+) {
+  for (const revenue of revenueFacts) {
+    const income =
+      findCloseFact(operatingIncomeFacts, revenue) ??
+      findCloseFact(netIncomeFacts, revenue);
+
+    if (income && revenue.val) {
+      return { revenue, income };
+    }
+  }
+
+  return null;
+}
+
+function findPreviousMarginPair(
+  currentRevenue: TaggedSecFactUnit,
+  revenueFacts: TaggedSecFactUnit[],
+  operatingIncomeFacts: TaggedSecFactUnit[],
+  netIncomeFacts: TaggedSecFactUnit[],
+) {
+  const olderRevenueFacts = revenueFacts.filter(
+    (fact) =>
+      factSortTime(fact) < factSortTime(currentRevenue) &&
+      compatiblePreviousPeriod(currentRevenue, fact),
+  );
+
+  return findMarginPair(olderRevenueFacts, operatingIncomeFacts, netIncomeFacts);
+}
+
+function latestFiledDate(facts: Array<SecFactUnit | null | undefined>) {
+  return facts
+    .filter((fact): fact is SecFactUnit => Boolean(fact?.filed))
     .sort(
       (a, b) =>
-        Math.abs(factSortTime(a) - targetTime) -
-        Math.abs(factSortTime(b) - targetTime),
-    )[0];
+        filedSortTime(b) - filedSortTime(a) ||
+        factSortTime(b) - factSortTime(a),
+    )[0]?.filed;
+}
 
-  return nearest?.val ?? facts[0]?.val ?? null;
+function anyStaleDataRejected(...states: Array<{ staleDataRejected: boolean }>) {
+  return states.some((state) => state.staleDataRejected);
 }
 
 function percentChange(current: number | null, previous: number | null) {
@@ -327,6 +494,28 @@ export function summarizeAvailableTags(companyFacts: CompanyFacts) {
   };
 }
 
+function summarizeFreshness(companyFacts: CompanyFacts) {
+  const summarize = (tags: string[]) => {
+    const allFacts = collectUsdFacts(companyFacts, tags);
+    const freshFacts = allFacts.filter((fact) => isFreshFact(fact));
+
+    return {
+      total: allFacts.length,
+      fresh: freshFacts.length,
+      latestEnd: allFacts[0]?.end,
+      latestFiled: allFacts[0]?.filed,
+    };
+  };
+
+  return {
+    revenue: summarize(revenueTags),
+    operatingIncome: summarize(operatingIncomeTags),
+    netIncome: summarize(netIncomeTags),
+    operatingCashFlow: summarize(operatingCashFlowTags),
+    capex: summarize(capexTags),
+  };
+}
+
 export async function fetchSecTickerMap() {
   if (tickerMapCache) {
     return tickerMapCache;
@@ -405,56 +594,71 @@ export async function fetchCompanyFacts(cik: string) {
 export function extractQuarterlyFinancials(
   companyFacts: CompanyFacts,
 ): FinancialSnapshot | null {
-  const revenueFacts = getUsdFacts(companyFacts, revenueTags);
-  const operatingIncomeFacts = getUsdFacts(companyFacts, operatingIncomeTags);
-  const netIncomeFacts = getUsdFacts(companyFacts, netIncomeTags);
-  const operatingCashFlowFacts = getUsdFacts(companyFacts, operatingCashFlowTags);
-  const capexFacts = getUsdFacts(companyFacts, capexTags);
-  const currentRevenueFact = revenueFacts[0];
-  const previousRevenueFact = revenueFacts[1];
+  const revenueState = collectFreshFacts(companyFacts, revenueTags);
+  const operatingIncomeState = collectFreshFacts(
+    companyFacts,
+    operatingIncomeTags,
+  );
+  const netIncomeState = collectFreshFacts(companyFacts, netIncomeTags);
+  const operatingCashFlowState = collectFreshFacts(
+    companyFacts,
+    operatingCashFlowTags,
+  );
+  const capexState = collectFreshFacts(companyFacts, capexTags);
+  const currentFcfPair = findCurrentPair(
+    operatingCashFlowState.facts,
+    capexState.facts,
+  );
 
-  if (!currentRevenueFact?.val) {
+  if (!currentFcfPair) {
     return null;
   }
 
-  const currentOperatingCashFlow = nearestFactValue(
-    operatingCashFlowFacts,
-    currentRevenueFact,
+  const previousFcfPair = findPreviousPair(
+    currentFcfPair.anchor,
+    operatingCashFlowState.facts,
+    capexState.facts,
   );
-  const previousOperatingCashFlow = nearestFactValue(
-    operatingCashFlowFacts,
-    previousRevenueFact,
-  );
-  const currentCapex = nearestFactValue(capexFacts, currentRevenueFact);
-  const previousCapex = nearestFactValue(capexFacts, previousRevenueFact);
-
-  if (currentOperatingCashFlow == null || currentCapex == null) {
-    return null;
-  }
-
-  const currentFcf = currentOperatingCashFlow - Math.abs(currentCapex);
-  const previousFcf =
-    previousOperatingCashFlow != null && previousCapex != null
-      ? previousOperatingCashFlow - Math.abs(previousCapex)
-      : null;
+  const currentFcf =
+    currentFcfPair.anchor.val! - Math.abs(currentFcfPair.match.val!);
+  const previousFcf = previousFcfPair
+    ? previousFcfPair.anchor.val! - Math.abs(previousFcfPair.match.val!)
+    : null;
   const fcfQoqChange = percentChange(currentFcf, previousFcf);
-
-  const currentIncome =
-    nearestFactValue(operatingIncomeFacts, currentRevenueFact) ??
-    nearestFactValue(netIncomeFacts, currentRevenueFact);
-  const previousIncome =
-    nearestFactValue(operatingIncomeFacts, previousRevenueFact) ??
-    nearestFactValue(netIncomeFacts, previousRevenueFact);
+  const currentMarginPair = findMarginPair(
+    revenueState.facts,
+    operatingIncomeState.facts,
+    netIncomeState.facts,
+  );
+  const previousMarginPair = currentMarginPair
+    ? findPreviousMarginPair(
+        currentMarginPair.revenue,
+        revenueState.facts,
+        operatingIncomeState.facts,
+        netIncomeState.facts,
+      )
+    : null;
   const currentMargin =
-    currentIncome != null ? (currentIncome / currentRevenueFact.val) * 100 : null;
-  const previousMargin =
-    previousIncome != null && previousRevenueFact?.val
-      ? (previousIncome / previousRevenueFact.val) * 100
+    currentMarginPair?.income.val != null && currentMarginPair.revenue.val
+      ? (currentMarginPair.income.val / currentMarginPair.revenue.val) * 100
       : null;
+  const previousMargin =
+    previousMarginPair?.income.val != null && previousMarginPair.revenue.val
+      ? (previousMarginPair.income.val / previousMarginPair.revenue.val) * 100
+      : null;
+
   const marginChange =
     currentMargin != null && previousMargin != null
       ? currentMargin - previousMargin
       : null;
+  const selectedPeriods = {
+    operatingCashFlow: toDebugFact(currentFcfPair.anchor),
+    capex: toDebugFact(currentFcfPair.match),
+    revenue: toDebugFact(currentMarginPair?.revenue),
+    marginIncome: toDebugFact(currentMarginPair?.income),
+    previousOperatingCashFlow: toDebugFact(previousFcfPair?.anchor),
+    previousCapex: toDebugFact(previousFcfPair?.match),
+  };
 
   return {
     marginScore: scoreMargin(marginChange),
@@ -464,10 +668,20 @@ export function extractQuarterlyFinancials(
     fcfQoqChange,
     cashFlowChangeRatio: fcfQoqChange,
     financialDataSource: "SEC",
-    financialUpdatedAt: currentRevenueFact.filed,
+    financialUpdatedAt:
+      latestFiledDate([currentFcfPair.anchor, currentFcfPair.match]) ??
+      currentFcfPair.anchor.filed,
     currentMargin,
     previousMargin,
     previousFcf,
+    selectedFinancialPeriods: selectedPeriods,
+    staleDataRejected: anyStaleDataRejected(
+      revenueState,
+      operatingIncomeState,
+      netIncomeState,
+      operatingCashFlowState,
+      capexState,
+    ),
   };
 }
 
@@ -531,6 +745,8 @@ export async function buildSecFinancialDebug(ticker: string) {
   const financials = extractQuarterlyFinancials(companyFacts);
 
   if (!financials) {
+    const freshness = summarizeFreshness(companyFacts);
+
     return {
       ticker: normalizedTicker,
       cikFound: true,
@@ -539,6 +755,10 @@ export async function buildSecFinancialDebug(ticker: string) {
       financialDataSource: "N/A" as const,
       error: "SEC_EXTRACTION_UNAVAILABLE",
       availableTags: summarizeAvailableTags(companyFacts),
+      freshness,
+      staleDataRejected: Object.values(freshness).some(
+        (summary) => summary.total > 0 && summary.fresh === 0,
+      ),
     };
   }
 
@@ -554,6 +774,8 @@ export async function buildSecFinancialDebug(ticker: string) {
     fcfScore: financials.fcfScore,
     marginScore: financials.marginScore,
     financialUpdatedAt: financials.financialUpdatedAt,
+    selectedPeriods: financials.selectedFinancialPeriods,
+    staleDataRejected: financials.staleDataRejected ?? false,
     availableTags: summarizeAvailableTags(companyFacts),
   };
 }

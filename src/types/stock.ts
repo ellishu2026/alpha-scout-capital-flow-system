@@ -16,6 +16,24 @@ export type PersistenceStatus = "SAVED" | "DISABLED" | "FAILED";
 
 export type FinancialDataSource = "SEC" | "FALLBACK" | "N/A";
 
+export type SelectedFinancialPeriod = {
+  tag?: string;
+  form?: string;
+  fp?: string;
+  filed?: string;
+  end?: string;
+  val?: number;
+};
+
+export type SelectedFinancialPeriods = {
+  operatingCashFlow?: SelectedFinancialPeriod;
+  capex?: SelectedFinancialPeriod;
+  revenue?: SelectedFinancialPeriod;
+  marginIncome?: SelectedFinancialPeriod;
+  previousOperatingCashFlow?: SelectedFinancialPeriod;
+  previousCapex?: SelectedFinancialPeriod;
+};
+
 export type StockCandidate = {
   rank: number;
   previousRank?: number | null;
@@ -49,6 +67,8 @@ export type StockCandidate = {
   previousMargin?: number | null;
   previousFcf?: number | null;
   financialError?: string;
+  selectedFinancialPeriods?: SelectedFinancialPeriods;
+  staleDataRejected?: boolean;
 };
 
 export type SnapshotResponse = {

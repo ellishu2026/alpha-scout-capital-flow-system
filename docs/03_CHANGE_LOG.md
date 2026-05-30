@@ -1,5 +1,14 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3.3 SEC Latest Period Selection
+
+- Fixed SEC financial period selection to collect all valid tag entries and prefer the latest 10-Q/10-K USD periods.
+- Added a 24-month stale-data guard so old SEC facts, such as outdated MSFT 2011 values, are not used for current scoring.
+- FCF now matches fresh operating cash flow and CapEx periods exactly or within a 45-day window instead of mixing unrelated periods.
+- Current FCF can still be used when prior comparable QoQ data is unavailable.
+- SEC debug output now includes selected period diagnostics and stale-data rejection status.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3.2 SEC CIK Mapping Fallback
 
 - Added a static CIK fallback map for key market universe and fixed-list operating companies.
