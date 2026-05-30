@@ -10,6 +10,18 @@ export function isSupabaseConfigured() {
   );
 }
 
+export function getSupabaseConfigStatus() {
+  const hasUrl = Boolean(process.env.SUPABASE_URL);
+  const hasServiceRoleKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+  return {
+    configured: hasUrl && hasServiceRoleKey,
+    hasUrl,
+    hasServiceRoleKey,
+    reason: hasUrl && hasServiceRoleKey ? undefined : "SUPABASE_ENV_MISSING",
+  };
+}
+
 export function getSupabaseAdminClient() {
   if (!isSupabaseConfigured()) {
     return null;

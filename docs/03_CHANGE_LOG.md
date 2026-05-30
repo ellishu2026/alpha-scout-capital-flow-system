@@ -1,5 +1,14 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.4.1 Supabase Persistence Diagnostics
+
+- Added structured Supabase persistence error reporting for snapshot upserts.
+- Refresh responses now include persistence error message, code, and details when persistence fails.
+- Added a CRON_SECRET-protected `/api/debug/persistence` endpoint for production-safe write/read diagnostics.
+- Improved Supabase admin configuration reporting without exposing secret values.
+- Dashboard now shows compact `Snapshot: Failed` status when persistence fails.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.4 Snapshot Persistence and Real Rank Movement
 
 - Added Supabase-backed snapshot persistence through `public.alpha_scout_snapshots`.

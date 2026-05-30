@@ -1,9 +1,13 @@
 import "server-only";
 
-import { getSupabaseAdminClient, isSupabaseConfigured } from "@/lib/supabaseAdmin";
+import {
+  getSupabaseAdminClient,
+  getSupabaseConfigStatus,
+  isSupabaseConfigured,
+} from "@/lib/supabaseAdmin";
 import type { SnapshotMode, SnapshotResponse } from "@/types/stock";
 
-const tableName = "alpha_scout_snapshots";
+export const snapshotTableName = "alpha_scout_snapshots";
 
 type SnapshotRow = {
   snapshot_date: string;
@@ -12,6 +16,54 @@ type SnapshotRow = {
   snapshot: SnapshotResponse;
   created_at?: string;
 };
+
+type SupabaseErrorLike = {
+  message?: string;
+  code?: string;
+  details?: string;
+};
+
+export type SnapshotStoreWriteResult = {
+  ok: boolean;
+  status: "SAVED" | "DISABLED" | "FAILED";
+  error?: string;
+  errorCode?: string;
+  errorDetails?: string;
+};
+
+function disabledResult(reason = "SUPABASE_ENV_MISSING"): SnapshotStoreWriteResult {
+  return {
+    ok: false,
+    status: "DISABLED",
+    error: reason,
+    errorCode: reason,
+  };
+}
+
+function failedResult(error: unknown): SnapshotStoreWriteResult {
+  const supabaseError = error as SupabaseErrorLike;
+
+  return {
+    ok: false,
+    status: "FAILED",
+    error:
+      supabaseError?.message ??
+      (error instanceof Error ? error.message : "Unknown Supabase error"),
+    errorCode: supabaseError?.code,
+    errorDetails: supabaseError?.details,
+  };
+}
+
+function savedResult(): SnapshotStoreWriteResult {
+  return {
+    ok: true,
+    status: "SAVED",
+  };
+}
+
+function toPlainJsonSnapshot(snapshot: SnapshotResponse) {
+  return JSON.parse(JSON.stringify(snapshot)) as SnapshotResponse;
+}
 
 export function getSnapshotDate(date = new Date()) {
   return date.toISOString().slice(0, 10);
@@ -22,24 +74,32 @@ export async function saveSnapshot(
   snapshot: SnapshotResponse,
 ) {
   if (!isSupabaseConfigured()) {
-    return { ok: false, disabled: true };
+    return disabledResult(getSupabaseConfigStatus().reason);
   }
 
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
-    return { ok: false, disabled: true };
+    return disabledResult();
   }
 
   const snapshotDate = getSnapshotDate(new Date(snapshot.updatedAt));
-  const { error } = await supabase.from(tableName).insert({
-    snapshot_date: snapshotDate,
-    mode,
-    status: snapshot.status,
-    snapshot,
-  });
+  try {
+    const { error } = await supabase.from(snapshotTableName).insert({
+      snapshot_date: snapshotDate,
+      mode,
+      status: snapshot.status,
+      snapshot: toPlainJsonSnapshot(snapshot),
+    });
 
-  return { ok: !error, disabled: false, error };
+    if (error) {
+      return failedResult(error);
+    }
+
+    return savedResult();
+  } catch (error) {
+    return failedResult(error);
+  }
 }
 
 export async function upsertTodaySnapshot(
@@ -47,29 +107,37 @@ export async function upsertTodaySnapshot(
   snapshot: SnapshotResponse,
 ) {
   if (!isSupabaseConfigured()) {
-    return { ok: false, disabled: true };
+    return disabledResult(getSupabaseConfigStatus().reason);
   }
 
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
-    return { ok: false, disabled: true };
+    return disabledResult();
   }
 
   const snapshotDate = getSnapshotDate(new Date(snapshot.updatedAt));
-  const { error } = await supabase.from(tableName).upsert(
-    {
-      snapshot_date: snapshotDate,
-      mode,
-      status: snapshot.status,
-      snapshot,
-    },
-    {
-      onConflict: "snapshot_date,mode",
-    },
-  );
+  try {
+    const { error } = await supabase.from(snapshotTableName).upsert(
+      {
+        snapshot_date: snapshotDate,
+        mode,
+        status: snapshot.status,
+        snapshot: toPlainJsonSnapshot(snapshot),
+      },
+      {
+        onConflict: "snapshot_date,mode",
+      },
+    );
 
-  return { ok: !error, disabled: false, error };
+    if (error) {
+      return failedResult(error);
+    }
+
+    return savedResult();
+  } catch (error) {
+    return failedResult(error);
+  }
 }
 
 export async function getLatestSnapshot(mode: SnapshotMode) {
@@ -84,7 +152,7 @@ export async function getLatestSnapshot(mode: SnapshotMode) {
   }
 
   const { data, error } = await supabase
-    .from(tableName)
+    .from(snapshotTableName)
     .select("snapshot")
     .eq("mode", mode)
     .order("snapshot_date", { ascending: false })
@@ -114,7 +182,7 @@ export async function getPreviousSnapshot(
   }
 
   const { data, error } = await supabase
-    .from(tableName)
+    .from(snapshotTableName)
     .select("snapshot")
     .eq("mode", mode)
     .lt("snapshot_date", beforeDate)

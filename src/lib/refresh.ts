@@ -8,6 +8,7 @@ import {
   getLatestSnapshot as getLatestSavedSnapshot,
   getPreviousSnapshot,
   getSnapshotDate,
+  type SnapshotStoreWriteResult,
   upsertTodaySnapshot,
 } from "@/lib/snapshotStore";
 import { isSupabaseConfigured } from "@/lib/supabaseAdmin";
@@ -159,23 +160,43 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
           "MARKET_SCAN",
           withoutFixedSnapshot(marketSnapshot),
         )
-      : { ok: false, disabled: !isSupabaseConfigured() };
+      : ({
+          ok: false,
+          status: isSupabaseConfigured() ? "FAILED" : "DISABLED",
+          error:
+            currentMode === "FIXED_WATCHLIST"
+              ? "Market scan failed; fixed-watchlist fallback was not saved as MARKET_SCAN."
+              : "Market scan failed; mock fallback was not saved as MARKET_SCAN.",
+          errorCode: "MARKET_SCAN_UNAVAILABLE",
+        } satisfies SnapshotStoreWriteResult);
   const fixedSaveResult = fixedSnapshot
     ? await upsertTodaySnapshot(
         "FIXED_WATCHLIST",
         withoutFixedSnapshot(fixedSnapshot),
       )
     : undefined;
+  const failedSaveResult = [marketSaveResult, fixedSaveResult].find(
+    (result) => result?.status === "FAILED",
+  );
+  const disabledSaveResult = [marketSaveResult, fixedSaveResult].find(
+    (result) => result?.status === "DISABLED",
+  );
   const persistenceStatus =
-    marketSaveResult.disabled || fixedSaveResult?.disabled
+    failedSaveResult
+      ? "FAILED"
+      : disabledSaveResult
       ? "DISABLED"
       : marketSaveResult.ok && (fixedSaveResult?.ok ?? true)
         ? "SAVED"
         : "FAILED";
+  const persistenceIssue = failedSaveResult ?? disabledSaveResult;
   const snapshot: SnapshotResponse = {
     ...marketSnapshot,
     persistenceStatus,
     previousSnapshotFound: Boolean(previousMarketSnapshot),
+    persistenceError: persistenceIssue?.error,
+    persistenceErrorCode: persistenceIssue?.errorCode,
+    persistenceErrorDetails: persistenceIssue?.errorDetails,
     fixedSnapshot,
   };
   const usedLiveSnapshot =
@@ -191,6 +212,9 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     persistenceStatus,
     previousSnapshotFound: Boolean(previousMarketSnapshot),
     droppedSymbols: snapshot.droppedSymbols,
+    persistenceError: snapshot.persistenceError,
+    persistenceErrorCode: snapshot.persistenceErrorCode,
+    persistenceErrorDetails: snapshot.persistenceErrorDetails,
     message: liveMode
       ? usedLiveSnapshot
         ? `V1.4 yahoo-finance2 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`

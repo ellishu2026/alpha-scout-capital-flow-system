@@ -56,6 +56,9 @@ export type SnapshotResponse = {
   persistenceStatus?: PersistenceStatus;
   previousSnapshotFound?: boolean;
   droppedSymbols?: string[];
+  persistenceError?: string;
+  persistenceErrorCode?: string;
+  persistenceErrorDetails?: string;
   movementSummary?: {
     newCount: number;
     upCount: number;
@@ -76,6 +79,9 @@ export type RefreshResult = {
   persistenceStatus?: PersistenceStatus;
   previousSnapshotFound?: boolean;
   droppedSymbols?: string[];
+  persistenceError?: string;
+  persistenceErrorCode?: string;
+  persistenceErrorDetails?: string;
   message: string;
   snapshot: SnapshotResponse;
 };
