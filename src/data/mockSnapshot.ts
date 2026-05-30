@@ -14,7 +14,7 @@ type MockCandidateInput = Omit<
 
 const billion = 1_000_000_000;
 
-const previousRankMap: Record<string, number | null> = {
+export const previousRankMap: Record<string, number | null> = {
   NVDA: 3,
   AVGO: null,
   LLY: 2,
@@ -330,6 +330,46 @@ const candidates: MockCandidateInput[] = [
     capitalFlowChangeRatio: 6.2,
   },
 ];
+
+export type MockFinancialFallback = Pick<
+  StockCandidate,
+  | "marginScore"
+  | "fcfScore"
+  | "marginChange"
+  | "fcf"
+  | "fcfQoqChange"
+  | "cashFlowChangeRatio"
+>;
+
+export function getMockFinancialFallback(
+  ticker: string,
+): MockFinancialFallback {
+  const fallback = candidates.find((candidate) => candidate.ticker === ticker);
+
+  if (!fallback) {
+    return {
+      marginScore: 65,
+      fcfScore: 65,
+      marginChange: 0,
+      fcf: 0,
+      fcfQoqChange: 0,
+      cashFlowChangeRatio: 0,
+    };
+  }
+
+  return {
+    marginScore: fallback.marginScore,
+    fcfScore: fallback.fcfScore,
+    marginChange: fallback.marginChange,
+    fcf: fallback.fcf,
+    fcfQoqChange: fallback.fcfQoqChange,
+    cashFlowChangeRatio: fallback.cashFlowChangeRatio,
+  };
+}
+
+export function getMockCandidateFallback(ticker: string) {
+  return candidates.find((candidate) => candidate.ticker === ticker) ?? null;
+}
 
 const rankedCandidates: StockCandidate[] = candidates
   .map((candidate) => {

@@ -129,6 +129,7 @@ export function getPoolLabel(pool: StockPool) {
     MID_CAP: "$50B-$300B",
     HIGH_PRICE: "Price > $800",
     OVERLAP: "Overlap",
+    WATCHLIST: "Watchlist",
   };
 
   return labels[pool];
@@ -139,6 +140,8 @@ export function getDataStatusLabel(status: DataStatus) {
     HIGH: "High",
     MID: "Medium",
     LOW: "Low",
+    LIVE_MARKET: "Live",
+    PARTIAL_LIVE: "Partial",
     MOCK: "Mock",
   };
 

@@ -1,6 +1,12 @@
-export type StockPool = "MID_CAP" | "HIGH_PRICE" | "OVERLAP";
+export type StockPool = "MID_CAP" | "HIGH_PRICE" | "OVERLAP" | "WATCHLIST";
 
-export type DataStatus = "HIGH" | "MID" | "LOW" | "MOCK";
+export type DataStatus =
+  | "HIGH"
+  | "MID"
+  | "LOW"
+  | "LIVE_MARKET"
+  | "PARTIAL_LIVE"
+  | "MOCK";
 
 export type RankChangeType = "NEW" | "UP" | "DOWN" | "SAME";
 

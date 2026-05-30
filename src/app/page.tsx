@@ -1,4 +1,4 @@
-import { mockSnapshot } from "@/data/mockSnapshot";
+import { buildLatestSnapshot } from "@/lib/refresh";
 import {
   formatCurrency,
   formatLargeCurrency,
@@ -11,32 +11,10 @@ import type { StockCandidate, StockPool } from "@/types/stock";
 
 const tabs: { label: string; pool?: StockPool }[] = [
   { label: "All" },
+  { label: "Watchlist", pool: "WATCHLIST" },
   { label: "Market Cap $50B-$300B", pool: "MID_CAP" },
   { label: "Price > $800", pool: "HIGH_PRICE" },
   { label: "Overlap", pool: "OVERLAP" },
-];
-
-const summaryCards = [
-  {
-    label: "Universe",
-    value: "2 Pools",
-    detail: "$50B-$300B market cap and price above $800",
-  },
-  {
-    label: "Top 11",
-    value: `${mockSnapshot.count} Candidates`,
-    detail: "Merged, deduplicated, and ranked by composite score",
-  },
-  {
-    label: "Scoring Model",
-    value: "30 / 40 / 30",
-    detail: "Margin, FCF, and capital flow weighted scoring",
-  },
-  {
-    label: "Data Status",
-    value: getDataStatusLabel(mockSnapshot.status),
-    detail: "V1.0 skeleton using deterministic mock snapshot data",
-  },
 ];
 
 const tableHeaders = [
@@ -78,6 +56,7 @@ function poolClass(pool: StockPool) {
     MID_CAP: "bg-sky-50 text-sky-700 ring-sky-200",
     HIGH_PRICE: "bg-violet-50 text-violet-700 ring-violet-200",
     OVERLAP: "bg-amber-50 text-amber-800 ring-amber-200",
+    WATCHLIST: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   };
 
   return classes[pool];
@@ -260,13 +239,46 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
   );
 }
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const snapshot = await buildLatestSnapshot();
   const updatedAt = new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "UTC",
-  }).format(new Date(mockSnapshot.updatedAt));
-  const movementSummary = mockSnapshot.movementSummary;
+  }).format(new Date(snapshot.updatedAt));
+  const movementSummary = snapshot.movementSummary;
+  const isLiveSnapshot =
+    snapshot.status === "LIVE_MARKET" || snapshot.status === "PARTIAL_LIVE";
+  const summaryCards = [
+    {
+      label: "Universe",
+      value: isLiveSnapshot ? "Fixed Watchlist" : "2 Pools",
+      detail: isLiveSnapshot
+        ? "11 symbols from yahoo-finance2 quote and daily candles"
+        : "$50B-$300B market cap and price above $800",
+    },
+    {
+      label: "Top 11",
+      value: `${snapshot.count} Candidates`,
+      detail: isLiveSnapshot
+        ? "Fixed watchlist ranked by composite score"
+        : "Merged, deduplicated, and ranked by composite score",
+    },
+    {
+      label: "Scoring Model",
+      value: "30 / 40 / 30",
+      detail: "Margin, FCF, and capital flow weighted scoring",
+    },
+    {
+      label: "Data Status",
+      value: getDataStatusLabel(snapshot.status),
+      detail: isLiveSnapshot
+        ? "V1.1 live market data with financial fallback"
+        : "V1.0 skeleton using deterministic mock snapshot data",
+    },
+  ];
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
@@ -278,7 +290,7 @@ export default function Home() {
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.0
+                AlphaScout Capital Flow System V1.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -287,12 +299,12 @@ export default function Home() {
             <div className="grid gap-x-3 gap-y-0.5 rounded border border-slate-200 bg-white px-2.5 py-2 text-[11px] shadow-sm sm:grid-cols-4 lg:min-w-[620px]">
               <div>
                 <span className="text-slate-500">Data Mode</span>
-                <p className="font-medium text-slate-950">{mockSnapshot.dataMode}</p>
+                <p className="font-medium text-slate-950">{snapshot.dataMode}</p>
               </div>
               <div>
                 <span className="text-slate-500">Refresh Mode</span>
                 <p className="font-medium text-slate-950">
-                  {mockSnapshot.refreshMode}
+                  {snapshot.refreshMode}
                 </p>
               </div>
               <div>
@@ -301,7 +313,9 @@ export default function Home() {
               </div>
               <div>
                 <span className="text-slate-500">Selected</span>
-                <p className="font-medium text-slate-950">Top 11</p>
+                <p className="font-medium text-slate-950">
+                  Top {snapshot.count} · {getDataStatusLabel(snapshot.status)}
+                </p>
               </div>
             </div>
           </div>
@@ -384,7 +398,7 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
-                {mockSnapshot.items.map((candidate) => (
+                {snapshot.items.map((candidate) => (
                   <TableRow key={candidate.ticker} candidate={candidate} />
                 ))}
               </tbody>
