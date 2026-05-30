@@ -83,6 +83,11 @@ export type StockCandidate = {
   secSelectedPeriodEnd?: string | null;
   secSelectedPeriodFiled?: string | null;
   secNormalizationNote?: string;
+  fcfQoqRaw?: number | null;
+  fcfQoqScoreInput?: number | null;
+  marginChangeRaw?: number | null;
+  marginChangeScoreInput?: number | null;
+  financialScoreNote?: string;
 };
 
 export type SnapshotResponse = {

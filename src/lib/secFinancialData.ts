@@ -62,6 +62,11 @@ export type FinancialSnapshot = {
   secSelectedPeriodEnd?: string | null;
   secSelectedPeriodFiled?: string | null;
   secNormalizationNote?: string;
+  fcfQoqRaw?: number | null;
+  fcfQoqScoreInput?: number | null;
+  marginChangeRaw?: number | null;
+  marginChangeScoreInput?: number | null;
+  financialScoreNote?: string;
 };
 
 const secTickerMapUrl = "https://www.sec.gov/files/company_tickers.json";
@@ -70,6 +75,7 @@ const etfLikeTickers = new Set(["SOXL", "SMH"]);
 const quarterLikePeriods = new Set(["Q1", "Q2", "Q3", "Q4", "FY"]);
 const staleDataWindowMonths = 24;
 const closePeriodWindowMs = 45 * 24 * 60 * 60 * 1000;
+const lowFcfBaseThreshold = 100_000_000;
 const staticTickerCikMap: Record<string, string> = {
   MSFT: "789019",
   GOOGL: "1652044",
@@ -646,64 +652,161 @@ function percentChange(current: number | null, previous: number | null) {
   return ((current - previous) / Math.abs(previous)) * 100;
 }
 
-function scoreFcf(currentFcf: number, fcfQoqChange: number | null) {
-  if (currentFcf <= 0) {
-    return 45;
+function clampFinancialChange(value: number | null, min: number, max: number) {
+  if (value == null || !Number.isFinite(value)) {
+    return null;
   }
 
-  if (fcfQoqChange == null) {
-    return 72;
-  }
-
-  if (fcfQoqChange >= 20) {
-    return 90;
-  }
-
-  if (fcfQoqChange >= 10) {
-    return 82;
-  }
-
-  if (fcfQoqChange >= 0) {
-    return 75;
-  }
-
-  return 65;
+  return Math.min(max, Math.max(min, value));
 }
 
-function scoreNormalizedFcf(
+function calculateStableFcfScore(
   currentFcf: number,
+  previousFcf: number | null,
   fcfQoqChange: number | null,
   periodType: FinancialPeriodType,
 ) {
+  const scoreInput = clampFinancialChange(fcfQoqChange, -100, 100);
+  const notes: string[] = [];
+
   if (periodType === "ANNUAL") {
-    return currentFcf > 0 ? 72 : 45;
+    notes.push("Annual SEC FCF capped at conservative score.");
+
+    return {
+      score: currentFcf > 0 ? 72 : 45,
+      scoreInput: null,
+      notes,
+    };
   }
 
-  return scoreFcf(currentFcf, fcfQoqChange);
+  if (fcfQoqChange !== scoreInput) {
+    notes.push("FCF QoQ capped to -100%/+100% for scoring.");
+  }
+
+  if (currentFcf <= 0) {
+    return {
+      score: 45,
+      scoreInput,
+      notes,
+    };
+  }
+
+  if (previousFcf == null) {
+    notes.push("FCF QoQ unavailable; scored from positive current FCF.");
+
+    return {
+      score: 72,
+      scoreInput,
+      notes,
+    };
+  }
+
+  if (Math.abs(previousFcf) < lowFcfBaseThreshold) {
+    notes.push("Low prior FCF base capped upside score.");
+
+    return {
+      score: currentFcf > 0 ? 78 : 45,
+      scoreInput,
+      notes,
+    };
+  }
+
+  if (previousFcf <= 0) {
+    notes.push("Negative-to-positive FCF turnaround scored conservatively.");
+
+    return {
+      score:
+        currentFcf > 1_000_000_000 ? 82 : currentFcf > 100_000_000 ? 78 : 72,
+      scoreInput,
+      notes,
+    };
+  }
+
+  if (scoreInput == null) {
+    return {
+      score: 72,
+      scoreInput,
+      notes,
+    };
+  }
+
+  if (scoreInput >= 50) {
+    return { score: 90, scoreInput, notes };
+  }
+
+  if (scoreInput >= 20) {
+    return { score: 84, scoreInput, notes };
+  }
+
+  if (scoreInput >= 10) {
+    return { score: 80, scoreInput, notes };
+  }
+
+  if (scoreInput >= 0) {
+    return { score: 75, scoreInput, notes };
+  }
+
+  if (scoreInput >= -20) {
+    return { score: 65, scoreInput, notes };
+  }
+
+  return { score: 55, scoreInput, notes };
 }
 
-function scoreMargin(marginChange: number | null) {
-  if (marginChange == null) {
-    return 70;
+function calculateStableMarginScore(
+  currentMargin: number | null,
+  previousMargin: number | null,
+  marginChange: number | null,
+  periodType: FinancialPeriodType,
+) {
+  const scoreInput = clampFinancialChange(marginChange, -20, 20);
+  const notes: string[] = [];
+
+  if (marginChange !== scoreInput) {
+    notes.push("Margin change capped to -20/+20 points for scoring.");
   }
 
-  if (marginChange >= 5) {
-    return 90;
+  if (periodType === "ANNUAL") {
+    notes.push("Annual SEC margin score capped.");
   }
 
-  if (marginChange >= 2) {
-    return 82;
+  if (scoreInput == null) {
+    return {
+      score:
+        currentMargin != null && Number.isFinite(currentMargin)
+          ? periodType === "ANNUAL"
+            ? 75
+            : 70
+          : 70,
+      scoreInput,
+      notes:
+        previousMargin == null
+          ? [...notes, "Margin comparison unavailable."]
+          : notes,
+    };
   }
 
-  if (marginChange >= 0) {
-    return 75;
+  let score: number;
+
+  if (scoreInput >= 5) {
+    score = 90;
+  } else if (scoreInput >= 2) {
+    score = 82;
+  } else if (scoreInput >= 0) {
+    score = 75;
+  } else if (scoreInput >= -2) {
+    score = 65;
+  } else if (scoreInput >= -5) {
+    score = 55;
+  } else {
+    score = 45;
   }
 
-  if (marginChange >= -2) {
-    return 60;
+  if (periodType === "ANNUAL") {
+    score = Math.min(score, 75);
   }
 
-  return 45;
+  return { score, scoreInput, notes };
 }
 
 export function summarizeAvailableTags(companyFacts: CompanyFacts) {
@@ -886,6 +989,22 @@ export function extractQuarterlyFinancials(
     currentMargin != null && previousMargin != null
       ? currentMargin - previousMargin
       : null;
+  const stableFcfScore = calculateStableFcfScore(
+    currentFcf.fcf,
+    previousFcf?.fcf ?? null,
+    fcfQoqChange,
+    currentFcf.periodType,
+  );
+  const stableMarginScore = calculateStableMarginScore(
+    currentMargin,
+    previousMargin,
+    marginChange,
+    currentFcf.periodType,
+  );
+  const financialScoreNote = [
+    ...stableFcfScore.notes,
+    ...stableMarginScore.notes,
+  ].join(" ");
   const selectedPeriods = {
     operatingCashFlow: toDebugFact(currentFcf.operatingCashFlow),
     capex: toDebugFact(currentFcf.capex),
@@ -898,12 +1017,8 @@ export function extractQuarterlyFinancials(
   };
 
   return {
-    marginScore: scoreMargin(marginChange),
-    fcfScore: scoreNormalizedFcf(
-      currentFcf.fcf,
-      fcfQoqChange,
-      currentFcf.periodType,
-    ),
+    marginScore: stableMarginScore.score,
+    fcfScore: stableFcfScore.score,
     marginChange,
     fcf: currentFcf.fcf,
     fcfQoqChange,
@@ -930,6 +1045,11 @@ export function extractQuarterlyFinancials(
     secSelectedPeriodFiled:
       latestFiledDate([currentFcf.operatingCashFlow, currentFcf.capex]) ?? null,
     secNormalizationNote: currentFcf.note,
+    fcfQoqRaw: fcfQoqChange,
+    fcfQoqScoreInput: stableFcfScore.scoreInput,
+    marginChangeRaw: marginChange,
+    marginChangeScoreInput: stableMarginScore.scoreInput,
+    financialScoreNote: financialScoreNote || undefined,
   };
 }
 
@@ -1018,9 +1138,14 @@ export async function buildSecFinancialDebug(ticker: string) {
     financialDataSource: financials.financialDataSource,
     fcf: financials.fcf,
     fcfQoqChange: financials.fcfQoqChange,
+    fcfQoqRaw: financials.fcfQoqRaw,
+    fcfQoqScoreInput: financials.fcfQoqScoreInput,
     marginChange: financials.marginChange,
+    marginChangeRaw: financials.marginChangeRaw,
+    marginChangeScoreInput: financials.marginChangeScoreInput,
     fcfScore: financials.fcfScore,
     marginScore: financials.marginScore,
+    financialScoreNote: financials.financialScoreNote,
     financialUpdatedAt: financials.financialUpdatedAt,
     financialPeriodType: financials.financialPeriodType,
     currentQuarterFcf: financials.currentQuarterFcf,

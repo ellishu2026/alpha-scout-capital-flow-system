@@ -1,5 +1,15 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3.5 Financial Score Stabilization
+
+- Added financial score stabilization for SEC-derived FCF and margin scores.
+- Extreme FCF QoQ is capped to -100%/+100% for scoring while preserving raw display values.
+- Added low-base FCF protection for prior-quarter FCF below $100M.
+- Added conservative handling for negative-to-positive FCF turnarounds.
+- Margin change is capped to -20/+20 percentage points for scoring while preserving raw margin change.
+- Added score input metadata for debug output and persisted snapshots.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3.4 SEC Quarterly FCF Normalization
 
 - Added SEC quarterly FCF normalization for operating cash flow and CapEx facts.
