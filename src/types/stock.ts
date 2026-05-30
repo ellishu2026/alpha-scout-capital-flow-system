@@ -15,14 +15,22 @@ export type SnapshotMode = "MARKET_SCAN" | "FIXED_WATCHLIST" | "MOCK";
 export type PersistenceStatus = "SAVED" | "DISABLED" | "FAILED";
 
 export type FinancialDataSource = "SEC" | "FALLBACK" | "N/A";
+export type FinancialPeriodType =
+  | "QUARTER"
+  | "YTD_NORMALIZED"
+  | "ANNUAL"
+  | "UNKNOWN";
 
 export type SelectedFinancialPeriod = {
   tag?: string;
+  start?: string;
   form?: string;
   fp?: string;
   filed?: string;
   end?: string;
+  frame?: string;
   val?: number;
+  periodType?: FinancialPeriodType;
 };
 
 export type SelectedFinancialPeriods = {
@@ -69,6 +77,12 @@ export type StockCandidate = {
   financialError?: string;
   selectedFinancialPeriods?: SelectedFinancialPeriods;
   staleDataRejected?: boolean;
+  financialPeriodType?: FinancialPeriodType;
+  currentQuarterFcf?: number | null;
+  previousQuarterFcf?: number | null;
+  secSelectedPeriodEnd?: string | null;
+  secSelectedPeriodFiled?: string | null;
+  secNormalizationNote?: string;
 };
 
 export type SnapshotResponse = {

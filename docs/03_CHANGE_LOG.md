@@ -1,5 +1,15 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3.4 SEC Quarterly FCF Normalization
+
+- Added SEC quarterly FCF normalization for operating cash flow and CapEx facts.
+- SEC facts are now classified by date duration as quarterly, YTD-normalized, annual, or unknown instead of relying only on `fp`.
+- YTD cash-flow facts are differenced against prior YTD facts to estimate single-quarter FCF where reliable.
+- Annual facts can estimate Q4 from FY minus Q3 YTD, or fall back to conservative annual scoring when no reliable quarterly normalization exists.
+- Avoided using cumulative cash-flow facts directly as quarterly FCF.
+- Financial debug output now includes selected period classifications and normalization notes.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3.3 SEC Latest Period Selection
 
 - Fixed SEC financial period selection to collect all valid tag entries and prefer the latest 10-Q/10-K USD periods.
