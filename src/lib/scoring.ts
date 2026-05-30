@@ -141,7 +141,7 @@ export function getDataStatusLabel(status: DataStatus) {
     MID: "Medium",
     LOW: "Low",
     LIVE_MARKET: "Live",
-    PARTIAL_LIVE: "Partial",
+    PARTIAL_LIVE: "Partial Live",
     MOCK: "Mock",
   };
 

@@ -11,7 +11,7 @@ import type { StockCandidate, StockPool } from "@/types/stock";
 
 const tabs: { label: string; pool?: StockPool }[] = [
   { label: "All" },
-  { label: "Watchlist", pool: "WATCHLIST" },
+  { label: "Fixed List", pool: "WATCHLIST" },
   { label: "Market Cap $50B-$300B", pool: "MID_CAP" },
   { label: "Price > $800", pool: "HIGH_PRICE" },
   { label: "Overlap", pool: "OVERLAP" },
@@ -275,7 +275,7 @@ export default async function Home() {
       label: "Data Status",
       value: getDataStatusLabel(snapshot.status),
       detail: isLiveSnapshot
-        ? "V1.1 live market data with financial fallback"
+        ? "Live market data with financial fallback"
         : "V1.0 skeleton using deterministic mock snapshot data",
     },
   ];
@@ -366,12 +366,12 @@ export default async function Home() {
             </p>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-            {tabs.map((tab, index) => (
+            {tabs.map((tab) => (
               <button
                 key={tab.label}
                 type="button"
                 className={`whitespace-nowrap rounded border px-2 py-1 text-[11px] font-medium transition-colors ${
-                  index === 0
+                  tab.pool === "WATCHLIST"
                     ? "border-slate-900 bg-slate-900 text-white"
                     : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                 }`}
