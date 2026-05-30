@@ -88,11 +88,32 @@ export function getRankChangeLabel(
   return `↓${Math.abs(rankChange)}`;
 }
 
-export function formatMarketCap(value: number) {
-  return `$${(value / 1_000_000_000).toFixed(0)}B`;
+function isAvailableNumber(
+  value: number | null | undefined,
+): value is number {
+  return typeof value === "number" && Number.isFinite(value);
 }
 
-export function formatCurrency(value: number) {
+export function formatMarketCap(value: number | null | undefined) {
+  if (!isAvailableNumber(value) || value <= 0) {
+    return "N/A";
+  }
+
+  if (value >= 1_000_000_000_000) {
+    return `$${(value / 1_000_000_000_000).toFixed(1)}T`;
+  }
+
+  const billions = value / 1_000_000_000;
+  const digits = billions >= 100 ? 0 : 1;
+
+  return `$${billions.toFixed(digits)}B`;
+}
+
+export function formatCurrency(value: number | null | undefined) {
+  if (!isAvailableNumber(value)) {
+    return "N/A";
+  }
+
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -100,12 +121,16 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
-export function formatLargeCurrency(value: number) {
+export function formatLargeCurrency(value: number | null | undefined) {
+  if (!isAvailableNumber(value)) {
+    return "N/A";
+  }
+
   const absValue = Math.abs(value);
   const sign = value < 0 ? "-" : "";
 
   if (absValue >= 1_000_000_000_000) {
-    return `${sign}$${(absValue / 1_000_000_000_000).toFixed(2)}T`;
+    return `${sign}$${(absValue / 1_000_000_000_000).toFixed(1)}T`;
   }
 
   if (absValue >= 1_000_000_000) {
@@ -119,7 +144,11 @@ export function formatLargeCurrency(value: number) {
   return `${sign}$${absValue.toFixed(0)}`;
 }
 
-export function formatPercent(value: number) {
+export function formatPercent(value: number | null | undefined) {
+  if (!isAvailableNumber(value)) {
+    return "N/A";
+  }
+
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(1)}%`;
 }
@@ -129,7 +158,7 @@ export function getPoolLabel(pool: StockPool) {
     MID_CAP: "$50B-$300B",
     HIGH_PRICE: "Price > $800",
     OVERLAP: "Overlap",
-    WATCHLIST: "Watchlist",
+    WATCHLIST: "Fixed List",
   };
 
   return labels[pool];

@@ -129,8 +129,13 @@ function rankChangeClass(changeType?: StockCandidate["changeType"]) {
   return "bg-slate-100 text-slate-500 ring-slate-200";
 }
 
+function hasUnavailableFinancials(candidate: StockCandidate) {
+  return candidate.fcf === 0 && candidate.fcfQoqChange === 0;
+}
+
 function TableRow({ candidate }: { candidate: StockCandidate }) {
   const numericCell = "px-1.5 py-1.5 text-left text-[10px] tabular-nums";
+  const financialsUnavailable = hasUnavailableFinancials(candidate);
 
   return (
     <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50/80">
@@ -165,10 +170,10 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
         {formatCurrency(candidate.price)}
       </td>
       <td className={`${numericCell} text-slate-700`}>
-        {formatLargeCurrency(candidate.fcf)}
+        {financialsUnavailable ? "N/A" : formatLargeCurrency(candidate.fcf)}
       </td>
       <td className={`${numericCell} ${toneForValue(candidate.fcfQoqChange)}`}>
-        {formatPercent(candidate.fcfQoqChange)}
+        {financialsUnavailable ? "N/A" : formatPercent(candidate.fcfQoqChange)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(candidate.capitalFlow3D)}`}
@@ -290,7 +295,7 @@ export default async function Home() {
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.1
+                AlphaScout Capital Flow System V1.1.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
