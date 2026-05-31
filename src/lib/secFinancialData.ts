@@ -757,17 +757,39 @@ function isQ3YtdForFiscalYear(
   );
 }
 
-function matchingFactForAnchor(
-  facts: TaggedSecFactUnit[],
-  anchor: TaggedSecFactUnit,
-  preferredTag?: string,
+function compatibleFyCapexCandidates(
+  fyOcf: TaggedSecFactUnit,
+  fyCapexCandidates: TaggedSecFactUnit[],
 ) {
-  const sameTagFacts = preferredTag
-    ? facts.filter((fact) => fact.tag === preferredTag)
-    : [];
-  const sameTagMatch = findCloseFact(sameTagFacts, anchor);
+  return fyCapexCandidates.filter(
+    (fact) =>
+      Boolean(fact.end) &&
+      Boolean(fyOcf.end) &&
+      daysBetween(new Date(fact.end!), new Date(fyOcf.end!)) <= 45 &&
+      classifyFactPeriod(fact) === "ANNUAL",
+  );
+}
 
-  return sameTagMatch ?? findCloseFact(facts, anchor);
+function compatibleQ3YtdCapexCandidates(
+  fyCapex: TaggedSecFactUnit,
+  q3YtdOcf: TaggedSecFactUnit,
+  q3YtdCapexCandidates: TaggedSecFactUnit[],
+) {
+  const sameTagCandidates = q3YtdCapexCandidates.filter(
+    (fact) => fact.tag === fyCapex.tag && isQ3YtdForFiscalYear(fyCapex, fact),
+  );
+  const compatibleCandidates = sameTagCandidates.length
+    ? sameTagCandidates
+    : q3YtdCapexCandidates.filter((fact) =>
+        isQ3YtdForFiscalYear(fyCapex, fact),
+      );
+
+  return compatibleCandidates.filter(
+    (fact) =>
+      Boolean(fact.end) &&
+      Boolean(q3YtdOcf.end) &&
+      daysBetween(new Date(fact.end!), new Date(q3YtdOcf.end!)) <= 45,
+  );
 }
 
 function recoverFyMinusQ3YtdPreviousQuarter(
@@ -818,10 +840,13 @@ function recoverFyMinusQ3YtdPreviousQuarter(
   }
 
   for (const fyOcf of fyOcfCandidates) {
-    const fyCapex = matchingFactForAnchor(capexFacts, fyOcf);
+    const fyCapexMatches = compatibleFyCapexCandidates(
+      fyOcf,
+      fyCapexCandidates,
+    );
 
-    if (!fyCapex || classifyFactPeriod(fyCapex) !== "ANNUAL") {
-      diagnostics.rejectionReasons.push(`NO_MATCHING_FY_CAPEX:${fyOcf.tag}`);
+    if (!fyCapexMatches.length) {
+      diagnostics.rejectionReasons.push(`NO_MATCHING_FY_CAPEX_FOR_OCF:${fyOcf.tag}`);
       continue;
     }
 
@@ -836,35 +861,49 @@ function recoverFyMinusQ3YtdPreviousQuarter(
       continue;
     }
 
-    const q3YtdCapex = matchingFactForAnchor(
-      q3YtdCapexCandidates,
-      q3YtdOcf,
-      fyCapex.tag,
-    );
+    for (const fyCapex of fyCapexMatches) {
+      const q3YtdCapexMatches = compatibleQ3YtdCapexCandidates(
+        fyCapex,
+        q3YtdOcf,
+        q3YtdCapexCandidates,
+      );
 
-    if (!q3YtdCapex || !isQ3YtdForFiscalYear(fyCapex, q3YtdCapex)) {
-      diagnostics.rejectionReasons.push(`NO_MATCHING_Q3_YTD_CAPEX:${fyCapex.tag}`);
-      continue;
+      if (!q3YtdCapexMatches.length) {
+        diagnostics.rejectionReasons.push(
+          `NO_MATCHING_Q3_YTD_CAPEX:${fyCapex.tag}`,
+        );
+        continue;
+      }
+
+      for (const q3YtdCapex of q3YtdCapexMatches) {
+        const q4Ocf = fyOcf.val! - q3YtdOcf.val!;
+        const q4Capex = Math.abs(fyCapex.val! - q3YtdCapex.val!);
+
+        if (q4Ocf < 0 || fyCapex.val! - q3YtdCapex.val! < 0) {
+          diagnostics.rejectionReasons.push(
+            `NEGATIVE_INTERVAL_VALUES:${fyOcf.tag}:${fyCapex.tag}`,
+          );
+          continue;
+        }
+
+        const fcf = q4Ocf - q4Capex;
+
+        return {
+          result: {
+            fcf,
+            periodType: "YTD_NORMALIZED" as const,
+            method: "FY_MINUS_Q3_YTD" as const,
+            currentQuarterFcf: fcf,
+            operatingCashFlow: fyOcf,
+            capex: fyCapex,
+            previousOperatingCashFlow: q3YtdOcf,
+            previousCapex: q3YtdCapex,
+            note: "Estimated prior Q4 SEC cash flow by subtracting Q3 YTD from FY.",
+          },
+          diagnostics,
+        };
+      }
     }
-
-    const q4Ocf = fyOcf.val! - q3YtdOcf.val!;
-    const q4Capex = Math.abs(fyCapex.val! - q3YtdCapex.val!);
-    const fcf = q4Ocf - q4Capex;
-
-    return {
-      result: {
-        fcf,
-        periodType: "YTD_NORMALIZED" as const,
-        method: "FY_MINUS_Q3_YTD" as const,
-        currentQuarterFcf: fcf,
-        operatingCashFlow: fyOcf,
-        capex: fyCapex,
-        previousOperatingCashFlow: q3YtdOcf,
-        previousCapex: q3YtdCapex,
-        note: "Estimated prior Q4 SEC cash flow by subtracting Q3 YTD from FY.",
-      },
-      diagnostics,
-    };
   }
 
   return {
