@@ -8,6 +8,8 @@ import type {
   FinancialDataSource,
   FinancialPeriodType,
   PreviousQuarterMethod,
+  PreviousQuarterSearch,
+  PreviousQuarterSelectedPeriods,
   SelectedFinancialPeriod,
   SelectedFinancialPeriods,
 } from "@/types/stock";
@@ -71,6 +73,8 @@ export type FinancialSnapshot = {
   capexMissingFresh?: boolean;
   availableCapexCandidateTags?: string[];
   previousQuarterMethod?: PreviousQuarterMethod;
+  previousQuarterSearch?: PreviousQuarterSearch;
+  previousQuarterSelectedPeriods?: PreviousQuarterSelectedPeriods;
 };
 
 const secTickerMapUrl = "https://www.sec.gov/files/company_tickers.json";
@@ -710,37 +714,24 @@ function expectedPreviousQuarterEnd(current: NormalizedFcfResult) {
   return previousDay(current.operatingCashFlow.start);
 }
 
-function previousQuarterMethodRank(method: PreviousQuarterMethod) {
-  if (method === "DIRECT_QUARTER") {
-    return 0;
-  }
+type PreviousQuarterRecovery = {
+  result: NormalizedFcfResult | null;
+  search: PreviousQuarterSearch;
+};
 
-  if (method === "FY_MINUS_Q3_YTD") {
-    return 1;
-  }
-
-  if (method === "YTD_DIFF") {
-    return 2;
-  }
-
-  return 3;
-}
-
-function findPreviousNormalizedFcf(
-  current: NormalizedFcfResult,
+function normalizeFcfAtExpectedEnd(
+  expectedEnd: Date,
+  method: PreviousQuarterMethod,
   operatingCashFlowFacts: TaggedSecFactUnit[],
   capexFacts: TaggedSecFactUnit[],
 ) {
-  if (current.periodType === "ANNUAL") {
-    return null;
-  }
+  for (const operatingCashFlow of operatingCashFlowFacts.filter((fact) => {
+    if (!fact.end) {
+      return false;
+    }
 
-  const expectedEnd = expectedPreviousQuarterEnd(current);
-  const candidates: NormalizedFcfResult[] = [];
-
-  for (const operatingCashFlow of operatingCashFlowFacts.filter(
-    (fact) => factSortTime(fact) < factSortTime(current.operatingCashFlow),
-  )) {
+    return daysBetween(new Date(fact.end), expectedEnd) <= 45;
+  })) {
     const normalized = normalizeFcfForAnchor(
       operatingCashFlow,
       operatingCashFlowFacts,
@@ -748,37 +739,123 @@ function findPreviousNormalizedFcf(
       false,
     );
 
-    if (normalized && normalized.periodType !== "ANNUAL") {
-      candidates.push(normalized);
+    if (normalized?.method === method) {
+      return normalized;
     }
   }
 
-  if (!candidates.length) {
-    return null;
+  return null;
+}
+
+function findPreviousQuarterFcf(
+  current: NormalizedFcfResult,
+  operatingCashFlowFacts: TaggedSecFactUnit[],
+  capexFacts: TaggedSecFactUnit[],
+): PreviousQuarterRecovery {
+  const search: PreviousQuarterSearch = {
+    triedDirectQuarter: false,
+    triedYtdDiff: false,
+    triedFyMinusQ3Ytd: false,
+  };
+
+  if (current.periodType === "ANNUAL") {
+    return {
+      result: null,
+      search: {
+        ...search,
+        failureReason: "CURRENT_PERIOD_ANNUAL",
+      },
+    };
   }
+
+  if (current.method === "YTD_DIFF" && current.previousOperatingCashFlow) {
+    search.triedYtdDiff = true;
+
+    const normalized = normalizeFcfForAnchor(
+      current.previousOperatingCashFlow,
+      operatingCashFlowFacts,
+      capexFacts,
+      false,
+    );
+
+    if (
+      normalized?.method === "YTD_DIFF" ||
+      normalized?.method === "DIRECT_QUARTER"
+    ) {
+      return {
+        result: normalized,
+        search,
+      };
+    }
+  }
+
+  if (current.method === "FY_MINUS_Q3_YTD" && current.previousOperatingCashFlow) {
+    search.triedYtdDiff = true;
+
+    const normalized = normalizeFcfForAnchor(
+      current.previousOperatingCashFlow,
+      operatingCashFlowFacts,
+      capexFacts,
+      false,
+    );
+
+    if (normalized?.method === "YTD_DIFF") {
+      return {
+        result: normalized,
+        search,
+      };
+    }
+  }
+
+  const expectedEnd = expectedPreviousQuarterEnd(current);
 
   if (!expectedEnd) {
-    return candidates[0];
+    return {
+      result: null,
+      search: {
+        ...search,
+        failureReason: "CURRENT_PERIOD_START_MISSING",
+      },
+    };
   }
 
-  return (
-    candidates
-      .filter((candidate) => {
-        if (!candidate.operatingCashFlow.end) {
-          return false;
-        }
-
-        return daysBetween(new Date(candidate.operatingCashFlow.end), expectedEnd) <= 45;
-      })
-      .sort(
-        (a, b) =>
-          previousQuarterMethodRank(a.method) -
-            previousQuarterMethodRank(b.method) ||
-          daysBetween(new Date(a.operatingCashFlow.end!), expectedEnd) -
-            daysBetween(new Date(b.operatingCashFlow.end!), expectedEnd) ||
-          filedSortTime(b.operatingCashFlow) - filedSortTime(a.operatingCashFlow),
-      )[0] ?? null
+  search.triedDirectQuarter = true;
+  const directQuarter = normalizeFcfAtExpectedEnd(
+    expectedEnd,
+    "DIRECT_QUARTER",
+    operatingCashFlowFacts,
+    capexFacts,
   );
+
+  if (directQuarter) {
+    return {
+      result: directQuarter,
+      search,
+    };
+  }
+
+  search.triedFyMinusQ3Ytd = true;
+  const fyMinusQ3Ytd = normalizeFcfAtExpectedEnd(
+    expectedEnd,
+    "FY_MINUS_Q3_YTD",
+    operatingCashFlowFacts,
+    capexFacts,
+  );
+
+  if (fyMinusQ3Ytd) {
+    return {
+      result: fyMinusQ3Ytd,
+      search,
+    };
+  }
+
+  return {
+    result: null,
+    search: {
+      ...search,
+      failureReason: "NO_COMPATIBLE_PREVIOUS_QUARTER_FCF",
+    },
+  };
 }
 
 function findMarginPair(
@@ -1153,11 +1230,12 @@ export function extractQuarterlyFinancials(
     return null;
   }
 
-  const previousFcf = findPreviousNormalizedFcf(
+  const previousQuarterRecovery = findPreviousQuarterFcf(
     currentFcf,
     operatingCashFlowState.facts,
     capexState.facts,
   );
+  const previousFcf = previousQuarterRecovery.result;
   const fcfQoqChange =
     currentFcf.periodType === "ANNUAL"
       ? null
@@ -1253,6 +1331,31 @@ export function extractQuarterlyFinancials(
       operatingCashFlowState.facts.length > 0 && capexState.facts.length === 0,
     availableCapexCandidateTags,
     previousQuarterMethod: previousFcf?.method ?? "UNAVAILABLE",
+    previousQuarterSearch: previousQuarterRecovery.search,
+    previousQuarterSelectedPeriods: previousFcf
+      ? {
+          ocfCurrent: toDebugFact(previousFcf.operatingCashFlow),
+          capexCurrent: toDebugFact(previousFcf.capex),
+          ocfPriorForDiff: toDebugFact(previousFcf.previousOperatingCashFlow),
+          capexPriorForDiff: toDebugFact(previousFcf.previousCapex),
+          fyOcf:
+            previousFcf.method === "FY_MINUS_Q3_YTD"
+              ? toDebugFact(previousFcf.operatingCashFlow)
+              : undefined,
+          fyCapex:
+            previousFcf.method === "FY_MINUS_Q3_YTD"
+              ? toDebugFact(previousFcf.capex)
+              : undefined,
+          q3YtdOcf:
+            previousFcf.method === "FY_MINUS_Q3_YTD"
+              ? toDebugFact(previousFcf.previousOperatingCashFlow)
+              : undefined,
+          q3YtdCapex:
+            previousFcf.method === "FY_MINUS_Q3_YTD"
+              ? toDebugFact(previousFcf.previousCapex)
+              : undefined,
+        }
+      : undefined,
   };
 }
 
@@ -1364,6 +1467,8 @@ export async function buildSecFinancialDebug(ticker: string) {
     currentQuarterFcf: financials.currentQuarterFcf,
     previousQuarterFcf: financials.previousQuarterFcf,
     previousQuarterMethod: financials.previousQuarterMethod,
+    previousQuarterSearch: financials.previousQuarterSearch,
+    previousQuarterSelectedPeriods: financials.previousQuarterSelectedPeriods,
     secSelectedPeriodEnd: financials.secSelectedPeriodEnd,
     secSelectedPeriodFiled: financials.secSelectedPeriodFiled,
     secNormalizationNote: financials.secNormalizationNote,

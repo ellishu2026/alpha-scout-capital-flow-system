@@ -1,5 +1,13 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3.8 FCF QoQ Previous Quarter Recovery
+
+- Improved previous-quarter FCF recovery for SEC-derived QoQ calculations.
+- Added explicit FY-minus-Q3-YTD recovery for prior Q4 when current period is Q1.
+- Restored safe YTD-diff recovery for previous quarters when current FCF is YTD-normalized.
+- Added `previousQuarterSearch` and `previousQuarterSelectedPeriods` diagnostics to SEC debug output.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3.7 SEC Previous Quarter Selection
 
 - Fixed SEC previous-quarter FCF selection so Q1 compares against prior fiscal-year Q4 instead of older Q3 periods.
