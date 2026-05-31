@@ -88,6 +88,8 @@ export type StockCandidate = {
   marginChangeRaw?: number | null;
   marginChangeScoreInput?: number | null;
   financialScoreNote?: string;
+  capexMissingFresh?: boolean;
+  availableCapexCandidateTags?: string[];
 };
 
 export type SnapshotResponse = {

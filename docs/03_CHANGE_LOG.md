@@ -1,5 +1,14 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3.6 LLY SEC CapEx Extraction Diagnostics
+
+- Investigated the LLY SEC FCF extraction gap where fresh OCF was available but fixed CapEx tags were stale or missing.
+- Expanded CapEx tag coverage for common SEC/XBRL property, equipment, productive asset, and capital expenditure names.
+- Added dynamic CapEx tag discovery across `us-gaap` facts with preference for cash-flow payment and purchase tags.
+- Added SEC debug diagnostics for CapEx candidate tags and per-tag freshness.
+- Improved reporting when OCF is fresh but no fresh CapEx-like tag can be matched.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3.5 Financial Score Stabilization
 
 - Added financial score stabilization for SEC-derived FCF and margin scores.

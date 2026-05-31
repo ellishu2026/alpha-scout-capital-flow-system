@@ -67,6 +67,8 @@ export type FinancialSnapshot = {
   marginChangeRaw?: number | null;
   marginChangeScoreInput?: number | null;
   financialScoreNote?: string;
+  capexMissingFresh?: boolean;
+  availableCapexCandidateTags?: string[];
 };
 
 const secTickerMapUrl = "https://www.sec.gov/files/company_tickers.json";
@@ -166,6 +168,17 @@ const capexTags = [
   "PaymentsToAcquirePropertyPlantAndEquipment",
   "PaymentsToAcquireProductiveAssets",
   "CapitalExpendituresIncurredButNotYetPaid",
+  "PaymentsForProceedsFromProductiveAssets",
+  "PaymentsToAcquireOtherPropertyPlantAndEquipment",
+  "PaymentsToAcquirePropertyPlantAndEquipmentAndIntangibleAssets",
+  "PaymentsToAcquirePropertyAndEquipment",
+  "PaymentsToAcquireBuildingsAndImprovements",
+  "PaymentsToAcquireMachineryAndEquipment",
+  "PurchasesOfPropertyAndEquipment",
+  "PurchaseOfPropertyAndEquipment",
+  "AdditionsToPropertyPlantAndEquipment",
+  "CapitalExpenditures",
+  "CapitalExpendituresAdditions",
   "PaymentsToAcquireBusinessesNetOfCashAcquiredAndPurchasesOfIntangibleAssets",
 ];
 
@@ -325,6 +338,117 @@ function collectFreshFacts(companyFacts: CompanyFacts, tags: string[]) {
     facts,
     staleDataRejected: allFacts.length > 0 && facts.length === 0,
   };
+}
+
+function uniqueTags(tags: string[]) {
+  return [...new Set(tags)];
+}
+
+function rankCapexTag(tag: string) {
+  const lower = tag.toLowerCase();
+
+  if (lower.includes("paymentstoacquire")) {
+    return 0;
+  }
+
+  if (lower.includes("purchasesofproperty")) {
+    return 1;
+  }
+
+  if (lower.includes("purchaseofproperty")) {
+    return 1;
+  }
+
+  if (lower.includes("capitalexpenditures")) {
+    return 2;
+  }
+
+  if (lower.includes("additionstoproperty")) {
+    return 3;
+  }
+
+  if (lower.includes("productiveassets")) {
+    return 4;
+  }
+
+  return 5;
+}
+
+function isLikelyCapexTag(tag: string) {
+  const lower = tag.toLowerCase();
+  const hasCapexPhrase =
+    (lower.includes("acquire") &&
+      (lower.includes("property") ||
+        lower.includes("plant") ||
+        lower.includes("equipment"))) ||
+    lower.includes("propertyplantandequipment") ||
+    lower.includes("productiveassets") ||
+    lower.includes("capitalexpenditures") ||
+    lower.includes("purchasesofproperty") ||
+    lower.includes("purchaseofproperty") ||
+    lower.includes("additionstoproperty");
+
+  if (!hasCapexPhrase) {
+    return false;
+  }
+
+  const hasOutflowOrCapexTerm =
+    lower.includes("payment") ||
+    lower.includes("purchase") ||
+    lower.includes("acquire") ||
+    lower.includes("capitalexpenditures") ||
+    lower.includes("additionsto");
+  const clearlyNotCapex =
+    lower.includes("accumulated") ||
+    lower.includes("depreciation") ||
+    lower.includes("amortization") ||
+    lower.includes("impairment") ||
+    lower.includes("gain") ||
+    lower.includes("loss") ||
+    lower.includes("proceedsfromsale") ||
+    lower.includes("salesofproperty") ||
+    (!hasOutflowOrCapexTerm &&
+      (lower.endsWith("assets") ||
+        lower.endsWith("assetsnet") ||
+        lower.endsWith("assetsgross") ||
+        lower.endsWith("assetsexcluding")));
+
+  return !clearlyNotCapex;
+}
+
+function findLikelyCapexTags(companyFacts: CompanyFacts) {
+  const usGaap = companyFacts.facts?.["us-gaap"];
+
+  if (!usGaap) {
+    return uniqueTags(capexTags);
+  }
+
+  const dynamicTags = Object.keys(usGaap).filter((tag) => {
+    const hasUsdFacts = Boolean(usGaap[tag]?.units?.USD?.length);
+
+    return hasUsdFacts && isLikelyCapexTag(tag);
+  });
+
+  return uniqueTags([...capexTags, ...dynamicTags]).sort(
+    (a, b) => rankCapexTag(a) - rankCapexTag(b) || a.localeCompare(b),
+  );
+}
+
+function summarizeFreshnessByTag(companyFacts: CompanyFacts, tags: string[]) {
+  return tags.map((tag) => {
+    const facts = collectUsdFacts(companyFacts, [tag]);
+    const freshFacts = facts.filter((fact) => isFreshFact(fact));
+    const latest = facts[0];
+
+    return {
+      tag,
+      total: facts.length,
+      fresh: freshFacts.length,
+      latestEnd: latest?.end,
+      latestFiled: latest?.filed,
+      latestVal: latest?.val,
+    };
+  });
 }
 
 function areClosePeriods(a: SecFactUnit, b: SecFactUnit) {
@@ -811,6 +935,7 @@ function calculateStableMarginScore(
 
 export function summarizeAvailableTags(companyFacts: CompanyFacts) {
   const usGaap = companyFacts.facts?.["us-gaap"];
+  const likelyCapexTags = findLikelyCapexTags(companyFacts);
 
   if (!usGaap) {
     return {
@@ -819,6 +944,7 @@ export function summarizeAvailableTags(companyFacts: CompanyFacts) {
       netIncomeTags: [],
       operatingCashFlowTags: [],
       capexTags: [],
+      availableCapexCandidateTags: likelyCapexTags,
     };
   }
 
@@ -830,7 +956,8 @@ export function summarizeAvailableTags(companyFacts: CompanyFacts) {
     operatingIncomeTags: present(operatingIncomeTags),
     netIncomeTags: present(netIncomeTags),
     operatingCashFlowTags: present(operatingCashFlowTags),
-    capexTags: present(capexTags),
+    capexTags: present(likelyCapexTags),
+    availableCapexCandidateTags: likelyCapexTags,
   };
 }
 
@@ -852,7 +979,7 @@ function summarizeFreshness(companyFacts: CompanyFacts) {
     operatingIncome: summarize(operatingIncomeTags),
     netIncome: summarize(netIncomeTags),
     operatingCashFlow: summarize(operatingCashFlowTags),
-    capex: summarize(capexTags),
+    capex: summarize(findLikelyCapexTags(companyFacts)),
   };
 }
 
@@ -934,6 +1061,7 @@ export async function fetchCompanyFacts(cik: string) {
 export function extractQuarterlyFinancials(
   companyFacts: CompanyFacts,
 ): FinancialSnapshot | null {
+  const availableCapexCandidateTags = findLikelyCapexTags(companyFacts);
   const revenueState = collectFreshFacts(companyFacts, revenueTags);
   const operatingIncomeState = collectFreshFacts(
     companyFacts,
@@ -944,7 +1072,7 @@ export function extractQuarterlyFinancials(
     companyFacts,
     operatingCashFlowTags,
   );
-  const capexState = collectFreshFacts(companyFacts, capexTags);
+  const capexState = collectFreshFacts(companyFacts, availableCapexCandidateTags);
   const currentFcf = findCurrentNormalizedFcf(
     operatingCashFlowState.facts,
     capexState.facts,
@@ -1050,6 +1178,9 @@ export function extractQuarterlyFinancials(
     marginChangeRaw: marginChange,
     marginChangeScoreInput: stableMarginScore.scoreInput,
     financialScoreNote: financialScoreNote || undefined,
+    capexMissingFresh:
+      operatingCashFlowState.facts.length > 0 && capexState.facts.length === 0,
+    availableCapexCandidateTags,
   };
 }
 
@@ -1111,9 +1242,16 @@ export async function buildSecFinancialDebug(ticker: string) {
   }
 
   const financials = extractQuarterlyFinancials(companyFacts);
+  const availableCapexCandidateTags = findLikelyCapexTags(companyFacts);
+  const capexFreshnessByTag = summarizeFreshnessByTag(
+    companyFacts,
+    availableCapexCandidateTags,
+  );
 
   if (!financials) {
     const freshness = summarizeFreshness(companyFacts);
+    const ocfFresh = freshness.operatingCashFlow.fresh > 0;
+    const capexFresh = capexFreshnessByTag.some((summary) => summary.fresh > 0);
 
     return {
       ticker: normalizedTicker,
@@ -1124,6 +1262,9 @@ export async function buildSecFinancialDebug(ticker: string) {
       error: "SEC_EXTRACTION_UNAVAILABLE",
       availableTags: summarizeAvailableTags(companyFacts),
       freshness,
+      availableCapexCandidateTags,
+      capexFreshnessByTag,
+      capexMissingFresh: ocfFresh && !capexFresh,
       staleDataRejected: Object.values(freshness).some(
         (summary) => summary.total > 0 && summary.fresh === 0,
       ),
@@ -1153,6 +1294,9 @@ export async function buildSecFinancialDebug(ticker: string) {
     secSelectedPeriodEnd: financials.secSelectedPeriodEnd,
     secSelectedPeriodFiled: financials.secSelectedPeriodFiled,
     secNormalizationNote: financials.secNormalizationNote,
+    availableCapexCandidateTags,
+    capexFreshnessByTag,
+    capexMissingFresh: financials.capexMissingFresh ?? false,
     selectedPeriods: financials.selectedFinancialPeriods,
     staleDataRejected: financials.staleDataRejected ?? false,
     availableTags: summarizeAvailableTags(companyFacts),
