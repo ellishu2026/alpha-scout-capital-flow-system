@@ -1,5 +1,13 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3.7 SEC Previous Quarter Selection
+
+- Fixed SEC previous-quarter FCF selection so Q1 compares against prior fiscal-year Q4 instead of older Q3 periods.
+- Added FY-minus-Q3-YTD derivation for Q4 FCF when direct Q4 quarter facts are unavailable.
+- Added `previousQuarterMethod` diagnostics for direct quarter, FY minus Q3 YTD, YTD diff, or unavailable cases.
+- Prevented unrelated older SEC cash-flow periods from being used as the previous quarter.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3.6 LLY SEC CapEx Extraction Diagnostics
 
 - Investigated the LLY SEC FCF extraction gap where fresh OCF was available but fixed CapEx tags were stale or missing.

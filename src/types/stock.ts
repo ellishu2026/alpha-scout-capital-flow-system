@@ -20,6 +20,11 @@ export type FinancialPeriodType =
   | "YTD_NORMALIZED"
   | "ANNUAL"
   | "UNKNOWN";
+export type PreviousQuarterMethod =
+  | "DIRECT_QUARTER"
+  | "FY_MINUS_Q3_YTD"
+  | "YTD_DIFF"
+  | "UNAVAILABLE";
 
 export type SelectedFinancialPeriod = {
   tag?: string;
@@ -90,6 +95,7 @@ export type StockCandidate = {
   financialScoreNote?: string;
   capexMissingFresh?: boolean;
   availableCapexCandidateTags?: string[];
+  previousQuarterMethod?: PreviousQuarterMethod;
 };
 
 export type SnapshotResponse = {
