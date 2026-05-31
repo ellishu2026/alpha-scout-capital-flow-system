@@ -65,6 +65,14 @@ export type PreviousQuarterSelectedPeriods = {
   q3YtdCapex?: SelectedFinancialPeriod;
 };
 
+export type FyMinusQ3YtdCandidates = {
+  fyOcfCandidates: SelectedFinancialPeriod[];
+  fyCapexCandidates: SelectedFinancialPeriod[];
+  q3YtdOcfCandidates: SelectedFinancialPeriod[];
+  q3YtdCapexCandidates: SelectedFinancialPeriod[];
+  rejectionReasons: string[];
+};
+
 export type StockCandidate = {
   rank: number;
   previousRank?: number | null;
@@ -116,6 +124,7 @@ export type StockCandidate = {
   previousQuarterMethod?: PreviousQuarterMethod;
   previousQuarterSearch?: PreviousQuarterSearch;
   previousQuarterSelectedPeriods?: PreviousQuarterSelectedPeriods;
+  fyMinusQ3YtdCandidates?: FyMinusQ3YtdCandidates;
 };
 
 export type SnapshotResponse = {

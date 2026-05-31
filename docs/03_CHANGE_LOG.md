@@ -1,5 +1,13 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.3.9 LLY FCF QoQ Recovery
+
+- Fixed LLY previous-quarter FCF recovery diagnostics for SEC-derived QoQ calculations.
+- Improved FY-minus-Q3-YTD previous Q4 recovery with explicit fiscal-year and Q3 YTD matching.
+- Added candidate diagnostics for FY and Q3 YTD OCF/CapEx matching and rejection reasons.
+- Preserved MSFT YTD-diff and GOOGL FY-minus-Q3-YTD behavior.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3.8 FCF QoQ Previous Quarter Recovery
 
 - Improved previous-quarter FCF recovery for SEC-derived QoQ calculations.
