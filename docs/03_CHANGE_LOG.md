@@ -1,5 +1,16 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.1 Chaikin Capital Flow Proxy
+
+- Changed capital flow calculation to Chaikin-style money flow using the daily high-low-close range.
+- Replaced simple up/down signed dollar volume with `close * volume * moneyFlowMultiplier` for displayed flow windows.
+- Preserved legacy signed dollar volume fields for diagnostics and persisted snapshots.
+- Added provider framework for Polygon and Alpha Vantage with conservative daily call limits.
+- Added YFINANCE_CHAIKIN fallback behavior when real-provider API keys or call budget are unavailable.
+- Added CRON_SECRET-protected `/api/debug/flow?ticker=...` endpoint for capital flow diagnostics.
+- Prepared optional market data archive writes for real provider data when the Supabase table exists.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.3.10 LLY FY Minus Q3 FCF Recovery
 
 - Fixed FY-minus-Q3-YTD OCF and CapEx tag matching for previous-quarter FCF recovery.

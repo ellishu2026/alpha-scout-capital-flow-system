@@ -13,6 +13,12 @@ export type RankChangeType = "NEW" | "UP" | "DOWN" | "SAME";
 export type SnapshotMode = "MARKET_SCAN" | "FIXED_WATCHLIST" | "MOCK";
 
 export type PersistenceStatus = "SAVED" | "DISABLED" | "FAILED";
+export type CapitalFlowDataSource =
+  | "YFINANCE_CHAIKIN"
+  | "ALPHA_VANTAGE"
+  | "POLYGON"
+  | "MOCK";
+export type CapitalFlowQuality = "LIVE_PROXY" | "REAL_PROVIDER" | "MOCK" | "FALLBACK";
 
 export type FinancialDataSource = "SEC" | "FALLBACK" | "N/A";
 export type FinancialPeriodType =
@@ -91,6 +97,11 @@ export type StockCandidate = {
   capitalFlow9D: number;
   capitalFlow3W: number;
   capitalFlow5W: number;
+  legacyCapitalFlow3D?: number;
+  legacyCapitalFlow5D?: number;
+  legacyCapitalFlow9D?: number;
+  legacyCapitalFlow3W?: number;
+  legacyCapitalFlow5W?: number;
   compositeScore: number;
   marginScore: number;
   fcfScore: number;
@@ -125,6 +136,12 @@ export type StockCandidate = {
   previousQuarterSearch?: PreviousQuarterSearch;
   previousQuarterSelectedPeriods?: PreviousQuarterSelectedPeriods;
   fyMinusQ3YtdCandidates?: FyMinusQ3YtdCandidates;
+  flowCalculationVersion?: "V1.6.1_CHAIKIN";
+  capitalFlowDataSource?: CapitalFlowDataSource;
+  capitalFlowQuality?: CapitalFlowQuality;
+  moneyFlowMultiplierLatest?: number | null;
+  chaikinDailyFlowLatest?: number | null;
+  flowDataUpdatedAt?: string;
 };
 
 export type SnapshotResponse = {

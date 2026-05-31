@@ -10,6 +10,17 @@ import {
   getSignal,
 } from "@/lib/scoring";
 import {
+  calculateCapitalFlowChangeRatio,
+  calculateCapitalFlowScore,
+  calculateCapitalFlowsFromCandles,
+  type CapitalFlows,
+  zeroCapitalFlows,
+} from "@/lib/capitalFlow";
+import {
+  fetchProviderCandles,
+  getProviderBudgetSummary,
+} from "@/lib/marketDataProviders";
+import {
   buildSecFinancialSnapshot,
   getFinancialFallback,
   type FinancialSnapshot,
@@ -38,18 +49,12 @@ type LiveQuote = {
 
 type HistoricalDailyCandle = {
   date: Date;
-  close: number;
-  volume: number;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  volume: number | null;
 };
-
-type CapitalFlows = Pick<
-  StockCandidate,
-  | "capitalFlow3D"
-  | "capitalFlow5D"
-  | "capitalFlow9D"
-  | "capitalFlow3W"
-  | "capitalFlow5W"
->;
 
 const yahooFinance = new YahooFinance({
   suppressNotices: ["yahooSurvey", "ripHistorical"],
@@ -69,13 +74,7 @@ const fallbackCompanyNames: Record<string, string> = {
   IONQ: "IonQ, Inc.",
 };
 
-const zeroFlows: CapitalFlows = {
-  capitalFlow3D: 0,
-  capitalFlow5D: 0,
-  capitalFlow9D: 0,
-  capitalFlow3W: 0,
-  capitalFlow5W: 0,
-};
+const zeroFlows = zeroCapitalFlows("MOCK", "MOCK");
 
 function numberOrNull(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -96,37 +95,6 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function calculateCapitalFlowScore(flows: CapitalFlows) {
-  let score = 50;
-
-  if (flows.capitalFlow3D > 0) score += 10;
-  if (flows.capitalFlow5D > 0) score += 10;
-  if (flows.capitalFlow9D > 0) score += 10;
-  if (flows.capitalFlow3W > 0) score += 10;
-  if (flows.capitalFlow5W > 0) score += 10;
-
-  if (flows.capitalFlow5W !== 0) {
-    const ratio = flows.capitalFlow3D / Math.abs(flows.capitalFlow5W);
-    score += clamp(ratio * 20, -10, 10);
-  }
-
-  return Number(clamp(score, 0, 100).toFixed(1));
-}
-
-function calculateCapitalFlowChangeRatio(flows: CapitalFlows) {
-  if (flows.capitalFlow5W === 0) {
-    return 0;
-  }
-
-  return Number(
-    ((flows.capitalFlow3D / Math.abs(flows.capitalFlow5W)) * 100).toFixed(1),
-  );
-}
-
 function fallbackFlows(symbol: string): CapitalFlows {
   const fallback = getMockCandidateFallback(symbol);
 
@@ -140,6 +108,17 @@ function fallbackFlows(symbol: string): CapitalFlows {
     capitalFlow9D: fallback.capitalFlow9D,
     capitalFlow3W: fallback.capitalFlow3W,
     capitalFlow5W: fallback.capitalFlow5W,
+    legacyCapitalFlow3D: fallback.capitalFlow3D,
+    legacyCapitalFlow5D: fallback.capitalFlow5D,
+    legacyCapitalFlow9D: fallback.capitalFlow9D,
+    legacyCapitalFlow3W: fallback.capitalFlow3W,
+    legacyCapitalFlow5W: fallback.capitalFlow5W,
+    flowCalculationVersion: "V1.6.1_CHAIKIN",
+    capitalFlowDataSource: "MOCK",
+    capitalFlowQuality: "MOCK",
+    moneyFlowMultiplierLatest: null,
+    chaikinDailyFlowLatest: null,
+    flowDataUpdatedAt: undefined,
   };
 }
 
@@ -202,50 +181,39 @@ export async function fetchHistoricalDailyCandles(
       (row) =>
         row.date instanceof Date &&
         Number.isFinite(row.close) &&
+        Number.isFinite(row.high) &&
+        Number.isFinite(row.low) &&
         Number.isFinite(row.volume),
     )
     .map((row) => ({
       date: row.date,
-      close: row.close,
-      volume: row.volume,
+      open: numberOrNull(row.open),
+      high: numberOrNull(row.high),
+      low: numberOrNull(row.low),
+      close: numberOrNull(row.close),
+      volume: numberOrNull(row.volume),
     }))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
-export function calculateSignedCapitalFlows(
-  candles: HistoricalDailyCandle[],
-): CapitalFlows {
-  const flows = candles
-    .slice()
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .reduce<number[]>((dailyFlows, candle, index, sortedCandles) => {
-      if (index === 0) {
-        return dailyFlows;
-      }
+export async function resolveCapitalFlows(symbol: string): Promise<CapitalFlows> {
+  const providerCandles = await fetchProviderCandles(symbol);
 
-      const previousClose = sortedCandles[index - 1].close;
+  if (providerCandles?.candles.length) {
+    return calculateCapitalFlowsFromCandles({
+      candles: providerCandles.candles,
+      dataSource: providerCandles.providerUsed,
+      quality: providerCandles.quality,
+    });
+  }
 
-      if (candle.close > previousClose) {
-        dailyFlows.push(candle.close * candle.volume);
-      } else if (candle.close < previousClose) {
-        dailyFlows.push(-candle.close * candle.volume);
-      } else {
-        dailyFlows.push(0);
-      }
+  const candles = await fetchHistoricalDailyCandles(symbol, 45);
 
-      return dailyFlows;
-    }, []);
-
-  const sumLast = (count: number) =>
-    flows.slice(-count).reduce((sum, flow) => sum + flow, 0);
-
-  return {
-    capitalFlow3D: sumLast(3),
-    capitalFlow5D: sumLast(5),
-    capitalFlow9D: sumLast(9),
-    capitalFlow3W: sumLast(15),
-    capitalFlow5W: sumLast(25),
-  };
+  return calculateCapitalFlowsFromCandles({
+    candles,
+    dataSource: "YFINANCE_CHAIKIN",
+    quality: "LIVE_PROXY",
+  });
 }
 
 function classifyPool(quote: LiveQuote): StockPool | null {
@@ -284,6 +252,8 @@ async function buildCandidateFromParts({
 }): Promise<StockCandidate> {
   const mockCandidate = getMockCandidateFallback(symbol);
   const financials = await resolveFinancials(symbol);
+  const candidateFlows = { ...flows };
+  delete candidateFlows.recentDailyFlow;
   const capitalFlowScore = calculateCapitalFlowScore(flows);
   const compositeScore = calculateCompositeScore(
     financials.marginScore,
@@ -303,7 +273,7 @@ async function buildCandidateFromParts({
     marketCap: quote ? (quote.marketCap ?? 0) : (mockCandidate?.marketCap ?? 0),
     price: quote ? (quote.price ?? 0) : (mockCandidate?.price ?? 0),
     ...financials,
-    ...flows,
+    ...candidateFlows,
     compositeScore,
     capitalFlowScore,
     capitalFlowChangeRatio: calculateCapitalFlowChangeRatio(flows),
@@ -333,10 +303,9 @@ async function buildFixedWatchlistCandidateWithMeta(symbol: string): Promise<{
   }
 
   try {
-    const candles = await fetchHistoricalDailyCandles(symbol, 45);
-    flows = calculateSignedCapitalFlows(candles);
+    flows = await resolveCapitalFlows(symbol);
 
-    if (candles.length < 26) {
+    if (flows.recentDailyFlow && flows.recentDailyFlow.length < 25) {
       usedFallback = true;
     }
   } catch {
@@ -399,10 +368,9 @@ async function buildScanCandidateFromQuote({
   let usedFallback = false;
 
   try {
-    const candles = await fetchHistoricalDailyCandles(symbol, 45);
-    flows = calculateSignedCapitalFlows(candles);
+    flows = await resolveCapitalFlows(symbol);
 
-    if (candles.length < 26) {
+    if (flows.recentDailyFlow && flows.recentDailyFlow.length < 25) {
       usedFallback = true;
     }
   } catch {
@@ -565,3 +533,35 @@ export async function buildLiveCandidate(
 }
 
 export const buildLiveMarketSnapshot = buildFixedWatchlistSnapshot;
+
+export async function buildCapitalFlowDebug(symbol: string) {
+  const flows = await resolveCapitalFlows(symbol);
+  const providerBudget = getProviderBudgetSummary();
+
+  return {
+    ticker: symbol,
+    flowCalculationVersion: flows.flowCalculationVersion,
+    capitalFlowDataSource: flows.capitalFlowDataSource,
+    capitalFlowQuality: flows.capitalFlowQuality,
+    capitalFlow3D: flows.capitalFlow3D,
+    capitalFlow5D: flows.capitalFlow5D,
+    capitalFlow9D: flows.capitalFlow9D,
+    capitalFlow3W: flows.capitalFlow3W,
+    capitalFlow5W: flows.capitalFlow5W,
+    legacyCapitalFlow3D: flows.legacyCapitalFlow3D,
+    legacyCapitalFlow5D: flows.legacyCapitalFlow5D,
+    legacyCapitalFlow9D: flows.legacyCapitalFlow9D,
+    legacyCapitalFlow3W: flows.legacyCapitalFlow3W,
+    legacyCapitalFlow5W: flows.legacyCapitalFlow5W,
+    moneyFlowMultiplierLatest: flows.moneyFlowMultiplierLatest,
+    chaikinDailyFlowLatest: flows.chaikinDailyFlowLatest,
+    capitalFlowScore: calculateCapitalFlowScore(flows),
+    providerUsed: flows.capitalFlowDataSource,
+    providerCallBudget: providerBudget,
+    providerCallsUsed: {
+      polygon: providerBudget.polygon.callsUsed,
+      alphaVantage: providerBudget.alphaVantage.callsUsed,
+    },
+    recentDailyFlow: flows.recentDailyFlow ?? [],
+  };
+}
