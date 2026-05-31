@@ -8,10 +8,27 @@ import {
 } from "@/lib/providerUsageLimit";
 import { getSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
-export type ProviderOhlcvResult = {
-  candles: OhlcvCandle[];
-  providerUsed: CapitalFlowDataSource;
-  quality: CapitalFlowQuality;
+type ProviderName = "POLYGON" | "ALPHA_VANTAGE";
+
+export type ProviderArchiveStatus = {
+  archived: boolean;
+  status: string;
+  error?: string;
+};
+
+export type ProviderPayloadSummary = {
+  provider: ProviderName;
+  resultCount: number;
+  latestDate?: string;
+  status?: string;
+};
+
+export type ProviderFetchMetadata = {
+  providerUsed?: CapitalFlowDataSource;
+  providerPriorityTried: CapitalFlowDataSource[];
+  providerErrors: string[];
+  archiveStatus?: string;
+  rawProviderPayloadSummary?: ProviderPayloadSummary;
   providerCallBudget: {
     polygon: ReturnType<typeof getProviderBudget>;
     alphaVantage: ReturnType<typeof getProviderBudget>;
@@ -20,6 +37,12 @@ export type ProviderOhlcvResult = {
     polygon: number;
     alphaVantage: number;
   };
+};
+
+export type ProviderOhlcvResult = ProviderFetchMetadata & {
+  candles: OhlcvCandle[];
+  providerUsed?: CapitalFlowDataSource;
+  quality?: CapitalFlowQuality;
 };
 
 export function getProviderBudgetSummary() {
@@ -32,17 +55,71 @@ export function getProviderBudgetSummary() {
   };
 }
 
+export function getProviderCallsUsedSummary() {
+  const budget = getProviderBudgetSummary();
+
+  return {
+    polygon: budget.polygon.callsUsed,
+    alphaVantage: budget.alphaVantage.callsUsed,
+  };
+}
+
+export function emptyProviderMetadata(): ProviderFetchMetadata {
+  return {
+    providerPriorityTried: [],
+    providerErrors: [],
+    providerCallBudget: getProviderBudgetSummary(),
+    providerCallsUsed: getProviderCallsUsedSummary(),
+  };
+}
+
 function toDate(value: string) {
   const date = new Date(value);
 
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
-async function fetchPolygonCandles(symbol: string) {
+function toNumber(value: unknown) {
+  const number = typeof value === "string" ? Number(value) : value;
+
+  return typeof number === "number" && Number.isFinite(number) ? number : null;
+}
+
+function isValidCandle(candle: OhlcvCandle) {
+  return (
+    candle.date instanceof Date &&
+    Number.isFinite(candle.date.getTime()) &&
+    typeof candle.high === "number" &&
+    Number.isFinite(candle.high) &&
+    typeof candle.low === "number" &&
+    Number.isFinite(candle.low) &&
+    typeof candle.close === "number" &&
+    Number.isFinite(candle.close) &&
+    typeof candle.volume === "number" &&
+    Number.isFinite(candle.volume)
+  );
+}
+
+function latestDate(candles: OhlcvCandle[]) {
+  return candles.at(-1)?.date.toISOString().slice(0, 10);
+}
+
+function providerError(provider: ProviderName, message: string) {
+  return `${provider}:${message}`;
+}
+
+async function fetchPolygonCandles(symbol: string): Promise<{
+  candles: OhlcvCandle[];
+  summary: ProviderPayloadSummary;
+}> {
   const apiKey = process.env.POLYGON_API_KEY;
 
-  if (!apiKey || !tryConsumeProviderCall("POLYGON")) {
-    return null;
+  if (!apiKey) {
+    throw new Error("API_KEY_MISSING");
+  }
+
+  if (!tryConsumeProviderCall("POLYGON")) {
+    throw new Error("CALL_BUDGET_EXHAUSTED");
   }
 
   const to = new Date();
@@ -58,30 +135,61 @@ async function fetchPolygonCandles(symbol: string) {
   );
 
   if (!response.ok) {
-    return null;
+    throw new Error(`HTTP_${response.status}`);
   }
 
   const payload = (await response.json()) as {
-    results?: Array<{ t: number; o: number; h: number; l: number; c: number; v: number }>;
+    status?: string;
+    resultsCount?: number;
+    results?: Array<{
+      t: number;
+      o: number;
+      h: number;
+      l: number;
+      c: number;
+      v: number;
+    }>;
   };
+  const candles =
+    payload.results
+      ?.map((row) => ({
+        date: new Date(row.t),
+        open: toNumber(row.o),
+        high: toNumber(row.h),
+        low: toNumber(row.l),
+        close: toNumber(row.c),
+        volume: toNumber(row.v),
+      }))
+      .filter(isValidCandle)
+      .sort((a, b) => a.date.getTime() - b.date.getTime()) ?? [];
 
-  return (
-    payload.results?.map((row) => ({
-      date: new Date(row.t),
-      open: row.o,
-      high: row.h,
-      low: row.l,
-      close: row.c,
-      volume: row.v,
-    })) ?? null
-  );
+  if (candles.length === 0) {
+    throw new Error("NO_VALID_CANDLES");
+  }
+
+  return {
+    candles,
+    summary: {
+      provider: "POLYGON",
+      resultCount: payload.resultsCount ?? candles.length,
+      latestDate: latestDate(candles),
+      status: payload.status,
+    },
+  };
 }
 
-async function fetchAlphaVantageCandles(symbol: string) {
+async function fetchAlphaVantageCandles(symbol: string): Promise<{
+  candles: OhlcvCandle[];
+  summary: ProviderPayloadSummary;
+}> {
   const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
 
-  if (!apiKey || !tryConsumeProviderCall("ALPHA_VANTAGE")) {
-    return null;
+  if (!apiKey) {
+    throw new Error("API_KEY_MISSING");
+  }
+
+  if (!tryConsumeProviderCall("ALPHA_VANTAGE")) {
+    throw new Error("CALL_BUDGET_EXHAUSTED");
   }
 
   const response = await fetch(
@@ -92,10 +200,13 @@ async function fetchAlphaVantageCandles(symbol: string) {
   );
 
   if (!response.ok) {
-    return null;
+    throw new Error(`HTTP_${response.status}`);
   }
 
   const payload = (await response.json()) as {
+    ["Error Message"]?: string;
+    ["Information"]?: string;
+    ["Note"]?: string;
     ["Time Series (Daily)"]?: Record<
       string,
       {
@@ -103,117 +214,190 @@ async function fetchAlphaVantageCandles(symbol: string) {
         ["2. high"]: string;
         ["3. low"]: string;
         ["4. close"]: string;
+        ["5. adjusted close"]?: string;
         ["6. volume"]: string;
       }
     >;
   };
+
+  if (payload["Error Message"] || payload.Information || payload.Note) {
+    throw new Error(
+      payload["Error Message"] ?? payload.Information ?? payload.Note ?? "API_RESPONSE_ERROR",
+    );
+  }
+
   const rows = payload["Time Series (Daily)"];
 
   if (!rows) {
-    return null;
+    throw new Error("NO_TIME_SERIES");
   }
 
-  return Object.entries(rows)
+  const candles = Object.entries(rows)
     .map<OhlcvCandle | null>(([dateText, row]) => {
       const date = toDate(dateText);
 
       return date
         ? {
             date,
-            open: Number(row["1. open"]),
-            high: Number(row["2. high"]),
-            low: Number(row["3. low"]),
-            close: Number(row["4. close"]),
-            volume: Number(row["6. volume"]),
+            open: toNumber(row["1. open"]),
+            high: toNumber(row["2. high"]),
+            low: toNumber(row["3. low"]),
+            close: toNumber(row["4. close"]),
+            volume: toNumber(row["6. volume"]),
           }
         : null;
     })
-    .filter((row): row is OhlcvCandle => row != null)
+    .filter((row): row is OhlcvCandle => row != null && isValidCandle(row))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  if (candles.length === 0) {
+    throw new Error("NO_VALID_CANDLES");
+  }
+
+  return {
+    candles,
+    summary: {
+      provider: "ALPHA_VANTAGE",
+      resultCount: candles.length,
+      latestDate: latestDate(candles),
+      status: "OK",
+    },
+  };
 }
 
 export async function archiveMarketDataIfPossible({
   ticker,
   provider,
   candles,
+  payloadSummary,
 }: {
   ticker: string;
   provider: CapitalFlowDataSource;
   candles: OhlcvCandle[];
-}) {
+  payloadSummary?: ProviderPayloadSummary;
+}): Promise<ProviderArchiveStatus> {
   if (provider !== "ALPHA_VANTAGE" && provider !== "POLYGON") {
-    return { archived: false, reason: "PROXY_PROVIDER" };
+    return { archived: false, status: "PROXY_PROVIDER" };
   }
 
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
-    return { archived: false, reason: "SUPABASE_UNAVAILABLE" };
+    return { archived: false, status: "SUPABASE_UNAVAILABLE" };
   }
 
   try {
-    const { error } = await supabase.from("alpha_scout_market_data_archive").insert({
-      ticker,
-      provider,
-      data_date: new Date().toISOString().slice(0, 10),
-      payload: candles,
-    });
+    const { error } = await supabase
+      .from("alpha_scout_market_data_archive")
+      .upsert(
+        {
+          ticker,
+          provider,
+          data_date: new Date().toISOString().slice(0, 10),
+          payload: {
+            summary: payloadSummary,
+            candles: candles.map((candle) => ({
+              ...candle,
+              date: candle.date.toISOString().slice(0, 10),
+            })),
+          },
+        },
+        { onConflict: "ticker,provider,data_date" },
+      );
 
     if (error) {
-      return { archived: false, reason: error.message };
+      return {
+        archived: false,
+        status:
+          error.code === "42P01"
+            ? "ARCHIVE_TABLE_MISSING"
+            : "ARCHIVE_FAILED",
+        error: error.message,
+      };
     }
 
-    return { archived: true };
+    return { archived: true, status: "ARCHIVED" };
   } catch (error) {
     return {
       archived: false,
-      reason: error instanceof Error ? error.message : "ARCHIVE_FAILED",
+      status: "ARCHIVE_FAILED",
+      error: error instanceof Error ? error.message : "ARCHIVE_FAILED",
     };
   }
 }
 
-export async function fetchProviderCandles(symbol: string): Promise<ProviderOhlcvResult | null> {
-  const polygonCandles = await fetchPolygonCandles(symbol);
+export async function fetchProviderCandles(
+  symbol: string,
+): Promise<ProviderOhlcvResult> {
+  const providerErrors: string[] = [];
+  const providerPriorityTried: CapitalFlowDataSource[] = [];
 
-  if (polygonCandles?.length) {
-    await archiveMarketDataIfPossible({
+  try {
+    providerPriorityTried.push("POLYGON");
+    const polygon = await fetchPolygonCandles(symbol);
+    const archive = await archiveMarketDataIfPossible({
       ticker: symbol,
       provider: "POLYGON",
-      candles: polygonCandles,
+      candles: polygon.candles,
+      payloadSummary: polygon.summary,
     });
 
     return {
-      candles: polygonCandles,
+      candles: polygon.candles,
       providerUsed: "POLYGON",
       quality: "REAL_PROVIDER",
+      providerPriorityTried,
+      providerErrors: archive.error
+        ? [...providerErrors, providerError("POLYGON", archive.error)]
+        : providerErrors,
+      archiveStatus: archive.status,
+      rawProviderPayloadSummary: polygon.summary,
       providerCallBudget: getProviderBudgetSummary(),
-      providerCallsUsed: {
-        polygon: getProviderBudget("POLYGON").callsUsed,
-        alphaVantage: getProviderBudget("ALPHA_VANTAGE").callsUsed,
-      },
+      providerCallsUsed: getProviderCallsUsedSummary(),
     };
+  } catch (error) {
+    providerErrors.push(
+      providerError("POLYGON", error instanceof Error ? error.message : "UNKNOWN_ERROR"),
+    );
   }
 
-  const alphaVantageCandles = await fetchAlphaVantageCandles(symbol);
-
-  if (alphaVantageCandles?.length) {
-    await archiveMarketDataIfPossible({
+  try {
+    providerPriorityTried.push("ALPHA_VANTAGE");
+    const alphaVantage = await fetchAlphaVantageCandles(symbol);
+    const archive = await archiveMarketDataIfPossible({
       ticker: symbol,
       provider: "ALPHA_VANTAGE",
-      candles: alphaVantageCandles,
+      candles: alphaVantage.candles,
+      payloadSummary: alphaVantage.summary,
     });
 
     return {
-      candles: alphaVantageCandles,
+      candles: alphaVantage.candles,
       providerUsed: "ALPHA_VANTAGE",
       quality: "REAL_PROVIDER",
+      providerPriorityTried,
+      providerErrors: archive.error
+        ? [...providerErrors, providerError("ALPHA_VANTAGE", archive.error)]
+        : providerErrors,
+      archiveStatus: archive.status,
+      rawProviderPayloadSummary: alphaVantage.summary,
       providerCallBudget: getProviderBudgetSummary(),
-      providerCallsUsed: {
-        polygon: getProviderBudget("POLYGON").callsUsed,
-        alphaVantage: getProviderBudget("ALPHA_VANTAGE").callsUsed,
-      },
+      providerCallsUsed: getProviderCallsUsedSummary(),
     };
+  } catch (error) {
+    providerErrors.push(
+      providerError(
+        "ALPHA_VANTAGE",
+        error instanceof Error ? error.message : "UNKNOWN_ERROR",
+      ),
+    );
   }
 
-  return null;
+  return {
+    candles: [],
+    providerPriorityTried,
+    providerErrors,
+    providerCallBudget: getProviderBudgetSummary(),
+    providerCallsUsed: getProviderCallsUsedSummary(),
+  };
 }

@@ -7,6 +7,10 @@ import type {
 export const FLOW_CALCULATION_VERSION = "V1.6.1_CHAIKIN" as const;
 export const NORMALIZED_FLOW_CALCULATION_VERSION =
   "V1.6.2_NORMALIZED_CHAIKIN" as const;
+export const REAL_PROVIDER_FLOW_CALCULATION_VERSION =
+  "V1.6.3_REAL_PROVIDER_CHAIKIN" as const;
+export const YFINANCE_FLOW_CALCULATION_VERSION =
+  "V1.6.3_YFINANCE_CHAIKIN" as const;
 
 export type OhlcvCandle = {
   date: Date;
@@ -43,6 +47,11 @@ export type CapitalFlows = Pick<
   | "flowCalculationVersion"
   | "capitalFlowDataSource"
   | "capitalFlowQuality"
+  | "providerUsed"
+  | "providerPriorityTried"
+  | "providerErrors"
+  | "archiveStatus"
+  | "rawProviderPayloadSummary"
   | "moneyFlowMultiplierLatest"
   | "chaikinDailyFlowLatest"
   | "flowDataUpdatedAt"
@@ -164,6 +173,12 @@ function calculateRawFlowScore(flows: Pick<
   }
 
   return clamp(rawScore, 0, 100);
+}
+
+function getFlowCalculationVersion(dataSource: CapitalFlowDataSource) {
+  return dataSource === "POLYGON" || dataSource === "ALPHA_VANTAGE"
+    ? REAL_PROVIDER_FLOW_CALCULATION_VERSION
+    : YFINANCE_FLOW_CALCULATION_VERSION;
 }
 
 export function calculateMoneyFlowMultiplier(candle: OhlcvCandle) {
@@ -312,9 +327,17 @@ export function calculateCapitalFlowsFromCandles({
     legacyCapitalFlow9D: sumLast(legacyFlows, 9),
     legacyCapitalFlow3W: sumLast(legacyFlows, 15),
     legacyCapitalFlow5W: sumLast(legacyFlows, 25),
-    flowCalculationVersion: NORMALIZED_FLOW_CALCULATION_VERSION,
+    flowCalculationVersion: getFlowCalculationVersion(dataSource),
     capitalFlowDataSource: dataSource,
     capitalFlowQuality: quality,
+    providerUsed: dataSource,
+    providerPriorityTried: [dataSource],
+    providerErrors: [],
+    archiveStatus:
+      dataSource === "POLYGON" || dataSource === "ALPHA_VANTAGE"
+        ? undefined
+        : "PROXY_PROVIDER",
+    rawProviderPayloadSummary: undefined,
     moneyFlowMultiplierLatest: latestFlow?.moneyFlowMultiplier ?? null,
     chaikinDailyFlowLatest: latestFlow?.dailyFlowDollar ?? null,
     flowDataUpdatedAt: latestFlow?.date,
@@ -371,9 +394,14 @@ export function zeroCapitalFlows(
     legacyCapitalFlow9D: 0,
     legacyCapitalFlow3W: 0,
     legacyCapitalFlow5W: 0,
-    flowCalculationVersion: NORMALIZED_FLOW_CALCULATION_VERSION,
+    flowCalculationVersion: YFINANCE_FLOW_CALCULATION_VERSION,
     capitalFlowDataSource: dataSource,
     capitalFlowQuality: quality,
+    providerUsed: dataSource,
+    providerPriorityTried: [],
+    providerErrors: [],
+    archiveStatus: dataSource === "MOCK" ? "MOCK" : "PROXY_PROVIDER",
+    rawProviderPayloadSummary: undefined,
     moneyFlowMultiplierLatest: null,
     chaikinDailyFlowLatest: null,
     flowDataUpdatedAt: undefined,

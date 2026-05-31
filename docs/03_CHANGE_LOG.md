@@ -1,5 +1,16 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.3 Real Provider Data Archive
+
+- Added Polygon and Alpha Vantage real OHLCV provider fetching ahead of the YFINANCE_CHAIKIN fallback.
+- Added provider priority diagnostics and safe env-configurable call budgets.
+- Normalized provider OHLCV responses into the existing Chaikin and normalized flow scoring pipeline.
+- Added optional Supabase market data archive upsert support for real provider payloads.
+- Real provider data now sets `capitalFlowQuality` to `REAL_PROVIDER`; YFINANCE_CHAIKIN remains the live proxy fallback.
+- Added provider errors, archive status, provider-used metadata, and raw payload summaries to flow diagnostics.
+- Added SQL documentation at `docs/alpha_scout_market_data_archive.sql`.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.6.2 Normalized Capital Flow Scoring
 
 - Added capital flow normalization while preserving raw Chaikin dollar flow values in the dashboard table.

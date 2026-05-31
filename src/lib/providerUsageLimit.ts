@@ -1,5 +1,17 @@
-export const ALPHA_VANTAGE_DAILY_CALL_LIMIT = 20;
-export const POLYGON_DAILY_CALL_LIMIT = 20;
+function parseDailyLimit(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+}
+
+export const ALPHA_VANTAGE_DAILY_CALL_LIMIT = Math.min(
+  parseDailyLimit(process.env.ALPHA_VANTAGE_DAILY_CALL_LIMIT, 20),
+  20,
+);
+export const POLYGON_DAILY_CALL_LIMIT = parseDailyLimit(
+  process.env.POLYGON_DAILY_CALL_LIMIT,
+  20,
+);
 
 type ProviderName = "ALPHA_VANTAGE" | "POLYGON";
 

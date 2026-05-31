@@ -219,23 +219,40 @@ export async function resolveCapitalFlows(
 ): Promise<CapitalFlows> {
   const providerCandles = await fetchProviderCandles(symbol);
 
-  if (providerCandles?.candles.length) {
-    return calculateCapitalFlowsFromCandles({
-      candles: providerCandles.candles,
-      dataSource: providerCandles.providerUsed,
-      quality: providerCandles.quality,
-      marketCap,
-    });
+  if (
+    providerCandles.candles.length &&
+    providerCandles.providerUsed &&
+    providerCandles.quality
+  ) {
+    return {
+      ...calculateCapitalFlowsFromCandles({
+        candles: providerCandles.candles,
+        dataSource: providerCandles.providerUsed,
+        quality: providerCandles.quality,
+        marketCap,
+      }),
+      providerUsed: providerCandles.providerUsed,
+      providerPriorityTried: providerCandles.providerPriorityTried,
+      providerErrors: providerCandles.providerErrors,
+      archiveStatus: providerCandles.archiveStatus,
+      rawProviderPayloadSummary: providerCandles.rawProviderPayloadSummary,
+    };
   }
 
   const candles = await fetchHistoricalDailyCandles(symbol, 45);
 
-  return calculateCapitalFlowsFromCandles({
-    candles,
-    dataSource: "YFINANCE_CHAIKIN",
-    quality: "LIVE_PROXY",
-    marketCap,
-  });
+  return {
+    ...calculateCapitalFlowsFromCandles({
+      candles,
+      dataSource: "YFINANCE_CHAIKIN",
+      quality: "LIVE_PROXY",
+      marketCap,
+    }),
+    providerUsed: "YFINANCE_CHAIKIN",
+    providerPriorityTried: providerCandles.providerPriorityTried,
+    providerErrors: providerCandles.providerErrors,
+    archiveStatus: "PROXY_PROVIDER",
+  };
 }
 
 function classifyPool(quote: LiveQuote): StockPool | null {
@@ -599,10 +616,14 @@ export async function buildCapitalFlowDebug(symbol: string) {
     shortTermFlowAcceleration: flows.shortTermFlowAcceleration,
     normalizedFlowScore: flows.normalizedFlowScore,
     rawFlowScore: flows.rawFlowScore,
+    providerUsed: flows.providerUsed,
+    providerPriorityTried: flows.providerPriorityTried,
+    providerErrors: flows.providerErrors,
+    archiveStatus: flows.archiveStatus,
+    rawProviderPayloadSummary: flows.rawProviderPayloadSummary,
     moneyFlowMultiplierLatest: flows.moneyFlowMultiplierLatest,
     chaikinDailyFlowLatest: flows.chaikinDailyFlowLatest,
     capitalFlowScore: calculateCapitalFlowScore(flows),
-    providerUsed: flows.capitalFlowDataSource,
     providerCallBudget: providerBudget,
     providerCallsUsed: {
       polygon: providerBudget.polygon.callsUsed,
