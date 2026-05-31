@@ -5,6 +5,8 @@ import type {
 } from "@/types/stock";
 
 export const FLOW_CALCULATION_VERSION = "V1.6.1_CHAIKIN" as const;
+export const NORMALIZED_FLOW_CALCULATION_VERSION =
+  "V1.6.2_NORMALIZED_CHAIKIN" as const;
 
 export type OhlcvCandle = {
   date: Date;
@@ -44,6 +46,22 @@ export type CapitalFlows = Pick<
   | "moneyFlowMultiplierLatest"
   | "chaikinDailyFlowLatest"
   | "flowDataUpdatedAt"
+  | "avgDollarVolume20D"
+  | "flow3DToMarketCapPct"
+  | "flow5DToMarketCapPct"
+  | "flow9DToMarketCapPct"
+  | "flow3WToMarketCapPct"
+  | "flow5WToMarketCapPct"
+  | "flow3DToAvgDollarVolume"
+  | "flow5DToAvgDollarVolume"
+  | "flow9DToAvgDollarVolume"
+  | "flow3WToAvgDollarVolume"
+  | "flow5WToAvgDollarVolume"
+  | "flowConsistency9D"
+  | "flowDirectionBreadth"
+  | "shortTermFlowAcceleration"
+  | "normalizedFlowScore"
+  | "rawFlowScore"
 > & {
   recentDailyFlow?: DailyFlowDetail[];
 };
@@ -70,6 +88,84 @@ function windowFlows(values: number[]) {
   };
 }
 
+function ratio(value: number, denominator: number | null | undefined) {
+  if (!isFiniteNumber(denominator) || denominator === 0) {
+    return null;
+  }
+
+  return value / denominator;
+}
+
+function scoreFlowToAvgDollarVolume(value: number | null | undefined) {
+  if (!isFiniteNumber(value)) return 45;
+  if (value >= 2) return 100;
+  if (value >= 1) return 85;
+  if (value >= 0.5) return 75;
+  if (value >= 0) return 60;
+  if (value >= -0.5) return 45;
+  if (value >= -1) return 35;
+  return 25;
+}
+
+function scoreFlowToMarketCap(value: number | null | undefined) {
+  if (!isFiniteNumber(value)) return 45;
+  if (value >= 5) return 100;
+  if (value >= 2) return 85;
+  if (value >= 1) return 75;
+  if (value >= 0) return 60;
+  if (value >= -1) return 45;
+  if (value >= -2) return 35;
+  return 25;
+}
+
+function scoreAcceleration(value: number | null | undefined) {
+  if (!isFiniteNumber(value)) return 55;
+  if (value >= 50) return 100;
+  if (value >= 20) return 85;
+  if (value >= 0) return 70;
+  if (value >= -20) return 55;
+  return 35;
+}
+
+function mapFlowScore(score: number) {
+  if (score >= 85) return 100;
+  if (score >= 75) return 90;
+  if (score >= 65) return 82;
+  if (score >= 55) return 75;
+  if (score >= 45) return 65;
+  if (score >= 35) return 55;
+
+  return 45;
+}
+
+function calculateRawFlowScore(flows: Pick<
+  StockCandidate,
+  | "capitalFlow3D"
+  | "capitalFlow5D"
+  | "capitalFlow9D"
+  | "capitalFlow3W"
+  | "capitalFlow5W"
+>) {
+  const positiveCount = [
+    flows.capitalFlow3D,
+    flows.capitalFlow5D,
+    flows.capitalFlow9D,
+    flows.capitalFlow3W,
+    flows.capitalFlow5W,
+  ].filter((flow) => flow > 0).length;
+  let rawScore = positiveCount * 15;
+
+  if (flows.capitalFlow3D > 0 && flows.capitalFlow5D > 0 && flows.capitalFlow9D > 0) {
+    rawScore += 25;
+  }
+
+  if (flows.capitalFlow3D < 0 && Math.abs(flows.capitalFlow3D) > Math.abs(flows.capitalFlow5D)) {
+    rawScore -= 15;
+  }
+
+  return clamp(rawScore, 0, 100);
+}
+
 export function calculateMoneyFlowMultiplier(candle: OhlcvCandle) {
   if (
     !isFiniteNumber(candle.high) ||
@@ -91,10 +187,12 @@ export function calculateCapitalFlowsFromCandles({
   candles,
   dataSource,
   quality,
+  marketCap,
 }: {
   candles: OhlcvCandle[];
   dataSource: CapitalFlowDataSource;
   quality: CapitalFlowQuality;
+  marketCap?: number | null;
 }): CapitalFlows {
   const sortedCandles = candles
     .slice()
@@ -118,6 +216,17 @@ export function calculateCapitalFlowsFromCandles({
     };
   });
   const chaikinFlows = dailyFlowDetails.map((flow) => flow.dailyFlowDollar);
+  const latestDollarVolumes = sortedCandles
+    .filter(
+      (candle) =>
+        isFiniteNumber(candle.close) && isFiniteNumber(candle.volume),
+    )
+    .slice(-20)
+    .map((candle) => (candle.close ?? 0) * (candle.volume ?? 0));
+  const avgDollarVolume20D = latestDollarVolumes.length
+    ? latestDollarVolumes.reduce((sum, value) => sum + value, 0) /
+      latestDollarVolumes.length
+    : null;
   const legacyFlows = sortedCandles.reduce<number[]>(
     (dailyFlows, candle, index, rows) => {
       if (index === 0 || !isFiniteNumber(candle.close) || !isFiniteNumber(candle.volume)) {
@@ -141,52 +250,100 @@ export function calculateCapitalFlowsFromCandles({
     [],
   );
   const latestFlow = dailyFlowDetails.at(-1);
+  const flows = windowFlows(chaikinFlows);
+  const flow3DToMarketCapRatio = ratio(flows.capitalFlow3D, marketCap);
+  const flow5DToMarketCapRatio = ratio(flows.capitalFlow5D, marketCap);
+  const flow9DToMarketCapRatio = ratio(flows.capitalFlow9D, marketCap);
+  const flow3WToMarketCapRatio = ratio(flows.capitalFlow3W, marketCap);
+  const flow5WToMarketCapRatio = ratio(flows.capitalFlow5W, marketCap);
+  const flow3DToMarketCapPct =
+    flow3DToMarketCapRatio == null ? null : flow3DToMarketCapRatio * 100;
+  const flow5DToMarketCapPct =
+    flow5DToMarketCapRatio == null ? null : flow5DToMarketCapRatio * 100;
+  const flow9DToMarketCapPct =
+    flow9DToMarketCapRatio == null ? null : flow9DToMarketCapRatio * 100;
+  const flow3WToMarketCapPct =
+    flow3WToMarketCapRatio == null ? null : flow3WToMarketCapRatio * 100;
+  const flow5WToMarketCapPct =
+    flow5WToMarketCapRatio == null ? null : flow5WToMarketCapRatio * 100;
+  const flow3DToAvgDollarVolume = ratio(flows.capitalFlow3D, avgDollarVolume20D);
+  const flow5DToAvgDollarVolume = ratio(flows.capitalFlow5D, avgDollarVolume20D);
+  const flow9DToAvgDollarVolume = ratio(flows.capitalFlow9D, avgDollarVolume20D);
+  const flow3WToAvgDollarVolume = ratio(flows.capitalFlow3W, avgDollarVolume20D);
+  const flow5WToAvgDollarVolume = ratio(flows.capitalFlow5W, avgDollarVolume20D);
+  const recent9Flows = chaikinFlows.slice(-9);
+  const flowConsistency9D =
+    (recent9Flows.filter((flow) => flow > 0).length / 9) * 100;
+  const flowDirectionBreadth =
+    ([
+      flows.capitalFlow3D,
+      flows.capitalFlow5D,
+      flows.capitalFlow9D,
+      flows.capitalFlow3W,
+      flows.capitalFlow5W,
+    ].filter((flow) => flow > 0).length /
+      5) *
+    100;
+  const flow3DPerDay = flows.capitalFlow3D / 3;
+  const flow9DPerDay = flows.capitalFlow9D / 9;
+  const shortTermFlowAcceleration =
+    Math.abs(flow9DPerDay) > 1
+      ? clamp(
+          ((flow3DPerDay - flow9DPerDay) / Math.abs(flow9DPerDay)) * 100,
+          -100,
+          100,
+        )
+      : null;
+  const rawFlowScore = calculateRawFlowScore(flows);
+  const normalizedFlowScore = clamp(
+    flowDirectionBreadth * 0.3 +
+      flowConsistency9D * 0.25 +
+      scoreFlowToAvgDollarVolume(flow5DToAvgDollarVolume) * 0.2 +
+      scoreFlowToMarketCap(flow3WToMarketCapPct) * 0.15 +
+      scoreAcceleration(shortTermFlowAcceleration) * 0.1,
+    0,
+    100,
+  );
 
   return {
-    ...windowFlows(chaikinFlows),
+    ...flows,
     legacyCapitalFlow3D: sumLast(legacyFlows, 3),
     legacyCapitalFlow5D: sumLast(legacyFlows, 5),
     legacyCapitalFlow9D: sumLast(legacyFlows, 9),
     legacyCapitalFlow3W: sumLast(legacyFlows, 15),
     legacyCapitalFlow5W: sumLast(legacyFlows, 25),
-    flowCalculationVersion: FLOW_CALCULATION_VERSION,
+    flowCalculationVersion: NORMALIZED_FLOW_CALCULATION_VERSION,
     capitalFlowDataSource: dataSource,
     capitalFlowQuality: quality,
     moneyFlowMultiplierLatest: latestFlow?.moneyFlowMultiplier ?? null,
     chaikinDailyFlowLatest: latestFlow?.dailyFlowDollar ?? null,
     flowDataUpdatedAt: latestFlow?.date,
+    avgDollarVolume20D,
+    flow3DToMarketCapPct,
+    flow5DToMarketCapPct,
+    flow9DToMarketCapPct,
+    flow3WToMarketCapPct,
+    flow5WToMarketCapPct,
+    flow3DToAvgDollarVolume,
+    flow5DToAvgDollarVolume,
+    flow9DToAvgDollarVolume,
+    flow3WToAvgDollarVolume,
+    flow5WToAvgDollarVolume,
+    flowConsistency9D,
+    flowDirectionBreadth,
+    shortTermFlowAcceleration,
+    normalizedFlowScore,
+    rawFlowScore,
     recentDailyFlow: dailyFlowDetails.slice(-25),
   };
 }
 
 export function calculateCapitalFlowScore(flows: CapitalFlows) {
-  const positiveCount = [
-    flows.capitalFlow3D,
-    flows.capitalFlow5D,
-    flows.capitalFlow9D,
-    flows.capitalFlow3W,
-    flows.capitalFlow5W,
-  ].filter((flow) => flow > 0).length;
-  let rawScore = positiveCount * 15;
-
-  if (flows.capitalFlow3D > 0 && flows.capitalFlow5D > 0 && flows.capitalFlow9D > 0) {
-    rawScore += 25;
-  }
-
-  if (flows.capitalFlow3D < 0 && Math.abs(flows.capitalFlow3D) > Math.abs(flows.capitalFlow5D)) {
-    rawScore -= 15;
-  }
-
-  rawScore = clamp(rawScore, 0, 100);
-
-  if (rawScore >= 85) return 100;
-  if (rawScore >= 75) return 90;
-  if (rawScore >= 65) return 82;
-  if (rawScore >= 55) return 75;
-  if (rawScore >= 45) return 65;
-  if (rawScore >= 35) return 55;
-
-  return 45;
+  return mapFlowScore(
+    isFiniteNumber(flows.normalizedFlowScore)
+      ? flows.normalizedFlowScore
+      : calculateRawFlowScore(flows),
+  );
 }
 
 export function calculateCapitalFlowChangeRatio(flows: CapitalFlows) {
@@ -214,12 +371,28 @@ export function zeroCapitalFlows(
     legacyCapitalFlow9D: 0,
     legacyCapitalFlow3W: 0,
     legacyCapitalFlow5W: 0,
-    flowCalculationVersion: FLOW_CALCULATION_VERSION,
+    flowCalculationVersion: NORMALIZED_FLOW_CALCULATION_VERSION,
     capitalFlowDataSource: dataSource,
     capitalFlowQuality: quality,
     moneyFlowMultiplierLatest: null,
     chaikinDailyFlowLatest: null,
     flowDataUpdatedAt: undefined,
+    avgDollarVolume20D: null,
+    flow3DToMarketCapPct: null,
+    flow5DToMarketCapPct: null,
+    flow9DToMarketCapPct: null,
+    flow3WToMarketCapPct: null,
+    flow5WToMarketCapPct: null,
+    flow3DToAvgDollarVolume: null,
+    flow5DToAvgDollarVolume: null,
+    flow9DToAvgDollarVolume: null,
+    flow3WToAvgDollarVolume: null,
+    flow5WToAvgDollarVolume: null,
+    flowConsistency9D: 0,
+    flowDirectionBreadth: 0,
+    shortTermFlowAcceleration: null,
+    normalizedFlowScore: 0,
+    rawFlowScore: 0,
     recentDailyFlow: [],
   };
 }

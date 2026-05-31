@@ -13,6 +13,7 @@ import {
   calculateCapitalFlowChangeRatio,
   calculateCapitalFlowScore,
   calculateCapitalFlowsFromCandles,
+  NORMALIZED_FLOW_CALCULATION_VERSION,
   type CapitalFlows,
   zeroCapitalFlows,
 } from "@/lib/capitalFlow";
@@ -113,12 +114,28 @@ function fallbackFlows(symbol: string): CapitalFlows {
     legacyCapitalFlow9D: fallback.capitalFlow9D,
     legacyCapitalFlow3W: fallback.capitalFlow3W,
     legacyCapitalFlow5W: fallback.capitalFlow5W,
-    flowCalculationVersion: "V1.6.1_CHAIKIN",
+    flowCalculationVersion: NORMALIZED_FLOW_CALCULATION_VERSION,
     capitalFlowDataSource: "MOCK",
     capitalFlowQuality: "MOCK",
     moneyFlowMultiplierLatest: null,
     chaikinDailyFlowLatest: null,
     flowDataUpdatedAt: undefined,
+    avgDollarVolume20D: null,
+    flow3DToMarketCapPct: null,
+    flow5DToMarketCapPct: null,
+    flow9DToMarketCapPct: null,
+    flow3WToMarketCapPct: null,
+    flow5WToMarketCapPct: null,
+    flow3DToAvgDollarVolume: null,
+    flow5DToAvgDollarVolume: null,
+    flow9DToAvgDollarVolume: null,
+    flow3WToAvgDollarVolume: null,
+    flow5WToAvgDollarVolume: null,
+    flowConsistency9D: 0,
+    flowDirectionBreadth: 0,
+    shortTermFlowAcceleration: null,
+    normalizedFlowScore: 0,
+    rawFlowScore: 0,
   };
 }
 
@@ -196,7 +213,10 @@ export async function fetchHistoricalDailyCandles(
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
-export async function resolveCapitalFlows(symbol: string): Promise<CapitalFlows> {
+export async function resolveCapitalFlows(
+  symbol: string,
+  marketCap?: number | null,
+): Promise<CapitalFlows> {
   const providerCandles = await fetchProviderCandles(symbol);
 
   if (providerCandles?.candles.length) {
@@ -204,6 +224,7 @@ export async function resolveCapitalFlows(symbol: string): Promise<CapitalFlows>
       candles: providerCandles.candles,
       dataSource: providerCandles.providerUsed,
       quality: providerCandles.quality,
+      marketCap,
     });
   }
 
@@ -213,6 +234,7 @@ export async function resolveCapitalFlows(symbol: string): Promise<CapitalFlows>
     candles,
     dataSource: "YFINANCE_CHAIKIN",
     quality: "LIVE_PROXY",
+    marketCap,
   });
 }
 
@@ -303,7 +325,7 @@ async function buildFixedWatchlistCandidateWithMeta(symbol: string): Promise<{
   }
 
   try {
-    flows = await resolveCapitalFlows(symbol);
+    flows = await resolveCapitalFlows(symbol, quote?.marketCap);
 
     if (flows.recentDailyFlow && flows.recentDailyFlow.length < 25) {
       usedFallback = true;
@@ -368,7 +390,7 @@ async function buildScanCandidateFromQuote({
   let usedFallback = false;
 
   try {
-    flows = await resolveCapitalFlows(symbol);
+    flows = await resolveCapitalFlows(symbol, quote.marketCap);
 
     if (flows.recentDailyFlow && flows.recentDailyFlow.length < 25) {
       usedFallback = true;
@@ -535,7 +557,15 @@ export async function buildLiveCandidate(
 export const buildLiveMarketSnapshot = buildFixedWatchlistSnapshot;
 
 export async function buildCapitalFlowDebug(symbol: string) {
-  const flows = await resolveCapitalFlows(symbol);
+  let quote: LiveQuote | null = null;
+
+  try {
+    quote = await fetchLiveQuote(symbol);
+  } catch {
+    quote = null;
+  }
+
+  const flows = await resolveCapitalFlows(symbol, quote?.marketCap);
   const providerBudget = getProviderBudgetSummary();
 
   return {
@@ -553,6 +583,22 @@ export async function buildCapitalFlowDebug(symbol: string) {
     legacyCapitalFlow9D: flows.legacyCapitalFlow9D,
     legacyCapitalFlow3W: flows.legacyCapitalFlow3W,
     legacyCapitalFlow5W: flows.legacyCapitalFlow5W,
+    avgDollarVolume20D: flows.avgDollarVolume20D,
+    flow3DToMarketCapPct: flows.flow3DToMarketCapPct,
+    flow5DToMarketCapPct: flows.flow5DToMarketCapPct,
+    flow9DToMarketCapPct: flows.flow9DToMarketCapPct,
+    flow3WToMarketCapPct: flows.flow3WToMarketCapPct,
+    flow5WToMarketCapPct: flows.flow5WToMarketCapPct,
+    flow3DToAvgDollarVolume: flows.flow3DToAvgDollarVolume,
+    flow5DToAvgDollarVolume: flows.flow5DToAvgDollarVolume,
+    flow9DToAvgDollarVolume: flows.flow9DToAvgDollarVolume,
+    flow3WToAvgDollarVolume: flows.flow3WToAvgDollarVolume,
+    flow5WToAvgDollarVolume: flows.flow5WToAvgDollarVolume,
+    flowConsistency9D: flows.flowConsistency9D,
+    flowDirectionBreadth: flows.flowDirectionBreadth,
+    shortTermFlowAcceleration: flows.shortTermFlowAcceleration,
+    normalizedFlowScore: flows.normalizedFlowScore,
+    rawFlowScore: flows.rawFlowScore,
     moneyFlowMultiplierLatest: flows.moneyFlowMultiplierLatest,
     chaikinDailyFlowLatest: flows.chaikinDailyFlowLatest,
     capitalFlowScore: calculateCapitalFlowScore(flows),

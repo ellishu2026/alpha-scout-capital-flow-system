@@ -1,5 +1,15 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.2 Normalized Capital Flow Scoring
+
+- Added capital flow normalization while preserving raw Chaikin dollar flow values in the dashboard table.
+- Added flow-to-market-cap metrics for 3D, 5D, 9D, 3W, and 5W windows.
+- Added flow-to-average-dollar-volume metrics using latest 20 trading days of dollar volume.
+- Added 9D flow consistency, direction breadth, and short-term flow acceleration.
+- Updated `capitalFlowScore` to use `normalizedFlowScore` so ranking is less dominated by mega-cap raw dollar flow.
+- Preserved `rawFlowScore` for diagnostics and continued storing legacy signed-dollar-volume fields.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.6.1 Chaikin Capital Flow Proxy
 
 - Changed capital flow calculation to Chaikin-style money flow using the daily high-low-close range.

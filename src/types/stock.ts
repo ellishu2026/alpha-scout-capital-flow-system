@@ -136,12 +136,28 @@ export type StockCandidate = {
   previousQuarterSearch?: PreviousQuarterSearch;
   previousQuarterSelectedPeriods?: PreviousQuarterSelectedPeriods;
   fyMinusQ3YtdCandidates?: FyMinusQ3YtdCandidates;
-  flowCalculationVersion?: "V1.6.1_CHAIKIN";
+  flowCalculationVersion?: "V1.6.1_CHAIKIN" | "V1.6.2_NORMALIZED_CHAIKIN";
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
   moneyFlowMultiplierLatest?: number | null;
   chaikinDailyFlowLatest?: number | null;
   flowDataUpdatedAt?: string;
+  avgDollarVolume20D?: number | null;
+  flow3DToMarketCapPct?: number | null;
+  flow5DToMarketCapPct?: number | null;
+  flow9DToMarketCapPct?: number | null;
+  flow3WToMarketCapPct?: number | null;
+  flow5WToMarketCapPct?: number | null;
+  flow3DToAvgDollarVolume?: number | null;
+  flow5DToAvgDollarVolume?: number | null;
+  flow9DToAvgDollarVolume?: number | null;
+  flow3WToAvgDollarVolume?: number | null;
+  flow5WToAvgDollarVolume?: number | null;
+  flowConsistency9D?: number;
+  flowDirectionBreadth?: number;
+  shortTermFlowAcceleration?: number | null;
+  normalizedFlowScore?: number;
+  rawFlowScore?: number;
 };
 
 export type SnapshotResponse = {
