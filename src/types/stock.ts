@@ -140,12 +140,15 @@ export type StockCandidate = {
     | "V1.6.1_CHAIKIN"
     | "V1.6.2_NORMALIZED_CHAIKIN"
     | "V1.6.3_REAL_PROVIDER_CHAIKIN"
-    | "V1.6.3_YFINANCE_CHAIKIN";
+    | "V1.6.3_YFINANCE_CHAIKIN"
+    | "V1.6.3.1_REAL_PROVIDER_CHAIKIN"
+    | "V1.6.3.1_YFINANCE_CHAIKIN";
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
   providerUsed?: CapitalFlowDataSource;
   providerPriorityTried?: CapitalFlowDataSource[];
   providerErrors?: string[];
+  providerEndpointType?: string;
   archiveStatus?: string;
   rawProviderPayloadSummary?: Record<string, unknown>;
   moneyFlowMultiplierLatest?: number | null;

@@ -117,6 +117,12 @@ function fallbackFlows(symbol: string): CapitalFlows {
     flowCalculationVersion: NORMALIZED_FLOW_CALCULATION_VERSION,
     capitalFlowDataSource: "MOCK",
     capitalFlowQuality: "MOCK",
+    providerUsed: "MOCK",
+    providerPriorityTried: [],
+    providerErrors: [],
+    providerEndpointType: "MOCK",
+    archiveStatus: "MOCK",
+    rawProviderPayloadSummary: undefined,
     moneyFlowMultiplierLatest: null,
     chaikinDailyFlowLatest: null,
     flowDataUpdatedAt: undefined,
@@ -234,6 +240,7 @@ export async function resolveCapitalFlows(
       providerUsed: providerCandles.providerUsed,
       providerPriorityTried: providerCandles.providerPriorityTried,
       providerErrors: providerCandles.providerErrors,
+      providerEndpointType: providerCandles.providerEndpointType,
       archiveStatus: providerCandles.archiveStatus,
       rawProviderPayloadSummary: providerCandles.rawProviderPayloadSummary,
     };
@@ -251,6 +258,7 @@ export async function resolveCapitalFlows(
     providerUsed: "YFINANCE_CHAIKIN",
     providerPriorityTried: providerCandles.providerPriorityTried,
     providerErrors: providerCandles.providerErrors,
+    providerEndpointType: "YFINANCE_HISTORICAL",
     archiveStatus: "PROXY_PROVIDER",
   };
 }
@@ -619,6 +627,7 @@ export async function buildCapitalFlowDebug(symbol: string) {
     providerUsed: flows.providerUsed,
     providerPriorityTried: flows.providerPriorityTried,
     providerErrors: flows.providerErrors,
+    providerEndpointType: flows.providerEndpointType,
     archiveStatus: flows.archiveStatus,
     rawProviderPayloadSummary: flows.rawProviderPayloadSummary,
     moneyFlowMultiplierLatest: flows.moneyFlowMultiplierLatest,

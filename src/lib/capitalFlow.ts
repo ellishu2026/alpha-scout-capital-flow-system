@@ -8,9 +8,9 @@ export const FLOW_CALCULATION_VERSION = "V1.6.1_CHAIKIN" as const;
 export const NORMALIZED_FLOW_CALCULATION_VERSION =
   "V1.6.2_NORMALIZED_CHAIKIN" as const;
 export const REAL_PROVIDER_FLOW_CALCULATION_VERSION =
-  "V1.6.3_REAL_PROVIDER_CHAIKIN" as const;
+  "V1.6.3.1_REAL_PROVIDER_CHAIKIN" as const;
 export const YFINANCE_FLOW_CALCULATION_VERSION =
-  "V1.6.3_YFINANCE_CHAIKIN" as const;
+  "V1.6.3.1_YFINANCE_CHAIKIN" as const;
 
 export type OhlcvCandle = {
   date: Date;
@@ -50,6 +50,7 @@ export type CapitalFlows = Pick<
   | "providerUsed"
   | "providerPriorityTried"
   | "providerErrors"
+  | "providerEndpointType"
   | "archiveStatus"
   | "rawProviderPayloadSummary"
   | "moneyFlowMultiplierLatest"
@@ -333,6 +334,10 @@ export function calculateCapitalFlowsFromCandles({
     providerUsed: dataSource,
     providerPriorityTried: [dataSource],
     providerErrors: [],
+    providerEndpointType:
+      dataSource === "POLYGON" || dataSource === "ALPHA_VANTAGE"
+        ? "REAL_PROVIDER"
+        : "YFINANCE_HISTORICAL",
     archiveStatus:
       dataSource === "POLYGON" || dataSource === "ALPHA_VANTAGE"
         ? undefined
@@ -400,6 +405,7 @@ export function zeroCapitalFlows(
     providerUsed: dataSource,
     providerPriorityTried: [],
     providerErrors: [],
+    providerEndpointType: dataSource === "MOCK" ? "MOCK" : "YFINANCE_HISTORICAL",
     archiveStatus: dataSource === "MOCK" ? "MOCK" : "PROXY_PROVIDER",
     rawProviderPayloadSummary: undefined,
     moneyFlowMultiplierLatest: null,

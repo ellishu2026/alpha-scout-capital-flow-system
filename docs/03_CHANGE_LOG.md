@@ -1,5 +1,14 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.3.1 Provider Endpoint Fix
+
+- Updated Polygon to use the REST aggregates daily endpoint with `limit=5000`.
+- Updated Alpha Vantage to use the free `TIME_SERIES_DAILY` endpoint instead of `TIME_SERIES_DAILY_ADJUSTED`.
+- Fixed Alpha Vantage daily volume parsing for the free endpoint.
+- Updated flow version labels to `V1.6.3.1_REAL_PROVIDER_CHAIKIN` and `V1.6.3.1_YFINANCE_CHAIKIN`.
+- Added `providerEndpointType` to flow diagnostics and persisted snapshot items.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.6.3 Real Provider Data Archive
 
 - Added Polygon and Alpha Vantage real OHLCV provider fetching ahead of the YFINANCE_CHAIKIN fallback.

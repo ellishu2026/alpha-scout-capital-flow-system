@@ -18,6 +18,7 @@ export type ProviderArchiveStatus = {
 
 export type ProviderPayloadSummary = {
   provider: ProviderName;
+  endpointType: string;
   resultCount: number;
   latestDate?: string;
   status?: string;
@@ -27,6 +28,7 @@ export type ProviderFetchMetadata = {
   providerUsed?: CapitalFlowDataSource;
   providerPriorityTried: CapitalFlowDataSource[];
   providerErrors: string[];
+  providerEndpointType?: string;
   archiveStatus?: string;
   rawProviderPayloadSummary?: ProviderPayloadSummary;
   providerCallBudget: {
@@ -130,7 +132,7 @@ async function fetchPolygonCandles(symbol: string): Promise<{
       symbol,
     )}/range/1/day/${from.toISOString().slice(0, 10)}/${to
       .toISOString()
-      .slice(0, 10)}?adjusted=true&sort=asc&limit=60&apiKey=${apiKey}`,
+      .slice(0, 10)}?adjusted=true&sort=asc&limit=5000&apiKey=${apiKey}`,
     { cache: "no-store" },
   );
 
@@ -171,6 +173,7 @@ async function fetchPolygonCandles(symbol: string): Promise<{
     candles,
     summary: {
       provider: "POLYGON",
+      endpointType: "POLYGON_AGGS_DAILY",
       resultCount: payload.resultsCount ?? candles.length,
       latestDate: latestDate(candles),
       status: payload.status,
@@ -193,7 +196,7 @@ async function fetchAlphaVantageCandles(symbol: string): Promise<{
   }
 
   const response = await fetch(
-    `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${encodeURIComponent(
+    `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${encodeURIComponent(
       symbol,
     )}&outputsize=compact&apikey=${apiKey}`,
     { cache: "no-store" },
@@ -214,8 +217,7 @@ async function fetchAlphaVantageCandles(symbol: string): Promise<{
         ["2. high"]: string;
         ["3. low"]: string;
         ["4. close"]: string;
-        ["5. adjusted close"]?: string;
-        ["6. volume"]: string;
+        ["5. volume"]: string;
       }
     >;
   };
@@ -243,7 +245,7 @@ async function fetchAlphaVantageCandles(symbol: string): Promise<{
             high: toNumber(row["2. high"]),
             low: toNumber(row["3. low"]),
             close: toNumber(row["4. close"]),
-            volume: toNumber(row["6. volume"]),
+            volume: toNumber(row["5. volume"]),
           }
         : null;
     })
@@ -258,6 +260,7 @@ async function fetchAlphaVantageCandles(symbol: string): Promise<{
     candles,
     summary: {
       provider: "ALPHA_VANTAGE",
+      endpointType: "ALPHA_VANTAGE_TIME_SERIES_DAILY",
       resultCount: candles.length,
       latestDate: latestDate(candles),
       status: "OK",
@@ -350,6 +353,7 @@ export async function fetchProviderCandles(
       providerErrors: archive.error
         ? [...providerErrors, providerError("POLYGON", archive.error)]
         : providerErrors,
+      providerEndpointType: polygon.summary.endpointType,
       archiveStatus: archive.status,
       rawProviderPayloadSummary: polygon.summary,
       providerCallBudget: getProviderBudgetSummary(),
@@ -379,6 +383,7 @@ export async function fetchProviderCandles(
       providerErrors: archive.error
         ? [...providerErrors, providerError("ALPHA_VANTAGE", archive.error)]
         : providerErrors,
+      providerEndpointType: alphaVantage.summary.endpointType,
       archiveStatus: archive.status,
       rawProviderPayloadSummary: alphaVantage.summary,
       providerCallBudget: getProviderBudgetSummary(),
