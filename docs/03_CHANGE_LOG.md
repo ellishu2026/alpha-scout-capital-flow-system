@@ -1,5 +1,15 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.6 Composite Capital Flow Proxy
+
+- Replaced YFINANCE fallback flow with a composite proxy while keeping real provider and archive logic unchanged.
+- Composite daily flow combines Chaikin flow, price-change-weighted flow, MFI-like flow, and OBV directional flow.
+- Added composite proxy diagnostics for latest component flows and composite weights.
+- Preserved `chaikinDailyFlowLatest` and legacy signed-dollar-volume diagnostics for comparison.
+- Updated YFINANCE fallback labels to `V1.6.6_COMPOSITE_PROXY` and `YFINANCE_COMPOSITE_PROXY`.
+- Added `compositeProxyFallbackCount` and `compositeProxyFallbackTickers` to provider coverage summary.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.6.5.1 Polygon Live Call Guard
 
 - Disabled Polygon live calls by default.

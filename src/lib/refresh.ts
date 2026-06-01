@@ -185,7 +185,17 @@ function buildProviderCoverageSummary({
     .filter((candidate) => candidate.providerUsed === "POLYGON")
     .map((candidate) => candidate.ticker);
   const yfinanceFallbackTickers = coverageItems
-    .filter((candidate) => candidate.capitalFlowDataSource === "YFINANCE_CHAIKIN")
+    .filter(
+      (candidate) =>
+        candidate.capitalFlowDataSource === "YFINANCE_CHAIKIN" ||
+        candidate.capitalFlowDataSource === "YFINANCE_COMPOSITE_PROXY",
+    )
+    .map((candidate) => candidate.ticker);
+  const compositeProxyFallbackTickers = coverageItems
+    .filter(
+      (candidate) =>
+        candidate.capitalFlowDataSource === "YFINANCE_COMPOSITE_PROXY",
+    )
     .map((candidate) => candidate.ticker);
   const providerErrorTickers = coverageItems
     .filter((candidate) => (candidate.providerErrors?.length ?? 0) > 0)
@@ -206,6 +216,7 @@ function buildProviderCoverageSummary({
     alphaVantageLiveCount: alphaVantageLiveTickers.length,
     polygonLiveCount: polygonLiveTickers.length,
     yfinanceFallbackCount: yfinanceFallbackTickers.length,
+    compositeProxyFallbackCount: compositeProxyFallbackTickers.length,
     realProviderCoverageCount,
     realProviderCoveragePct:
       totalTickers > 0
@@ -223,6 +234,7 @@ function buildProviderCoverageSummary({
     archiveHitTickers,
     alphaVantageLiveTickers,
     yfinanceFallbackTickers,
+    compositeProxyFallbackTickers,
     providerErrorTickers,
   };
 }

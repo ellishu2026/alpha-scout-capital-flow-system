@@ -15,6 +15,7 @@ export type SnapshotMode = "MARKET_SCAN" | "FIXED_WATCHLIST" | "MOCK";
 export type PersistenceStatus = "SAVED" | "DISABLED" | "FAILED";
 export type CapitalFlowDataSource =
   | "YFINANCE_CHAIKIN"
+  | "YFINANCE_COMPOSITE_PROXY"
   | "ALPHA_VANTAGE"
   | "POLYGON"
   | "MOCK";
@@ -162,7 +163,8 @@ export type StockCandidate = {
     | "V1.6.5_YFINANCE_CHAIKIN"
     | "V1.6.5.1_ARCHIVE_PROVIDER_CHAIKIN"
     | "V1.6.5.1_REAL_PROVIDER_CHAIKIN"
-    | "V1.6.5.1_YFINANCE_CHAIKIN";
+    | "V1.6.5.1_YFINANCE_CHAIKIN"
+    | "V1.6.6_COMPOSITE_PROXY";
   sourceBucket?: CoverageSourceBucket;
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
@@ -177,6 +179,16 @@ export type StockCandidate = {
   rawProviderPayloadSummary?: Record<string, unknown>;
   moneyFlowMultiplierLatest?: number | null;
   chaikinDailyFlowLatest?: number | null;
+  compositeDailyFlowLatest?: number | null;
+  priceChangeWeightedFlowLatest?: number | null;
+  mfiLikeFlowLatest?: number | null;
+  obvDirectionalFlowLatest?: number | null;
+  compositeFlowWeights?: {
+    chaikin: number;
+    priceChangeWeighted: number;
+    mfiLike: number;
+    obvDirectional: number;
+  };
   flowDataUpdatedAt?: string;
   avgDollarVolume20D?: number | null;
   flow3DToMarketCapPct?: number | null;
@@ -205,6 +217,7 @@ export type ProviderCoverageSummary = {
   alphaVantageLiveCount: number;
   polygonLiveCount: number;
   yfinanceFallbackCount: number;
+  compositeProxyFallbackCount: number;
   realProviderCoverageCount: number;
   realProviderCoveragePct: number;
   providerCallsUsed: {
@@ -219,6 +232,7 @@ export type ProviderCoverageSummary = {
   archiveHitTickers: string[];
   alphaVantageLiveTickers: string[];
   yfinanceFallbackTickers: string[];
+  compositeProxyFallbackTickers: string[];
   providerErrorTickers: string[];
 };
 

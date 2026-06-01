@@ -13,6 +13,14 @@ export const YFINANCE_FLOW_CALCULATION_VERSION =
   "V1.6.5.1_YFINANCE_CHAIKIN" as const;
 export const ARCHIVE_PROVIDER_FLOW_CALCULATION_VERSION =
   "V1.6.5.1_ARCHIVE_PROVIDER_CHAIKIN" as const;
+export const COMPOSITE_PROXY_FLOW_CALCULATION_VERSION =
+  "V1.6.6_COMPOSITE_PROXY" as const;
+export const COMPOSITE_FLOW_WEIGHTS = {
+  chaikin: 0.45,
+  priceChangeWeighted: 0.25,
+  mfiLike: 0.2,
+  obvDirectional: 0.1,
+} as const;
 
 export type OhlcvCandle = {
   date: Date;
@@ -32,6 +40,10 @@ export type DailyFlowDetail = {
   volume: number | null;
   moneyFlowMultiplier: number;
   dailyFlowDollar: number;
+  chaikinDailyFlowDollar: number;
+  priceChangeWeightedFlow: number;
+  mfiLikeFlow: number;
+  obvDirectionalFlow: number;
 };
 
 export type CapitalFlows = Pick<
@@ -60,6 +72,11 @@ export type CapitalFlows = Pick<
   | "rawProviderPayloadSummary"
   | "moneyFlowMultiplierLatest"
   | "chaikinDailyFlowLatest"
+  | "compositeDailyFlowLatest"
+  | "priceChangeWeightedFlowLatest"
+  | "mfiLikeFlowLatest"
+  | "obvDirectionalFlowLatest"
+  | "compositeFlowWeights"
   | "flowDataUpdatedAt"
   | "avgDollarVolume20D"
   | "flow3DToMarketCapPct"
@@ -182,6 +199,10 @@ function calculateRawFlowScore(flows: Pick<
 }
 
 function getFlowCalculationVersion(dataSource: CapitalFlowDataSource) {
+  if (dataSource === "YFINANCE_COMPOSITE_PROXY") {
+    return COMPOSITE_PROXY_FLOW_CALCULATION_VERSION;
+  }
+
   return dataSource === "POLYGON" || dataSource === "ALPHA_VANTAGE"
     ? REAL_PROVIDER_FLOW_CALCULATION_VERSION
     : YFINANCE_FLOW_CALCULATION_VERSION;
@@ -218,12 +239,72 @@ export function calculateCapitalFlowsFromCandles({
   const sortedCandles = candles
     .slice()
     .sort((a, b) => a.date.getTime() - b.date.getTime());
-  const dailyFlowDetails = sortedCandles.map<DailyFlowDetail>((candle) => {
+  const useCompositeProxy = dataSource === "YFINANCE_COMPOSITE_PROXY";
+  const dailyFlowDetails = sortedCandles.map<DailyFlowDetail>((candle, index, rows) => {
     const multiplier = calculateMoneyFlowMultiplier(candle);
-    const dailyFlowDollar =
+    const previousClose = index > 0 ? rows[index - 1].close : null;
+    const previousTypicalPrice =
+      index > 0 &&
+      isFiniteNumber(rows[index - 1].high) &&
+      isFiniteNumber(rows[index - 1].low) &&
+      isFiniteNumber(rows[index - 1].close)
+        ? ((rows[index - 1].high ?? 0) +
+            (rows[index - 1].low ?? 0) +
+            (rows[index - 1].close ?? 0)) /
+          3
+        : null;
+    const typicalPrice =
+      isFiniteNumber(candle.high) &&
+      isFiniteNumber(candle.low) &&
+      isFiniteNumber(candle.close)
+        ? (candle.high + candle.low + candle.close) / 3
+        : null;
+    const chaikinFlow =
       isFiniteNumber(candle.close) && isFiniteNumber(candle.volume)
         ? candle.close * candle.volume * multiplier
         : 0;
+    const priceChangePct =
+      isFiniteNumber(previousClose) &&
+      previousClose > 0 &&
+      isFiniteNumber(candle.close)
+        ? (candle.close - previousClose) / previousClose
+        : 0;
+    const priceChangeWeightedFlow =
+      isFiniteNumber(candle.close) && isFiniteNumber(candle.volume)
+        ? candle.volume * candle.close * clamp(priceChangePct * 8, -1, 1)
+        : 0;
+    const mfiDirection =
+      isFiniteNumber(typicalPrice) && isFiniteNumber(previousTypicalPrice)
+        ? typicalPrice > previousTypicalPrice
+          ? 1
+          : typicalPrice < previousTypicalPrice
+            ? -1
+            : 0
+        : 0;
+    const mfiLikeFlow =
+      isFiniteNumber(candle.volume) && isFiniteNumber(typicalPrice)
+        ? candle.volume * typicalPrice * mfiDirection
+        : 0;
+    const obvDirection =
+      isFiniteNumber(previousClose) && isFiniteNumber(candle.close)
+        ? candle.close > previousClose
+          ? 1
+          : candle.close < previousClose
+            ? -1
+            : 0
+        : 0;
+    const obvDirectionalFlow =
+      isFiniteNumber(candle.volume) && isFiniteNumber(candle.close)
+        ? candle.volume * candle.close * obvDirection
+        : 0;
+    const compositeDailyFlow =
+      COMPOSITE_FLOW_WEIGHTS.chaikin * chaikinFlow +
+      COMPOSITE_FLOW_WEIGHTS.priceChangeWeighted * priceChangeWeightedFlow +
+      COMPOSITE_FLOW_WEIGHTS.mfiLike * mfiLikeFlow +
+      COMPOSITE_FLOW_WEIGHTS.obvDirectional * obvDirectionalFlow;
+    const dailyFlowDollar = useCompositeProxy
+      ? compositeDailyFlow
+      : chaikinFlow;
 
     return {
       date: candle.date.toISOString().slice(0, 10),
@@ -233,7 +314,15 @@ export function calculateCapitalFlowsFromCandles({
       close: candle.close,
       volume: candle.volume,
       moneyFlowMultiplier: Number(multiplier.toFixed(6)),
-      dailyFlowDollar,
+      dailyFlowDollar: Number.isFinite(dailyFlowDollar) ? dailyFlowDollar : 0,
+      chaikinDailyFlowDollar: Number.isFinite(chaikinFlow) ? chaikinFlow : 0,
+      priceChangeWeightedFlow: Number.isFinite(priceChangeWeightedFlow)
+        ? priceChangeWeightedFlow
+        : 0,
+      mfiLikeFlow: Number.isFinite(mfiLikeFlow) ? mfiLikeFlow : 0,
+      obvDirectionalFlow: Number.isFinite(obvDirectionalFlow)
+        ? obvDirectionalFlow
+        : 0,
     };
   });
   const chaikinFlows = dailyFlowDetails.map((flow) => flow.dailyFlowDollar);
@@ -352,7 +441,22 @@ export function calculateCapitalFlowsFromCandles({
         : "PROXY_PROVIDER",
     rawProviderPayloadSummary: undefined,
     moneyFlowMultiplierLatest: latestFlow?.moneyFlowMultiplier ?? null,
-    chaikinDailyFlowLatest: latestFlow?.dailyFlowDollar ?? null,
+    chaikinDailyFlowLatest: latestFlow?.chaikinDailyFlowDollar ?? null,
+    compositeDailyFlowLatest: useCompositeProxy
+      ? latestFlow?.dailyFlowDollar ?? null
+      : null,
+    priceChangeWeightedFlowLatest: useCompositeProxy
+      ? latestFlow?.priceChangeWeightedFlow ?? null
+      : null,
+    mfiLikeFlowLatest: useCompositeProxy
+      ? latestFlow?.mfiLikeFlow ?? null
+      : null,
+    obvDirectionalFlowLatest: useCompositeProxy
+      ? latestFlow?.obvDirectionalFlow ?? null
+      : null,
+    compositeFlowWeights: useCompositeProxy
+      ? { ...COMPOSITE_FLOW_WEIGHTS }
+      : undefined,
     flowDataUpdatedAt: latestFlow?.date,
     avgDollarVolume20D,
     flow3DToMarketCapPct,
@@ -421,6 +525,11 @@ export function zeroCapitalFlows(
     rawProviderPayloadSummary: undefined,
     moneyFlowMultiplierLatest: null,
     chaikinDailyFlowLatest: null,
+    compositeDailyFlowLatest: null,
+    priceChangeWeightedFlowLatest: null,
+    mfiLikeFlowLatest: null,
+    obvDirectionalFlowLatest: null,
+    compositeFlowWeights: undefined,
     flowDataUpdatedAt: undefined,
     avgDollarVolume20D: null,
     flow3DToMarketCapPct: null,
