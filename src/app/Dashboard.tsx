@@ -521,6 +521,18 @@ function DiagnosticsSection({
               label="Deduped"
               value={snapshot.dedupedCoverageTickerCount ?? coverage?.dedupedCoverageCount}
             />
+            <DiagnosticMetric
+              label="Signal Snapshots"
+              value={snapshot.signalSnapshotPersistenceStatus}
+            />
+            <DiagnosticMetric
+              label="Rows Saved"
+              value={snapshot.signalSnapshotRowsSaved}
+            />
+            <DiagnosticMetric
+              label="Signal Date"
+              value={snapshot.signalSnapshotLatestDate}
+            />
           </div>
         </article>
 
@@ -725,7 +737,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.6.9.2
+                AlphaScout Capital Flow System V1.7.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

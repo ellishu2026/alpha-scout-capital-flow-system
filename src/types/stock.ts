@@ -321,6 +321,10 @@ export type SnapshotResponse = {
   fallbackToYfinanceCount?: number;
   providerCallsUsed?: ProviderCoverageSummary["providerCallsUsed"];
   providerCallsRemaining?: ProviderCoverageSummary["providerCallsRemaining"];
+  signalSnapshotPersistenceStatus?: "SAVED" | "FAILED" | "SKIPPED";
+  signalSnapshotRowsSaved?: number;
+  signalSnapshotError?: string | null;
+  signalSnapshotLatestDate?: string | null;
   timeoutGuardTriggered?: boolean;
   elapsedMs?: number;
   refreshWorkItemCount?: number;
@@ -358,6 +362,10 @@ export type RefreshResult = {
   persistenceErrorCode?: string;
   persistenceErrorDetails?: string;
   providerCoverageSummary?: ProviderCoverageSummary;
+  signalSnapshotPersistenceStatus?: "SAVED" | "FAILED" | "SKIPPED";
+  signalSnapshotRowsSaved?: number;
+  signalSnapshotError?: string | null;
+  signalSnapshotLatestDate?: string | null;
   timeoutGuardTriggered?: boolean;
   elapsedMs?: number;
   refreshWorkItemCount?: number;

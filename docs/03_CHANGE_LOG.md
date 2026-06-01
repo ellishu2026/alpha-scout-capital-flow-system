@@ -1,5 +1,13 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.1 Signal Snapshot Table
+
+- Added SQL for `alpha_scout_signal_snapshots` with daily per-ticker signal, score, provider, quality, and forward-return placeholder fields.
+- Added signal snapshot upsert during cron refresh with non-blocking persistence status fields.
+- Added `/api/debug/signals` for authorized signal snapshot inspection.
+- Added signal snapshot status, rows saved, and latest signal date to dashboard diagnostics.
+- Updated dashboard title to V1.7.1.
+
 ## V1.6.9.2 Dashboard UX Refinements
 
 - Added punctuation to the scoring label.

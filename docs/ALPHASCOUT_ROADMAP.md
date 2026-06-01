@@ -17,10 +17,10 @@
 - V1.6.9 Flow Data Dashboard Diagnostics
 - V1.6.9.1 Diagnostics Collapse & Quota Label Cleanup
 - V1.6.9.2 Scoring Label, Diagnostics Summary Wording & Sticky Ticker Column
+- V1.7.1 Signal Snapshot Table
 
 ## Next Recommended Steps
 
-- V1.7.1 Signal Snapshot Table
 - V1.7.2 Forward Return Tracking
 - V1.7.3 Win Rate & Signal Quality Report
 - V1.7.4 Buy / Watch / Avoid Signal Upgrade
@@ -29,3 +29,9 @@
 
 - V1.5.1 Expand market universe
 - V1.5.2 Scan performance optimization
+
+## Signal Snapshot Foundation
+
+V1.7.1 stores daily signal records in `alpha_scout_signal_snapshots`, one row per ticker, refresh date, mode, and source bucket. These rows preserve rank, scores, signal labels, provider metadata, and flow data quality diagnostics at the time of refresh.
+
+Forward return fields are included as placeholders and will be populated in V1.7.2. This table is the base for future win-rate and signal-quality analysis in V1.7.3 and signal upgrade work in V1.7.4.

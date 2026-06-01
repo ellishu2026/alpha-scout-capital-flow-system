@@ -20,6 +20,7 @@ import {
   type SnapshotStoreWriteResult,
   upsertTodaySnapshot,
 } from "@/lib/snapshotStore";
+import { upsertSignalSnapshots } from "@/lib/signalSnapshots";
 import { isSupabaseConfigured } from "@/lib/supabaseAdmin";
 import type {
   CoverageSourceBucket,
@@ -533,7 +534,7 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
         : marketTop15Items.length),
     dedupedCoverageTickerCount: providerCoverageSummary.dedupedCoverageCount,
   });
-  const snapshot: SnapshotResponse = {
+  const snapshotWithoutSignalStatus: SnapshotResponse = {
     ...marketSnapshotForSave,
     persistenceStatus,
     previousSnapshotFound: Boolean(previousMarketSnapshot),
@@ -543,6 +544,25 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     fixedSnapshot,
     ...timeoutSummary,
   };
+  const signalSnapshotResult = await upsertSignalSnapshots({
+    marketSnapshot: snapshotWithoutSignalStatus,
+    fixedSnapshot,
+  });
+  const signalSnapshotFields = {
+    signalSnapshotPersistenceStatus: signalSnapshotResult.status,
+    signalSnapshotRowsSaved: signalSnapshotResult.rowsSaved,
+    signalSnapshotError: signalSnapshotResult.error,
+    signalSnapshotLatestDate: signalSnapshotResult.latestSignalDate,
+  };
+  const snapshot: SnapshotResponse = {
+    ...snapshotWithoutSignalStatus,
+    ...signalSnapshotFields,
+  };
+
+  if (currentMode === "MARKET_SCAN" && marketSaveResult.ok) {
+    await upsertTodaySnapshot("MARKET_SCAN", withoutFixedSnapshot(snapshot));
+  }
+
   const usedLiveSnapshot =
     snapshot.status === "LIVE_MARKET" ||
     snapshot.status === "PARTIAL_LIVE" ||
@@ -562,6 +582,7 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     persistenceErrorCode: snapshot.persistenceErrorCode,
     persistenceErrorDetails: snapshot.persistenceErrorDetails,
     providerCoverageSummary,
+    ...signalSnapshotFields,
     ...timeoutSummary,
     message: liveMode
       ? usedLiveSnapshot
