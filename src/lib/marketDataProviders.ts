@@ -505,40 +505,6 @@ export async function fetchProviderCandles(
   }
 
   try {
-    providerPriorityTried.push("POLYGON");
-    const polygon = await fetchPolygonCandles(symbol);
-    const archive = await archiveMarketDataIfPossible({
-      ticker: symbol,
-      provider: "POLYGON",
-      candles: polygon.candles,
-      payloadSummary: polygon.summary,
-    });
-
-    return {
-      candles: polygon.candles,
-      providerUsed: "POLYGON",
-      dataSource: "POLYGON",
-      quality: "REAL_PROVIDER",
-      providerPriorityTried,
-      providerErrors: archive.error
-        ? [...providerErrors, providerError("POLYGON", archive.error)]
-        : providerErrors,
-      providerEndpointType: polygon.summary.endpointType,
-      archiveLookupTried,
-      archiveProviderChecked,
-      archiveHitProvider: null,
-      archiveStatus: archive.status,
-      rawProviderPayloadSummary: polygon.summary,
-      providerCallBudget: getProviderBudgetSummary(),
-      providerCallsUsed: getProviderCallsUsedSummary(),
-    };
-  } catch (error) {
-    providerErrors.push(
-      providerError("POLYGON", error instanceof Error ? error.message : "UNKNOWN_ERROR"),
-    );
-  }
-
-  try {
     providerPriorityTried.push("ALPHA_VANTAGE");
     const alphaVantage = await fetchAlphaVantageCandles(symbol);
     const archive = await archiveMarketDataIfPossible({
@@ -572,6 +538,40 @@ export async function fetchProviderCandles(
         "ALPHA_VANTAGE",
         error instanceof Error ? error.message : "UNKNOWN_ERROR",
       ),
+    );
+  }
+
+  try {
+    providerPriorityTried.push("POLYGON");
+    const polygon = await fetchPolygonCandles(symbol);
+    const archive = await archiveMarketDataIfPossible({
+      ticker: symbol,
+      provider: "POLYGON",
+      candles: polygon.candles,
+      payloadSummary: polygon.summary,
+    });
+
+    return {
+      candles: polygon.candles,
+      providerUsed: "POLYGON",
+      dataSource: "POLYGON",
+      quality: "REAL_PROVIDER",
+      providerPriorityTried,
+      providerErrors: archive.error
+        ? [...providerErrors, providerError("POLYGON", archive.error)]
+        : providerErrors,
+      providerEndpointType: polygon.summary.endpointType,
+      archiveLookupTried,
+      archiveProviderChecked,
+      archiveHitProvider: null,
+      archiveStatus: archive.status,
+      rawProviderPayloadSummary: polygon.summary,
+      providerCallBudget: getProviderBudgetSummary(),
+      providerCallsUsed: getProviderCallsUsedSummary(),
+    };
+  } catch (error) {
+    providerErrors.push(
+      providerError("POLYGON", error instanceof Error ? error.message : "UNKNOWN_ERROR"),
     );
   }
 

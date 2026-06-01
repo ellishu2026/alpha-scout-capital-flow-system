@@ -24,6 +24,10 @@ export type ProviderUsed =
   | "POLYGON_ARCHIVE";
 export type ArchiveHitProvider = "POLYGON" | "ALPHA_VANTAGE" | null;
 export type CapitalFlowQuality = "LIVE_PROXY" | "REAL_PROVIDER" | "MOCK" | "FALLBACK";
+export type CoverageSourceBucket =
+  | "FIXED_WATCHLIST"
+  | "MARKET_SCAN_TOP15"
+  | "BOTH";
 
 export type FinancialDataSource = "SEC" | "FALLBACK" | "N/A";
 export type FinancialPeriodType =
@@ -152,7 +156,11 @@ export type StockCandidate = {
     | "V1.6.4_YFINANCE_CHAIKIN"
     | "V1.6.4.1_ARCHIVE_PROVIDER_CHAIKIN"
     | "V1.6.4.1_REAL_PROVIDER_CHAIKIN"
-    | "V1.6.4.1_YFINANCE_CHAIKIN";
+    | "V1.6.4.1_YFINANCE_CHAIKIN"
+    | "V1.6.5_ARCHIVE_PROVIDER_CHAIKIN"
+    | "V1.6.5_REAL_PROVIDER_CHAIKIN"
+    | "V1.6.5_YFINANCE_CHAIKIN";
+  sourceBucket?: CoverageSourceBucket;
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
   providerUsed?: ProviderUsed;
@@ -185,6 +193,31 @@ export type StockCandidate = {
   rawFlowScore?: number;
 };
 
+export type ProviderCoverageSummary = {
+  totalTickers: number;
+  fixedListCount: number;
+  marketScanTop15Count: number;
+  dedupedCoverageCount: number;
+  archiveHitCount: number;
+  alphaVantageLiveCount: number;
+  polygonLiveCount: number;
+  yfinanceFallbackCount: number;
+  realProviderCoverageCount: number;
+  realProviderCoveragePct: number;
+  providerCallsUsed: {
+    polygon: number;
+    alphaVantage: number;
+  };
+  providerCallsRemaining: {
+    polygon: number;
+    alphaVantage: number;
+  };
+  archiveHitTickers: string[];
+  alphaVantageLiveTickers: string[];
+  yfinanceFallbackTickers: string[];
+  providerErrorTickers: string[];
+};
+
 export type SnapshotResponse = {
   updatedAt: string;
   dataMode: "Daily Close Snapshot";
@@ -201,6 +234,13 @@ export type SnapshotResponse = {
   persistenceError?: string;
   persistenceErrorCode?: string;
   persistenceErrorDetails?: string;
+  providerCoverageSummary?: ProviderCoverageSummary;
+  realProviderCoveragePct?: number;
+  archiveHitCount?: number;
+  liveProviderSuccessCount?: number;
+  fallbackToYfinanceCount?: number;
+  providerCallsUsed?: ProviderCoverageSummary["providerCallsUsed"];
+  providerCallsRemaining?: ProviderCoverageSummary["providerCallsRemaining"];
   movementSummary?: {
     newCount: number;
     upCount: number;
@@ -224,6 +264,7 @@ export type RefreshResult = {
   persistenceError?: string;
   persistenceErrorCode?: string;
   persistenceErrorDetails?: string;
+  providerCoverageSummary?: ProviderCoverageSummary;
   message: string;
   snapshot: SnapshotResponse;
 };

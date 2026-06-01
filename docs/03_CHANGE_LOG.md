@@ -1,5 +1,17 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.5 Provider Coverage Manager
+
+- Added Provider Coverage Manager for daily refresh.
+- Daily refresh now covers Fixed List 11 plus Market Scan Top 15 candidates.
+- Added `refreshCoverageUniverse` behavior through deduped fixed-list and market-scan coverage metadata.
+- Added `providerCoverageSummary` with archive hits, live provider hits, YFINANCE fallbacks, provider errors, and provider call budget fields.
+- Archive hits do not consume provider quota.
+- Alpha Vantage live calls remain capped by configured provider limits.
+- YFINANCE_CHAIKIN remains fallback when archive and real provider data are unavailable.
+- Added compact dashboard provider coverage diagnostics.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.6.4.1 True Archive-First Provider Lookup
 
 - Added true archive-first provider lookup before any Polygon or Alpha Vantage network calls.

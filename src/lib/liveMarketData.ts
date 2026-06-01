@@ -37,7 +37,8 @@ import YahooFinance from "yahoo-finance2";
 const MID_CAP_MIN = 50_000_000_000;
 const MID_CAP_MAX = 300_000_000_000;
 const HIGH_PRICE_MIN = 800;
-const TOP_CANDIDATE_LIMIT = 11;
+export const TOP_CANDIDATE_LIMIT = 11;
+export const COVERAGE_MARKET_SCAN_LIMIT = 15;
 const QUOTE_CONCURRENCY = 8;
 const CANDLE_CONCURRENCY = 4;
 
@@ -506,7 +507,10 @@ export async function buildFixedWatchlistSnapshot(): Promise<SnapshotResponse> {
   }
 
   const rankedCandidates = rankCandidates(
-    results.map((result) => result.candidate),
+    results.map((result) => ({
+      ...result.candidate,
+      sourceBucket: "FIXED_WATCHLIST" as const,
+    })),
     TOP_CANDIDATE_LIMIT,
   );
 
@@ -525,7 +529,9 @@ export async function buildFixedWatchlistSnapshot(): Promise<SnapshotResponse> {
   };
 }
 
-export async function buildMarketScanSnapshot(): Promise<SnapshotResponse> {
+export async function buildMarketScanSnapshot(
+  limit = TOP_CANDIDATE_LIMIT,
+): Promise<SnapshotResponse> {
   const symbols = Array.from(new Set(MARKET_SCAN_SYMBOLS));
   const quoteResults = await mapWithConcurrency(
     symbols,
@@ -554,8 +560,11 @@ export async function buildMarketScanSnapshot(): Promise<SnapshotResponse> {
   );
 
   const rankedCandidates = rankCandidates(
-    scanResults.map((result) => result.candidate),
-    TOP_CANDIDATE_LIMIT,
+    scanResults.map((result) => ({
+      ...result.candidate,
+      sourceBucket: "MARKET_SCAN_TOP15" as const,
+    })),
+    limit,
   );
 
   if (rankedCandidates.length === 0) {

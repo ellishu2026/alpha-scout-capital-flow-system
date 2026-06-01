@@ -348,6 +348,7 @@ export function Dashboard({
       : allSnapshot.movementSummary;
   const droppedSymbols =
     activeTab === "FIXED_LIST" ? [] : (allSnapshot.droppedSymbols ?? []);
+  const providerCoverage = allSnapshot.providerCoverageSummary;
   const summaryCards = [
     {
       label: "Universe",
@@ -369,6 +370,20 @@ export function Dashboard({
       value: getDataStatusLabel(allSnapshot.status),
       detail: `Snapshot: ${getPersistenceLabel(allSnapshot)}`,
     },
+    {
+      label: "Provider Coverage",
+      value:
+        providerCoverage != null
+          ? `${providerCoverage.realProviderCoveragePct}%`
+          : "N/A",
+      detail:
+        providerCoverage != null
+          ? `Archive ${providerCoverage.archiveHitCount} · Live ${
+              providerCoverage.alphaVantageLiveCount +
+              providerCoverage.polygonLiveCount
+            } · Fallback ${providerCoverage.yfinanceFallbackCount}`
+          : "Awaiting refresh coverage summary",
+    },
   ];
 
   return (
@@ -381,7 +396,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.6.4.1
+                AlphaScout Capital Flow System V1.6.5
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -424,7 +439,7 @@ export function Dashboard({
       </section>
 
       <section className="mx-auto w-full max-w-[1600px] px-2.5 py-2.5 sm:px-3 lg:px-4">
-        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-5">
           {summaryCards.map((card) => (
             <article
               key={card.label}
