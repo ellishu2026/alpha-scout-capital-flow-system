@@ -46,6 +46,15 @@ const tableHeaders = [
   "Data",
 ];
 
+const stickyHeaderClass =
+  "sticky z-20 whitespace-nowrap border-b border-slate-200 bg-slate-50 px-1.5 py-1.5 text-left text-[9px] font-bold uppercase text-slate-500";
+const normalHeaderClass =
+  "whitespace-nowrap border-b border-slate-200 px-1.5 py-1.5 text-left text-[9px] font-bold uppercase text-slate-500";
+const rankStickyCellClass =
+  "sticky left-0 z-10 w-12 min-w-12 border-r border-slate-200 bg-white px-1.5 py-1.5 text-left text-[10px] font-semibold tabular-nums text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]";
+const tickerStickyCellClass =
+  "sticky left-12 z-10 w-20 min-w-20 border-r border-slate-200 bg-white px-1.5 py-1.5 text-[11px] font-bold text-slate-950 shadow-[2px_0_3px_rgba(15,23,42,0.05)]";
+
 const MID_CAP_MIN = 50_000_000_000;
 const MID_CAP_MAX = 300_000_000_000;
 const HIGH_PRICE_MIN = 800;
@@ -286,7 +295,7 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
 
   return (
     <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50/80">
-      <td className="px-1.5 py-1.5 text-left text-[10px] font-semibold tabular-nums text-slate-900">
+      <td className={rankStickyCellClass}>
         #{candidate.rank}
       </td>
       <td className="px-1.5 py-1.5">
@@ -298,7 +307,7 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
           {candidate.changeLabel ?? "-"}
         </span>
       </td>
-      <td className="px-1.5 py-1.5 text-[11px] font-bold text-slate-950">
+      <td className={tickerStickyCellClass}>
         {candidate.ticker}
       </td>
       <td className="px-1.5 py-1.5">
@@ -645,10 +654,15 @@ export function Dashboard({
   const droppedSymbols =
     activeTab === "FIXED_LIST" ? [] : (allSnapshot.droppedSymbols ?? []);
   const providerCoverage = allSnapshot.providerCoverageSummary;
+  const qualitySummary = providerCoverage?.dataQualitySummary;
   const diagnosticsSummary = providerCoverage
-    ? `Real ${providerCoverage.realProviderCoveragePct}% · Data Q A${
-        providerCoverage.dataQualitySummary?.gradeACount ?? 0
-      } · Archive ${providerCoverage.archiveHitCount} · Proxy ${
+    ? `Real ${providerCoverage.realProviderCoveragePct}% · Quality A:${
+        qualitySummary?.gradeACount ?? 0
+      } B:${qualitySummary?.gradeBCount ?? 0} C:${
+        qualitySummary?.gradeCCount ?? 0
+      } D:${qualitySummary?.gradeDCount ?? 0} · Archive ${
+        providerCoverage.archiveHitCount
+      } · Proxy ${
         providerCoverage.compositeProxyFallbackCount
       }`
     : "Diagnostics pending";
@@ -711,7 +725,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.6.9.1
+                AlphaScout Capital Flow System V1.6.9.2
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -746,9 +760,11 @@ export function Dashboard({
 
           <div className="flex flex-col gap-1.5 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-              <span className="font-medium text-slate-700">Scoring</span>
-              <span className="text-slate-600">
-                Margin 30% · FCF 40% · Capital Flow 30%
+              <span className="font-medium text-slate-700">
+                Scoring:{" "}
+                <span className="font-normal text-slate-600">
+                  Margin 30% · FCF 40% · Capital Flow 30%
+                </span>
               </span>
             </div>
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
@@ -847,14 +863,20 @@ export function Dashboard({
             <table className="w-full min-w-[1320px] border-collapse text-left">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
-                  {tableHeaders.map((header) => (
-                    <th
-                      key={header}
-                      className="whitespace-nowrap border-b border-slate-200 px-1.5 py-1.5 text-left text-[9px] font-bold uppercase text-slate-500"
-                    >
-                      {header}
-                    </th>
-                  ))}
+                  {tableHeaders.map((header) => {
+                    const stickyClass =
+                      header === "Rank"
+                        ? `${stickyHeaderClass} left-0 w-12 min-w-12 border-r shadow-[2px_0_3px_rgba(15,23,42,0.05)]`
+                        : header === "Ticker"
+                          ? `${stickyHeaderClass} left-12 w-20 min-w-20 border-r shadow-[2px_0_3px_rgba(15,23,42,0.05)]`
+                          : normalHeaderClass;
+
+                    return (
+                      <th key={header} className={stickyClass}>
+                        {header}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>

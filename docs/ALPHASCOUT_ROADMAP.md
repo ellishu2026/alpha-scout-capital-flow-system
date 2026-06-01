@@ -16,6 +16,7 @@
 - V1.6.8 Provider Data Quality Scoring
 - V1.6.9 Flow Data Dashboard Diagnostics
 - V1.6.9.1 Diagnostics Collapse & Quota Label Cleanup
+- V1.6.9.2 Scoring Label, Diagnostics Summary Wording & Sticky Ticker Column
 
 ## Next Recommended Steps
 

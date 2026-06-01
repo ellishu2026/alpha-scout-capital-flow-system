@@ -1,5 +1,12 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.9.2 Dashboard UX Refinements
+
+- Added punctuation to the scoring label.
+- Clarified collapsed diagnostics quality summary wording.
+- Made rank and ticker columns sticky in the desktop ranked-candidates table.
+- Updated dashboard title to V1.6.9.2.
+
 ## V1.6.9.1 Diagnostics Collapse & Quota Label Cleanup
 
 - Collapsed Flow Data Diagnostics by default behind a compact dashboard toggle.
