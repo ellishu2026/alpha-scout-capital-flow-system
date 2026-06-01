@@ -159,7 +159,10 @@ export type StockCandidate = {
     | "V1.6.4.1_YFINANCE_CHAIKIN"
     | "V1.6.5_ARCHIVE_PROVIDER_CHAIKIN"
     | "V1.6.5_REAL_PROVIDER_CHAIKIN"
-    | "V1.6.5_YFINANCE_CHAIKIN";
+    | "V1.6.5_YFINANCE_CHAIKIN"
+    | "V1.6.5.1_ARCHIVE_PROVIDER_CHAIKIN"
+    | "V1.6.5.1_REAL_PROVIDER_CHAIKIN"
+    | "V1.6.5.1_YFINANCE_CHAIKIN";
   sourceBucket?: CoverageSourceBucket;
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
@@ -212,6 +215,7 @@ export type ProviderCoverageSummary = {
     polygon: number;
     alphaVantage: number;
   };
+  polygonLiveEnabled: boolean;
   archiveHitTickers: string[];
   alphaVantageLiveTickers: string[];
   yfinanceFallbackTickers: string[];

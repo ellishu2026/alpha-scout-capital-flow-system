@@ -5,7 +5,10 @@ import {
   buildMarketScanSnapshot,
   TOP_CANDIDATE_LIMIT,
 } from "@/lib/liveMarketData";
-import { getProviderBudgetSummary } from "@/lib/marketDataProviders";
+import {
+  getPolygonLiveEnabled,
+  getProviderBudgetSummary,
+} from "@/lib/marketDataProviders";
 import { applyRealRankMovement } from "@/lib/rankMovement";
 import {
   getLatestSnapshot as getLatestSavedSnapshot,
@@ -216,6 +219,7 @@ function buildProviderCoverageSummary({
       polygon: providerBudget.polygon.remaining,
       alphaVantage: providerBudget.alphaVantage.remaining,
     },
+    polygonLiveEnabled: getPolygonLiveEnabled(),
     archiveHitTickers,
     alphaVantageLiveTickers,
     yfinanceFallbackTickers,

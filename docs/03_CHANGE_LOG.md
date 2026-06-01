@@ -1,5 +1,16 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.5.1 Polygon Live Call Guard
+
+- Disabled Polygon live calls by default.
+- Added `POLYGON_LIVE_ENABLED` flag; Polygon live calls only run when set to `true`.
+- Polygon archive lookup remains enabled and does not count as a provider call.
+- Alpha Vantage remains the primary live provider after archive miss.
+- YFINANCE_CHAIKIN remains fallback when archive and Alpha Vantage are unavailable.
+- Prevented wasted Polygon HTTP_401 attempts from refresh coverage runs.
+- Added `polygonLiveEnabled` to provider coverage summary.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.6.5 Provider Coverage Manager
 
 - Added Provider Coverage Manager for daily refresh.

@@ -15,6 +15,9 @@ import { getSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 type ProviderName = "POLYGON" | "ALPHA_VANTAGE";
 
+export const POLYGON_LIVE_ENABLED =
+  process.env.POLYGON_LIVE_ENABLED === "true";
+
 export type ProviderArchiveStatus = {
   archived: boolean;
   status: string;
@@ -47,6 +50,7 @@ export type ProviderFetchMetadata = {
     polygon: number;
     alphaVantage: number;
   };
+  polygonLiveEnabled: boolean;
 };
 
 export type ProviderOhlcvResult = ProviderFetchMetadata & {
@@ -75,6 +79,10 @@ export function getProviderCallsUsedSummary() {
   };
 }
 
+export function getPolygonLiveEnabled() {
+  return POLYGON_LIVE_ENABLED;
+}
+
 export function emptyProviderMetadata(): ProviderFetchMetadata {
   return {
     providerPriorityTried: [],
@@ -84,6 +92,7 @@ export function emptyProviderMetadata(): ProviderFetchMetadata {
     archiveHitProvider: null,
     providerCallBudget: getProviderBudgetSummary(),
     providerCallsUsed: getProviderCallsUsedSummary(),
+    polygonLiveEnabled: POLYGON_LIVE_ENABLED,
   };
 }
 
@@ -477,6 +486,7 @@ export async function fetchProviderCandles(
       rawProviderPayloadSummary: archivedPolygon.summary,
       providerCallBudget: getProviderBudgetSummary(),
       providerCallsUsed: getProviderCallsUsedSummary(),
+      polygonLiveEnabled: POLYGON_LIVE_ENABLED,
     };
   }
 
@@ -501,6 +511,7 @@ export async function fetchProviderCandles(
       rawProviderPayloadSummary: archivedAlphaVantage.summary,
       providerCallBudget: getProviderBudgetSummary(),
       providerCallsUsed: getProviderCallsUsedSummary(),
+      polygonLiveEnabled: POLYGON_LIVE_ENABLED,
     };
   }
 
@@ -531,6 +542,7 @@ export async function fetchProviderCandles(
       rawProviderPayloadSummary: alphaVantage.summary,
       providerCallBudget: getProviderBudgetSummary(),
       providerCallsUsed: getProviderCallsUsedSummary(),
+      polygonLiveEnabled: POLYGON_LIVE_ENABLED,
     };
   } catch (error) {
     providerErrors.push(
@@ -541,38 +553,41 @@ export async function fetchProviderCandles(
     );
   }
 
-  try {
-    providerPriorityTried.push("POLYGON");
-    const polygon = await fetchPolygonCandles(symbol);
-    const archive = await archiveMarketDataIfPossible({
-      ticker: symbol,
-      provider: "POLYGON",
-      candles: polygon.candles,
-      payloadSummary: polygon.summary,
-    });
+  if (POLYGON_LIVE_ENABLED) {
+    try {
+      providerPriorityTried.push("POLYGON");
+      const polygon = await fetchPolygonCandles(symbol);
+      const archive = await archiveMarketDataIfPossible({
+        ticker: symbol,
+        provider: "POLYGON",
+        candles: polygon.candles,
+        payloadSummary: polygon.summary,
+      });
 
-    return {
-      candles: polygon.candles,
-      providerUsed: "POLYGON",
-      dataSource: "POLYGON",
-      quality: "REAL_PROVIDER",
-      providerPriorityTried,
-      providerErrors: archive.error
-        ? [...providerErrors, providerError("POLYGON", archive.error)]
-        : providerErrors,
-      providerEndpointType: polygon.summary.endpointType,
-      archiveLookupTried,
-      archiveProviderChecked,
-      archiveHitProvider: null,
-      archiveStatus: archive.status,
-      rawProviderPayloadSummary: polygon.summary,
-      providerCallBudget: getProviderBudgetSummary(),
-      providerCallsUsed: getProviderCallsUsedSummary(),
-    };
-  } catch (error) {
-    providerErrors.push(
-      providerError("POLYGON", error instanceof Error ? error.message : "UNKNOWN_ERROR"),
-    );
+      return {
+        candles: polygon.candles,
+        providerUsed: "POLYGON",
+        dataSource: "POLYGON",
+        quality: "REAL_PROVIDER",
+        providerPriorityTried,
+        providerErrors: archive.error
+          ? [...providerErrors, providerError("POLYGON", archive.error)]
+          : providerErrors,
+        providerEndpointType: polygon.summary.endpointType,
+        archiveLookupTried,
+        archiveProviderChecked,
+        archiveHitProvider: null,
+        archiveStatus: archive.status,
+        rawProviderPayloadSummary: polygon.summary,
+        providerCallBudget: getProviderBudgetSummary(),
+        providerCallsUsed: getProviderCallsUsedSummary(),
+        polygonLiveEnabled: POLYGON_LIVE_ENABLED,
+      };
+    } catch (error) {
+      providerErrors.push(
+        providerError("POLYGON", error instanceof Error ? error.message : "UNKNOWN_ERROR"),
+      );
+    }
   }
 
   return {
@@ -584,5 +599,6 @@ export async function fetchProviderCandles(
     archiveHitProvider: null,
     providerCallBudget: getProviderBudgetSummary(),
     providerCallsUsed: getProviderCallsUsedSummary(),
+    polygonLiveEnabled: POLYGON_LIVE_ENABLED,
   };
 }
