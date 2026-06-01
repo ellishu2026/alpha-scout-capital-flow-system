@@ -42,6 +42,7 @@ const tableHeaders = [
   "Flow Δ",
   "Signal",
   "Data Q",
+  "Provider",
   "Data",
 ];
 
@@ -171,6 +172,73 @@ function qualityClass(grade?: StockCandidate["flowDataQualityGrade"]) {
   if (grade === "D") return "bg-rose-50 text-rose-700 ring-rose-200";
 
   return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function providerShortLabel(provider?: StockCandidate["providerUsed"]) {
+  const labels: Record<string, string> = {
+    ALPHA_VANTAGE_ARCHIVE: "AV Archive",
+    TWELVE_DATA_ARCHIVE: "Twelve Archive",
+    EODHD_ARCHIVE: "EODHD Archive",
+    POLYGON_ARCHIVE: "Polygon Archive",
+    ALPHA_VANTAGE: "AV Live",
+    TWELVE_DATA: "Twelve Live",
+    EODHD: "EODHD Live",
+    POLYGON: "Polygon Live",
+    YFINANCE_COMPOSITE_PROXY: "YF Proxy",
+    YFINANCE_CHAIKIN: "YF Chaikin",
+    MOCK: "Mock",
+  };
+
+  return provider ? (labels[provider] ?? provider) : "N/A";
+}
+
+function compactFlowVersion(version?: StockCandidate["flowCalculationVersion"]) {
+  if (!version) return "N/A";
+  if (version.includes("PROVIDER_LADDER")) return "Provider Ladder";
+  if (version.includes("COMPOSITE_PROXY")) return "Composite Proxy";
+  if (version.includes("YFINANCE")) return "YFinance";
+
+  return version.replace(/^V/, "");
+}
+
+function formatMaybeNumber(value: number | null | undefined, suffix = "") {
+  return typeof value === "number" && Number.isFinite(value)
+    ? `${value}${suffix}`
+    : "N/A";
+}
+
+function TickerList({
+  label,
+  tickers,
+}: {
+  label: string;
+  tickers?: string[];
+}) {
+  return (
+    <div className="min-w-0">
+      <span className="text-slate-500">{label}</span>
+      <p className="mt-0.5 truncate font-medium text-slate-800">
+        {tickers && tickers.length > 0 ? tickers.join(", ") : "None"}
+      </p>
+    </div>
+  );
+}
+
+function DiagnosticMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) {
+  return (
+    <div>
+      <span className="text-slate-500">{label}</span>
+      <p className="mt-0.5 font-semibold text-slate-950">
+        {value ?? "N/A"}
+      </p>
+    </div>
+  );
 }
 
 function hasUnavailableFinancials(candidate: StockCandidate) {
@@ -321,11 +389,220 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
         </span>
       </td>
       <td className="px-1.5 py-1.5">
+        <span
+          title={`${candidate.archiveStatus ?? "NO_ARCHIVE_STATUS"} · ${compactFlowVersion(candidate.flowCalculationVersion)}`}
+          className="inline-flex max-w-24 truncate rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold text-slate-600 ring-1 ring-slate-200"
+        >
+          {providerShortLabel(candidate.providerUsed)}
+        </span>
+      </td>
+      <td className="px-1.5 py-1.5">
         <span className="inline-flex rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold text-slate-600 ring-1 ring-slate-200">
           {financialDataLabel(candidate)}
         </span>
       </td>
     </tr>
+  );
+}
+
+function MobileCandidateCard({ candidate }: { candidate: StockCandidate }) {
+  return (
+    <article className="rounded border border-slate-200 bg-white px-2.5 py-2 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-bold text-slate-950">
+            #{candidate.rank} {candidate.ticker}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            {providerShortLabel(candidate.providerUsed)} ·{" "}
+            {candidate.archiveStatus ?? "NO_ARCHIVE_STATUS"}
+          </p>
+        </div>
+        <span
+          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ring-1 ${signalClass(
+            candidate.signal,
+          )}`}
+        >
+          {compactSignal(candidate.signal)}
+        </span>
+      </div>
+      <div className="mt-2 grid grid-cols-3 gap-1.5 text-[11px]">
+        <div>
+          <span className="text-slate-500">Composite</span>
+          <p className="font-semibold text-slate-950">
+            {candidate.compositeScore.toFixed(1)}
+          </p>
+        </div>
+        <div>
+          <span className="text-slate-500">Data Q</span>
+          <p className="font-semibold text-slate-950">
+            {candidate.flowDataQualityGrade ?? "N/A"}{" "}
+            {candidate.flowDataQualityScore ?? ""}
+          </p>
+        </div>
+        <div>
+          <span className="text-slate-500">Flow</span>
+          <p className="font-semibold text-slate-950">
+            {compactFlowVersion(candidate.flowCalculationVersion)}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function DiagnosticsSection({
+  snapshot,
+  updatedAt,
+}: {
+  snapshot: SnapshotResponse;
+  updatedAt: string;
+}) {
+  const coverage = snapshot.providerCoverageSummary;
+  const quality = coverage?.dataQualitySummary;
+  const used = coverage?.providerCallsUsed;
+  const remaining = coverage?.providerCallsRemaining;
+
+  return (
+    <section className="mt-2.5 rounded border border-slate-200 bg-white p-2.5 shadow-sm">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-950">
+            Flow Data Diagnostics
+          </h2>
+          <p className="text-[11px] text-slate-600">
+            Provider coverage, archive usage, data quality, quota, and timeout
+            guard status.
+          </p>
+        </div>
+        <p className="text-[11px] font-medium text-slate-500">
+          Snapshot {updatedAt} UTC
+        </p>
+      </div>
+
+      <div className="mt-2 grid gap-1.5 md:grid-cols-2 xl:grid-cols-5">
+        <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+          <p className="mb-1 font-semibold text-slate-800">Refresh Health</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <DiagnosticMetric label="Status" value={getDataStatusLabel(snapshot.status)} />
+            <DiagnosticMetric label="Saved" value={getPersistenceLabel(snapshot)} />
+            <DiagnosticMetric
+              label="Timeout Guard"
+              value={snapshot.timeoutGuardTriggered ? "Triggered" : "Clear"}
+            />
+            <DiagnosticMetric label="Elapsed" value={formatMaybeNumber(snapshot.elapsedMs, "ms")} />
+            <DiagnosticMetric
+              label="Final Coverage"
+              value={snapshot.finalCoverageTickerCount ?? coverage?.dedupedCoverageCount}
+            />
+            <DiagnosticMetric
+              label="Deduped"
+              value={snapshot.dedupedCoverageTickerCount ?? coverage?.dedupedCoverageCount}
+            />
+          </div>
+        </article>
+
+        <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+          <p className="mb-1 font-semibold text-slate-800">Provider Coverage</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <DiagnosticMetric
+              label="Real %"
+              value={
+                coverage ? `${coverage.realProviderCoveragePct}%` : "N/A"
+              }
+            />
+            <DiagnosticMetric label="Real Count" value={coverage?.realProviderCoverageCount} />
+            <DiagnosticMetric
+              label="Tickers"
+              value={
+                coverage
+                  ? `${coverage.totalTickers}/${coverage.dedupedCoverageCount}`
+                  : "N/A"
+              }
+            />
+            <DiagnosticMetric label="Archive" value={coverage?.archiveHitCount} />
+            <DiagnosticMetric label="AV Live" value={coverage?.alphaVantageLiveCount} />
+            <DiagnosticMetric label="Twelve" value={coverage?.twelveDataLiveCount} />
+            <DiagnosticMetric label="EODHD" value={coverage?.eodhdLiveCount} />
+            <DiagnosticMetric label="YF Proxy" value={coverage?.yfinanceFallbackCount} />
+            <DiagnosticMetric label="Composite" value={coverage?.compositeProxyFallbackCount} />
+          </div>
+        </article>
+
+        <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+          <p className="mb-1 font-semibold text-slate-800">Data Quality</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <DiagnosticMetric
+              label="Avg"
+              value={quality?.averageFlowDataQualityScore}
+            />
+            <DiagnosticMetric
+              label="Grades"
+              value={
+                quality
+                  ? `A${quality.gradeACount} B${quality.gradeBCount} C${quality.gradeCCount} D${quality.gradeDCount}`
+                  : "N/A"
+              }
+            />
+          </div>
+          <div className="mt-1.5 space-y-1">
+            <TickerList label="Low Quality" tickers={quality?.lowQualityTickers} />
+            <TickerList label="Proxy Data" tickers={quality?.proxyDataTickers} />
+            <TickerList label="Stale Data" tickers={quality?.staleDataTickers} />
+          </div>
+        </article>
+
+        <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+          <p className="mb-1 font-semibold text-slate-800">Provider Quota</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <DiagnosticMetric
+              label="Polygon"
+              value={
+                used && remaining
+                  ? `${used.polygon}/${remaining.polygon} left`
+                  : "N/A"
+              }
+            />
+            <DiagnosticMetric
+              label="Alpha Vantage"
+              value={
+                used && remaining
+                  ? `${used.alphaVantage}/${remaining.alphaVantage} left`
+                  : "N/A"
+              }
+            />
+            <DiagnosticMetric
+              label="Twelve Data"
+              value={
+                used && remaining
+                  ? `${used.twelveData}/${remaining.twelveData} left`
+                  : "N/A"
+              }
+            />
+            <DiagnosticMetric
+              label="EODHD"
+              value={
+                used && remaining
+                  ? `${used.eodhd}/${remaining.eodhd} left`
+                  : "N/A"
+              }
+            />
+          </div>
+        </article>
+
+        <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+          <p className="mb-1 font-semibold text-slate-800">Source Lists</p>
+          <div className="grid gap-1">
+            <TickerList label="Archive" tickers={coverage?.archiveHitTickers} />
+            <TickerList label="AV Live" tickers={coverage?.alphaVantageLiveTickers} />
+            <TickerList label="Twelve Live" tickers={coverage?.twelveDataLiveTickers} />
+            <TickerList label="EODHD Live" tickers={coverage?.eodhdLiveTickers} />
+            <TickerList label="YF Proxy" tickers={coverage?.compositeProxyFallbackTickers} />
+            <TickerList label="Errors" tickers={coverage?.providerErrorTickers} />
+          </div>
+        </article>
+      </div>
+    </section>
   );
 }
 
@@ -429,7 +706,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.6.8
+                AlphaScout Capital Flow System V1.6.9
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -468,6 +745,7 @@ export function Dashboard({
               Margin 30% · FCF 40% · Capital Flow 30%
             </span>
           </div>
+          <DiagnosticsSection snapshot={allSnapshot} updatedAt={updatedAt} />
         </div>
       </section>
 
@@ -530,9 +808,18 @@ export function Dashboard({
           </div>
         </div>
 
-        <div className="mt-1.5 overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+        <div className="mt-1.5 grid gap-1.5 md:hidden">
+          {displayedItems.map((candidate) => (
+            <MobileCandidateCard
+              key={candidate.ticker}
+              candidate={candidate}
+            />
+          ))}
+        </div>
+
+        <div className="mt-1.5 hidden overflow-hidden rounded border border-slate-200 bg-white shadow-sm md:block">
           <div className="max-h-[calc(100vh-205px)] overflow-auto">
-            <table className="w-full min-w-[1240px] border-collapse text-left">
+            <table className="w-full min-w-[1320px] border-collapse text-left">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
                   {tableHeaders.map((header) => (

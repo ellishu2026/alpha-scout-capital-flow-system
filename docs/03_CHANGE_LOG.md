@@ -1,5 +1,12 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.9 Flow Data Dashboard Diagnostics
+
+- Added a compact dashboard diagnostics section for refresh health, provider coverage, data quality, provider quota, and source ticker lists.
+- Added provider short labels and flow-version hints to ticker rows.
+- Added mobile ticker cards with signal, composite score, data quality, and provider source.
+- Updated dashboard title to V1.6.9.
+
 ## V1.6.8 Provider Data Quality Scoring
 
 - Added flow data quality scoring, grades, reasons, and transparent input diagnostics to ticker items and debug flow responses.
