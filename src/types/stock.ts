@@ -39,6 +39,27 @@ export type CoverageSourceBucket =
   | "FIXED_WATCHLIST"
   | "MARKET_SCAN_TOP15"
   | "BOTH";
+export type FlowDataQualityGrade = "A" | "B" | "C" | "D";
+
+export type FlowDataQualityInputs = {
+  providerUsed?: ProviderUsed;
+  capitalFlowDataSource?: CapitalFlowDataSource;
+  capitalFlowQuality?: CapitalFlowQuality;
+  providerEndpointType?: string;
+  archiveStatus?: string;
+  archiveHitProvider?: ArchiveHitProvider;
+  flowDataUpdatedAt?: string;
+  rawProviderLatestDate?: string;
+  providerFreshnessDays: number | null;
+  archiveAgeDays: number | null;
+  isArchive: boolean;
+  isLiveProvider: boolean;
+  isCompositeProxy: boolean;
+  hasFullOHLCV: boolean;
+  hasVolume: boolean;
+  recentDailyFlowCount: number;
+  expectedMinimumDailyFlowCount: number;
+};
 
 export type FinancialDataSource = "SEC" | "FALLBACK" | "N/A";
 export type FinancialPeriodType =
@@ -180,7 +201,9 @@ export type StockCandidate = {
     | "V1.6.7.1_PROVIDER_LADDER_CHAIKIN"
     | "V1.6.7.1_COMPOSITE_PROXY"
     | "V1.6.7.2_PROVIDER_LADDER_CHAIKIN"
-    | "V1.6.7.2_COMPOSITE_PROXY";
+    | "V1.6.7.2_COMPOSITE_PROXY"
+    | "V1.6.8_PROVIDER_LADDER_CHAIKIN"
+    | "V1.6.8_COMPOSITE_PROXY";
   sourceBucket?: CoverageSourceBucket;
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
@@ -222,6 +245,10 @@ export type StockCandidate = {
   shortTermFlowAcceleration?: number | null;
   normalizedFlowScore?: number;
   rawFlowScore?: number;
+  flowDataQualityScore?: number;
+  flowDataQualityGrade?: FlowDataQualityGrade;
+  flowDataQualityReasons?: string[];
+  flowDataQualityInputs?: FlowDataQualityInputs;
 };
 
 export type ProviderCoverageSummary = {
@@ -259,6 +286,16 @@ export type ProviderCoverageSummary = {
   yfinanceFallbackTickers: string[];
   compositeProxyFallbackTickers: string[];
   providerErrorTickers: string[];
+  dataQualitySummary?: {
+    gradeACount: number;
+    gradeBCount: number;
+    gradeCCount: number;
+    gradeDCount: number;
+    averageFlowDataQualityScore: number | null;
+    lowQualityTickers: string[];
+    proxyDataTickers: string[];
+    staleDataTickers: string[];
+  };
 };
 
 export type SnapshotResponse = {

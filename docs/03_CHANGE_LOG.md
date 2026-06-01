@@ -1,5 +1,12 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.8 Provider Data Quality Scoring
+
+- Added flow data quality scoring, grades, reasons, and transparent input diagnostics to ticker items and debug flow responses.
+- Added provider coverage data quality summary with grade counts, average quality score, proxy tickers, stale tickers, and low-quality tickers.
+- Added compact dashboard data quality display per ticker and an average data quality summary card.
+- Updated real provider and composite proxy flow labels to V1.6.8.
+
 ## V1.6.7.2 Refresh Metrics Cleanup
 
 - Added explicit cron refresh metric fields separating internal work-item counts from final unique ticker coverage.

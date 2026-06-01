@@ -41,6 +41,7 @@ const tableHeaders = [
   "FCF Δ",
   "Flow Δ",
   "Signal",
+  "Data Q",
   "Data",
 ];
 
@@ -161,6 +162,15 @@ function rankChangeClass(changeType?: StockCandidate["changeType"]) {
   }
 
   return "bg-slate-100 text-slate-500 ring-slate-200";
+}
+
+function qualityClass(grade?: StockCandidate["flowDataQualityGrade"]) {
+  if (grade === "A") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (grade === "B") return "bg-blue-50 text-blue-700 ring-blue-200";
+  if (grade === "C") return "bg-amber-50 text-amber-800 ring-amber-200";
+  if (grade === "D") return "bg-rose-50 text-rose-700 ring-rose-200";
+
+  return "bg-slate-100 text-slate-600 ring-slate-200";
 }
 
 function hasUnavailableFinancials(candidate: StockCandidate) {
@@ -300,6 +310,17 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
         </span>
       </td>
       <td className="px-1.5 py-1.5">
+        <span
+          className={`inline-flex min-w-10 justify-center rounded px-1 py-0.5 text-[9px] font-bold tabular-nums ring-1 ${qualityClass(
+            candidate.flowDataQualityGrade,
+          )}`}
+        >
+          {candidate.flowDataQualityGrade
+            ? `${candidate.flowDataQualityGrade} ${candidate.flowDataQualityScore ?? ""}`
+            : "N/A"}
+        </span>
+      </td>
+      <td className="px-1.5 py-1.5">
         <span className="inline-flex rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold text-slate-600 ring-1 ring-slate-200">
           {financialDataLabel(candidate)}
         </span>
@@ -380,9 +401,21 @@ export function Dashboard({
         providerCoverage != null
           ? `Archive ${providerCoverage.archiveHitCount} · Live ${
               providerCoverage.alphaVantageLiveCount +
+              providerCoverage.twelveDataLiveCount +
+              providerCoverage.eodhdLiveCount +
               providerCoverage.polygonLiveCount
             } · Fallback ${providerCoverage.yfinanceFallbackCount}`
           : "Awaiting refresh coverage summary",
+    },
+    {
+      label: "Avg Data Quality",
+      value:
+        providerCoverage?.dataQualitySummary?.averageFlowDataQualityScore != null
+          ? `${providerCoverage.dataQualitySummary.averageFlowDataQualityScore}`
+          : "N/A",
+      detail: providerCoverage?.dataQualitySummary
+        ? `A ${providerCoverage.dataQualitySummary.gradeACount} · B ${providerCoverage.dataQualitySummary.gradeBCount} · C ${providerCoverage.dataQualitySummary.gradeCCount} · D ${providerCoverage.dataQualitySummary.gradeDCount}`
+        : "Awaiting quality summary",
     },
   ];
 
@@ -396,7 +429,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.6.7.2
+                AlphaScout Capital Flow System V1.6.8
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -439,7 +472,7 @@ export function Dashboard({
       </section>
 
       <section className="mx-auto w-full max-w-[1600px] px-2.5 py-2.5 sm:px-3 lg:px-4">
-        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-6">
           {summaryCards.map((card) => (
             <article
               key={card.label}
@@ -499,7 +532,7 @@ export function Dashboard({
 
         <div className="mt-1.5 overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
           <div className="max-h-[calc(100vh-205px)] overflow-auto">
-            <table className="w-full min-w-[1180px] border-collapse text-left">
+            <table className="w-full min-w-[1240px] border-collapse text-left">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
                   {tableHeaders.map((header) => (

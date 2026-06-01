@@ -13,10 +13,10 @@
 - V1.6.7 Provider Ladder Expansion
 - V1.6.7.1 Cron Refresh Timeout Guard
 - V1.6.7.2 Refresh Metrics Cleanup
+- V1.6.8 Provider Data Quality Scoring
 
 ## Next Recommended Steps
 
-- V1.6.8 Provider Data Quality Scoring
 - V1.6.9 Flow Data Dashboard Diagnostics
 - V1.7.1 Signal Snapshot Table
 - V1.7.2 Forward Return Tracking

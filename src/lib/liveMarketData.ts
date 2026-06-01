@@ -22,6 +22,7 @@ import {
   fetchProviderCandles,
   getProviderBudgetSummary,
 } from "@/lib/marketDataProviders";
+import { evaluateFlowDataQuality } from "@/lib/flowDataQuality";
 import {
   buildSecFinancialSnapshot,
   getFinancialFallback,
@@ -264,10 +265,13 @@ function fallbackFlows(symbol: string): CapitalFlows {
   const fallback = getMockCandidateFallback(symbol);
 
   if (!fallback) {
-    return zeroFlows;
+    return {
+      ...zeroFlows,
+      ...evaluateFlowDataQuality(zeroFlows),
+    };
   }
 
-  return {
+  const flows: CapitalFlows = {
     capitalFlow3D: fallback.capitalFlow3D,
     capitalFlow5D: fallback.capitalFlow5D,
     capitalFlow9D: fallback.capitalFlow9D,
@@ -309,6 +313,11 @@ function fallbackFlows(symbol: string): CapitalFlows {
     shortTermFlowAcceleration: null,
     normalizedFlowScore: 0,
     rawFlowScore: 0,
+  };
+
+  return {
+    ...flows,
+    ...evaluateFlowDataQuality(flows),
   };
 }
 
@@ -405,7 +414,7 @@ export async function resolveCapitalFlows(
         marketCap,
       });
 
-    return {
+    const flowsWithProviderMetadata: CapitalFlows = {
       ...flows,
       flowCalculationVersion:
         providerCandles.archiveStatus === "ARCHIVE_HIT"
@@ -421,11 +430,16 @@ export async function resolveCapitalFlows(
       archiveStatus: providerCandles.archiveStatus,
       rawProviderPayloadSummary: providerCandles.rawProviderPayloadSummary,
     };
+
+    return {
+      ...flowsWithProviderMetadata,
+      ...evaluateFlowDataQuality(flowsWithProviderMetadata),
+    };
   }
 
   const candles = await fetchHistoricalDailyCandles(symbol, 45);
 
-  return {
+  const fallbackFlows: CapitalFlows = {
     ...calculateCapitalFlowsFromCandles({
       candles,
       dataSource: "YFINANCE_COMPOSITE_PROXY",
@@ -440,6 +454,11 @@ export async function resolveCapitalFlows(
     archiveProviderChecked: providerCandles.archiveProviderChecked,
     archiveHitProvider: providerCandles.archiveHitProvider,
     archiveStatus: "PROXY_PROVIDER",
+  };
+
+  return {
+    ...fallbackFlows,
+    ...evaluateFlowDataQuality(fallbackFlows),
   };
 }
 
@@ -843,6 +862,10 @@ export async function buildCapitalFlowDebug(symbol: string) {
     shortTermFlowAcceleration: flows.shortTermFlowAcceleration,
     normalizedFlowScore: flows.normalizedFlowScore,
     rawFlowScore: flows.rawFlowScore,
+    flowDataQualityScore: flows.flowDataQualityScore,
+    flowDataQualityGrade: flows.flowDataQualityGrade,
+    flowDataQualityReasons: flows.flowDataQualityReasons,
+    flowDataQualityInputs: flows.flowDataQualityInputs,
     compositeDailyFlowLatest: flows.compositeDailyFlowLatest,
     priceChangeWeightedFlowLatest: flows.priceChangeWeightedFlowLatest,
     mfiLikeFlowLatest: flows.mfiLikeFlowLatest,

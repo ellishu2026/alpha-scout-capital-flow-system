@@ -213,6 +213,57 @@ function buildProviderCoverageSummary({
   const providerErrorTickers = coverageItems
     .filter((candidate) => (candidate.providerErrors?.length ?? 0) > 0)
     .map((candidate) => candidate.ticker);
+  const qualityScores = coverageItems
+    .map((candidate) => candidate.flowDataQualityScore)
+    .filter(
+      (score): score is number =>
+        typeof score === "number" && Number.isFinite(score),
+    );
+  const dataQualitySummary = {
+    gradeACount: coverageItems.filter(
+      (candidate) => candidate.flowDataQualityGrade === "A",
+    ).length,
+    gradeBCount: coverageItems.filter(
+      (candidate) => candidate.flowDataQualityGrade === "B",
+    ).length,
+    gradeCCount: coverageItems.filter(
+      (candidate) => candidate.flowDataQualityGrade === "C",
+    ).length,
+    gradeDCount: coverageItems.filter(
+      (candidate) => candidate.flowDataQualityGrade === "D",
+    ).length,
+    averageFlowDataQualityScore:
+      qualityScores.length > 0
+        ? Number(
+            (
+              qualityScores.reduce((sum, score) => sum + score, 0) /
+              qualityScores.length
+            ).toFixed(1),
+          )
+        : null,
+    lowQualityTickers: coverageItems
+      .filter(
+        (candidate) =>
+          candidate.flowDataQualityGrade === "C" ||
+          candidate.flowDataQualityGrade === "D",
+      )
+      .map((candidate) => candidate.ticker),
+    proxyDataTickers: coverageItems
+      .filter(
+        (candidate) =>
+          candidate.capitalFlowDataSource === "YFINANCE_COMPOSITE_PROXY" ||
+          candidate.capitalFlowDataSource === "YFINANCE_CHAIKIN",
+      )
+      .map((candidate) => candidate.ticker),
+    staleDataTickers: coverageItems
+      .filter((candidate) => {
+        const freshness =
+          candidate.flowDataQualityInputs?.providerFreshnessDays;
+
+        return typeof freshness === "number" && freshness > 7;
+      })
+      .map((candidate) => candidate.ticker),
+  };
   const providerBudget = getProviderBudgetSummary();
   const realProviderCoverageCount =
     archiveHitTickers.length +
@@ -260,6 +311,7 @@ function buildProviderCoverageSummary({
     yfinanceFallbackTickers,
     compositeProxyFallbackTickers,
     providerErrorTickers,
+    dataQualitySummary,
   };
 }
 
