@@ -440,6 +440,8 @@ export async function buildLatestSnapshotWithFixed(): Promise<SnapshotResponse> 
 export async function refreshDailySnapshot(): Promise<RefreshResult> {
   const timeoutGuard = createRefreshTimeoutGuard();
   const liveMode = process.env.YAHOO_FINANCE_ENABLED === "true";
+  const freshFixedSnapshot =
+    await buildFreshFixedSnapshotForRefresh(timeoutGuard);
   const marketCoverageSnapshot =
     await buildFreshMarketSnapshotForRefresh(timeoutGuard);
   const currentMarketSnapshot = withTopCandidateLimit(marketCoverageSnapshot);
@@ -453,8 +455,6 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     currentMarketSnapshot,
     previousMarketSnapshot,
   );
-  const freshFixedSnapshot =
-    await buildFreshFixedSnapshotForRefresh(timeoutGuard);
   const {
     marketSnapshot: marketSnapshotWithBuckets,
     fixedSnapshot,
@@ -549,7 +549,7 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
       marketCoverageSnapshot.mode === "MARKET_SCAN"
         ? marketCoverageSnapshot
         : undefined,
-    fixedSnapshot,
+    fixedSnapshot: fixedSnapshot ?? snapshotWithoutSignalStatus.fixedSnapshot,
     fallbackSnapshot: snapshotWithoutSignalStatus,
   });
   const signalSnapshotFields = {

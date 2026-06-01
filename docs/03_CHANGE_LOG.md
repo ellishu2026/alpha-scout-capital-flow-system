@@ -1,5 +1,11 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.1.2 Fixed Watchlist Signal Snapshot Persistence
+
+- Built fixed watchlist snapshots before timeout-sensitive market scan expansion during cron refresh.
+- Added a defensive fixed snapshot fallback for signal snapshot persistence.
+- Updated dashboard title to V1.7.1.2.
+
 ## V1.7.1.1 Signal Snapshot Coverage Alignment
 
 - Updated signal snapshot persistence to save full Market Scan Top15 rows and Fixed Watchlist rows separately.

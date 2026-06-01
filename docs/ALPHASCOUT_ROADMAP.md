@@ -19,6 +19,7 @@
 - V1.6.9.2 Scoring Label, Diagnostics Summary Wording & Sticky Ticker Column
 - V1.7.1 Signal Snapshot Table
 - V1.7.1.1 Signal Snapshot Coverage Alignment
+- V1.7.1.2 Fixed Watchlist Signal Snapshot Persistence
 
 ## Next Recommended Steps
 
