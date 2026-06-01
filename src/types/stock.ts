@@ -6,6 +6,7 @@ export type DataStatus =
   | "LOW"
   | "LIVE_MARKET"
   | "PARTIAL_LIVE"
+  | "PARTIAL_LIVE_TIMEOUT_GUARDED"
   | "MOCK";
 
 export type RankChangeType = "NEW" | "UP" | "DOWN" | "SAME";
@@ -175,7 +176,9 @@ export type StockCandidate = {
     | "V1.6.5.1_YFINANCE_CHAIKIN"
     | "V1.6.6_COMPOSITE_PROXY"
     | "V1.6.7_PROVIDER_LADDER_CHAIKIN"
-    | "V1.6.7_COMPOSITE_PROXY";
+    | "V1.6.7_COMPOSITE_PROXY"
+    | "V1.6.7.1_PROVIDER_LADDER_CHAIKIN"
+    | "V1.6.7.1_COMPOSITE_PROXY";
   sourceBucket?: CoverageSourceBucket;
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
@@ -279,6 +282,11 @@ export type SnapshotResponse = {
   fallbackToYfinanceCount?: number;
   providerCallsUsed?: ProviderCoverageSummary["providerCallsUsed"];
   providerCallsRemaining?: ProviderCoverageSummary["providerCallsRemaining"];
+  timeoutGuardTriggered?: boolean;
+  processedTickerCount?: number;
+  skippedTickerCount?: number;
+  skippedTickers?: string[];
+  elapsedMs?: number;
   movementSummary?: {
     newCount: number;
     upCount: number;
@@ -303,6 +311,11 @@ export type RefreshResult = {
   persistenceErrorCode?: string;
   persistenceErrorDetails?: string;
   providerCoverageSummary?: ProviderCoverageSummary;
+  timeoutGuardTriggered?: boolean;
+  processedTickerCount?: number;
+  skippedTickerCount?: number;
+  skippedTickers?: string[];
+  elapsedMs?: number;
   message: string;
   snapshot: SnapshotResponse;
 };

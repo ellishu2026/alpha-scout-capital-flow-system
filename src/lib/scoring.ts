@@ -171,6 +171,7 @@ export function getDataStatusLabel(status: DataStatus) {
     LOW: "Low",
     LIVE_MARKET: "Live",
     PARTIAL_LIVE: "Partial Live",
+    PARTIAL_LIVE_TIMEOUT_GUARDED: "Partial Live",
     MOCK: "Mock",
   };
 

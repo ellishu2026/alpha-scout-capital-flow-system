@@ -41,6 +41,16 @@ export const TOP_CANDIDATE_LIMIT = 11;
 export const COVERAGE_MARKET_SCAN_LIMIT = 15;
 const QUOTE_CONCURRENCY = 8;
 const CANDLE_CONCURRENCY = 4;
+export const CRON_REFRESH_TIMEOUT_GUARD_MS = 45_000;
+const CRON_REFRESH_NEW_WORK_BUFFER_MS = 5_000;
+
+export type RefreshTimeoutGuard = {
+  startedAt: number;
+  maxElapsedMs: number;
+  triggered: boolean;
+  processedTickers: Set<string>;
+  skippedTickers: Set<string>;
+};
 
 type LiveQuote = {
   symbol: string;
@@ -83,14 +93,88 @@ function numberOrNull(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+export function createRefreshTimeoutGuard(
+  maxElapsedMs = CRON_REFRESH_TIMEOUT_GUARD_MS,
+): RefreshTimeoutGuard {
+  return {
+    startedAt: Date.now(),
+    maxElapsedMs,
+    triggered: false,
+    processedTickers: new Set<string>(),
+    skippedTickers: new Set<string>(),
+  };
+}
+
+export function getRefreshTimeoutSummary(guard: RefreshTimeoutGuard) {
+  const skippedTickers = Array.from(guard.skippedTickers).sort();
+
+  return {
+    timeoutGuardTriggered: guard.triggered,
+    processedTickerCount: guard.processedTickers.size,
+    skippedTickerCount: skippedTickers.length,
+    skippedTickers,
+    elapsedMs: Date.now() - guard.startedAt,
+  };
+}
+
+function canStartTickerWork(guard?: RefreshTimeoutGuard) {
+  if (!guard) return true;
+
+  if (
+    Date.now() - guard.startedAt >=
+    guard.maxElapsedMs - CRON_REFRESH_NEW_WORK_BUFFER_MS
+  ) {
+    guard.triggered = true;
+
+    return false;
+  }
+
+  return true;
+}
+
+function markSkipped(
+  guard: RefreshTimeoutGuard | undefined,
+  symbols: readonly string[],
+) {
+  if (!guard) return;
+
+  guard.triggered = true;
+  for (const symbol of symbols) {
+    if (symbol && !guard.processedTickers.has(symbol)) {
+      guard.skippedTickers.add(symbol);
+    }
+  }
+}
+
+function markProcessed(guard: RefreshTimeoutGuard | undefined, symbol: string) {
+  if (!guard) return;
+
+  guard.processedTickers.add(symbol);
+  guard.skippedTickers.delete(symbol);
+}
+
 async function mapWithConcurrency<T, R>(
   items: readonly T[],
   limit: number,
   mapper: (item: T) => Promise<R>,
+  options?: {
+    guard?: RefreshTimeoutGuard;
+    getTicker?: (item: T) => string;
+  },
 ): Promise<R[]> {
   const results: R[] = [];
 
   for (let index = 0; index < items.length; index += limit) {
+    if (!canStartTickerWork(options?.guard)) {
+      markSkipped(
+        options?.guard,
+        options?.getTicker
+          ? items.slice(index).map((item) => options.getTicker?.(item) ?? "")
+          : [],
+      );
+      break;
+    }
+
     const batch = items.slice(index, index + limit);
     results.push(...(await Promise.all(batch.map((item) => mapper(item)))));
   }
@@ -352,7 +436,10 @@ async function buildCandidateFromParts({
   };
 }
 
-async function buildFixedWatchlistCandidateWithMeta(symbol: string): Promise<{
+async function buildFixedWatchlistCandidateWithMeta(
+  symbol: string,
+  guard?: RefreshTimeoutGuard,
+): Promise<{
   candidate: StockCandidate;
   usedFallback: boolean;
 }> {
@@ -381,7 +468,7 @@ async function buildFixedWatchlistCandidateWithMeta(symbol: string): Promise<{
     usedFallback = true;
   }
 
-  return {
+  const result = {
     usedFallback,
     candidate: await buildCandidateFromParts({
       symbol,
@@ -391,6 +478,10 @@ async function buildFixedWatchlistCandidateWithMeta(symbol: string): Promise<{
       usedMarketFallback: usedFallback,
     }),
   };
+
+  markProcessed(guard, symbol);
+
+  return result;
 }
 
 async function fetchQuoteForScan(symbol: string): Promise<{
@@ -421,10 +512,12 @@ async function buildScanCandidateFromQuote({
   symbol,
   quote,
   pool,
+  guard,
 }: {
   symbol: string;
   quote: LiveQuote;
   pool: StockPool;
+  guard?: RefreshTimeoutGuard;
 }): Promise<{
   candidate: StockCandidate;
   usedFallback: boolean;
@@ -442,7 +535,7 @@ async function buildScanCandidateFromQuote({
     usedFallback = true;
   }
 
-  return {
+  const result = {
     usedFallback,
     candidate: await buildCandidateFromParts({
       symbol,
@@ -452,6 +545,10 @@ async function buildScanCandidateFromQuote({
       usedMarketFallback: usedFallback,
     }),
   };
+
+  markProcessed(guard, symbol);
+
+  return result;
 }
 
 function rankCandidates(candidates: StockCandidate[], limit: number) {
@@ -492,12 +589,18 @@ function buildMovementSummary(candidates: StockCandidate[]) {
   );
 }
 
-export async function buildFixedWatchlistSnapshot(): Promise<SnapshotResponse> {
+export async function buildFixedWatchlistSnapshot(
+  guard?: RefreshTimeoutGuard,
+): Promise<SnapshotResponse> {
   const symbols = Array.from(new Set(FIXED_WATCHLIST_SYMBOLS));
   const results = await mapWithConcurrency(
     symbols,
     CANDLE_CONCURRENCY,
-    buildFixedWatchlistCandidateWithMeta,
+    (symbol) => buildFixedWatchlistCandidateWithMeta(symbol, guard),
+    {
+      guard,
+      getTicker: (symbol) => symbol,
+    },
   );
 
   const liveCount = results.filter((result) => !result.usedFallback).length;
@@ -531,12 +634,17 @@ export async function buildFixedWatchlistSnapshot(): Promise<SnapshotResponse> {
 
 export async function buildMarketScanSnapshot(
   limit = TOP_CANDIDATE_LIMIT,
+  guard?: RefreshTimeoutGuard,
 ): Promise<SnapshotResponse> {
   const symbols = Array.from(new Set(MARKET_SCAN_SYMBOLS));
   const quoteResults = await mapWithConcurrency(
     symbols,
     QUOTE_CONCURRENCY,
     fetchQuoteForScan,
+    {
+      guard,
+      getTicker: (symbol) => symbol,
+    },
   );
   const quoteFilteredCandidates = quoteResults.filter(
     (
@@ -556,7 +664,11 @@ export async function buildMarketScanSnapshot(
   const scanResults = await mapWithConcurrency(
     quoteFilteredCandidates,
     CANDLE_CONCURRENCY,
-    buildScanCandidateFromQuote,
+    (candidate) => buildScanCandidateFromQuote({ ...candidate, guard }),
+    {
+      guard,
+      getTicker: (candidate) => candidate.symbol,
+    },
   );
 
   const rankedCandidates = rankCandidates(

@@ -1,5 +1,12 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.7.1 Cron Refresh Timeout Guard
+
+- Added a cron refresh elapsed-time guard that stops starting new ticker batches as the request approaches the production timeout.
+- Added partial refresh response diagnostics: `timeoutGuardTriggered`, `processedTickerCount`, `skippedTickerCount`, `skippedTickers`, and `elapsedMs`.
+- Preserved the V1.6.7 provider ladder and archive-first behavior.
+- Updated dashboard and flow labels to V1.6.7.1.
+
 ## V1.6.7 Provider Ladder Expansion
 
 - Added archive lookup support for `TWELVE_DATA` and `EODHD` after existing `POLYGON` and `ALPHA_VANTAGE` archive checks.

@@ -3,7 +3,10 @@ import {
   COVERAGE_MARKET_SCAN_LIMIT,
   buildFixedWatchlistSnapshot,
   buildMarketScanSnapshot,
+  createRefreshTimeoutGuard,
+  getRefreshTimeoutSummary,
   TOP_CANDIDATE_LIMIT,
+  type RefreshTimeoutGuard,
 } from "@/lib/liveMarketData";
 import {
   getPolygonLiveEnabled,
@@ -33,13 +36,15 @@ function withoutFixedSnapshot(snapshot: SnapshotResponse): SnapshotResponse {
   return snapshotWithoutFixed;
 }
 
-async function buildFreshMarketSnapshotForRefresh(): Promise<SnapshotResponse> {
+async function buildFreshMarketSnapshotForRefresh(
+  guard?: RefreshTimeoutGuard,
+): Promise<SnapshotResponse> {
   if (process.env.YAHOO_FINANCE_ENABLED === "true") {
     try {
-      return await buildMarketScanSnapshot(COVERAGE_MARKET_SCAN_LIMIT);
+      return await buildMarketScanSnapshot(COVERAGE_MARKET_SCAN_LIMIT, guard);
     } catch {
       try {
-        return await buildFixedWatchlistSnapshot();
+        return await buildFixedWatchlistSnapshot(guard);
       } catch {
         return {
           ...mockSnapshot,
@@ -282,13 +287,13 @@ function attachProviderCoverageSummary(
   };
 }
 
-async function buildFreshFixedSnapshotForRefresh() {
+async function buildFreshFixedSnapshotForRefresh(guard?: RefreshTimeoutGuard) {
   if (process.env.YAHOO_FINANCE_ENABLED !== "true") {
     return undefined;
   }
 
   try {
-    return await buildFixedWatchlistSnapshot();
+    return await buildFixedWatchlistSnapshot(guard);
   } catch {
     return undefined;
   }
@@ -380,8 +385,10 @@ export async function buildLatestSnapshotWithFixed(): Promise<SnapshotResponse> 
 }
 
 export async function refreshDailySnapshot(): Promise<RefreshResult> {
+  const timeoutGuard = createRefreshTimeoutGuard();
   const liveMode = process.env.YAHOO_FINANCE_ENABLED === "true";
-  const marketCoverageSnapshot = await buildFreshMarketSnapshotForRefresh();
+  const marketCoverageSnapshot =
+    await buildFreshMarketSnapshotForRefresh(timeoutGuard);
   const currentMarketSnapshot = withTopCandidateLimit(marketCoverageSnapshot);
   const currentMode = currentMarketSnapshot.mode ?? "MARKET_SCAN";
   const snapshotDate = getSnapshotDate(new Date(currentMarketSnapshot.updatedAt));
@@ -393,7 +400,8 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     currentMarketSnapshot,
     previousMarketSnapshot,
   );
-  const freshFixedSnapshot = await buildFreshFixedSnapshotForRefresh();
+  const freshFixedSnapshot =
+    await buildFreshFixedSnapshotForRefresh(timeoutGuard);
   const {
     marketSnapshot: marketSnapshotWithBuckets,
     fixedSnapshot,
@@ -411,7 +419,12 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     marketTop15Items,
   });
   const marketSnapshotForSave = attachProviderCoverageSummary(
-    marketSnapshotWithBuckets,
+    timeoutGuard.triggered
+      ? {
+          ...marketSnapshotWithBuckets,
+          status: "PARTIAL_LIVE_TIMEOUT_GUARDED",
+        }
+      : marketSnapshotWithBuckets,
     providerCoverageSummary,
   );
   const marketSaveResult =
@@ -452,6 +465,7 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
         ? "SAVED"
         : "FAILED";
   const persistenceIssue = failedSaveResult ?? disabledSaveResult;
+  const timeoutSummary = getRefreshTimeoutSummary(timeoutGuard);
   const snapshot: SnapshotResponse = {
     ...marketSnapshotForSave,
     persistenceStatus,
@@ -460,9 +474,12 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     persistenceErrorCode: persistenceIssue?.errorCode,
     persistenceErrorDetails: persistenceIssue?.errorDetails,
     fixedSnapshot,
+    ...timeoutSummary,
   };
   const usedLiveSnapshot =
-    snapshot.status === "LIVE_MARKET" || snapshot.status === "PARTIAL_LIVE";
+    snapshot.status === "LIVE_MARKET" ||
+    snapshot.status === "PARTIAL_LIVE" ||
+    snapshot.status === "PARTIAL_LIVE_TIMEOUT_GUARDED";
 
   return {
     ok: true,
@@ -478,9 +495,12 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     persistenceErrorCode: snapshot.persistenceErrorCode,
     persistenceErrorDetails: snapshot.persistenceErrorDetails,
     providerCoverageSummary,
+    ...timeoutSummary,
     message: liveMode
       ? usedLiveSnapshot
-        ? `V1.4 yahoo-finance2 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`
+        ? timeoutSummary.timeoutGuardTriggered
+          ? `V1.6.7.1 refresh completed with timeout guard after ${timeoutSummary.elapsedMs}ms.`
+          : `V1.6.7.1 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`
         : "V1.4 yahoo-finance2 refresh failed; returned mock snapshot fallback."
       : "V1.0 mock snapshot refresh completed. Live yahoo-finance2 ingestion is not enabled.",
     snapshot,
