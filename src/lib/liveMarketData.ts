@@ -228,12 +228,13 @@ export async function resolveCapitalFlows(
   if (
     providerCandles.candles.length &&
     providerCandles.providerUsed &&
+    providerCandles.dataSource &&
     providerCandles.quality
   ) {
     return {
       ...calculateCapitalFlowsFromCandles({
         candles: providerCandles.candles,
-        dataSource: providerCandles.providerUsed,
+        dataSource: providerCandles.dataSource,
         quality: providerCandles.quality,
         marketCap,
       }),

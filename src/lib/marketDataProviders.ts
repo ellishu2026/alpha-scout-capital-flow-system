@@ -1,6 +1,10 @@
 import "server-only";
 
-import type { CapitalFlowDataSource, CapitalFlowQuality } from "@/types/stock";
+import type {
+  CapitalFlowDataSource,
+  CapitalFlowQuality,
+  ProviderUsed,
+} from "@/types/stock";
 import type { OhlcvCandle } from "@/lib/capitalFlow";
 import {
   getProviderBudget,
@@ -25,7 +29,7 @@ export type ProviderPayloadSummary = {
 };
 
 export type ProviderFetchMetadata = {
-  providerUsed?: CapitalFlowDataSource;
+  providerUsed?: ProviderUsed;
   providerPriorityTried: CapitalFlowDataSource[];
   providerErrors: string[];
   providerEndpointType?: string;
@@ -43,7 +47,8 @@ export type ProviderFetchMetadata = {
 
 export type ProviderOhlcvResult = ProviderFetchMetadata & {
   candles: OhlcvCandle[];
-  providerUsed?: CapitalFlowDataSource;
+  providerUsed?: ProviderUsed;
+  dataSource?: CapitalFlowDataSource;
   quality?: CapitalFlowQuality;
 };
 
@@ -108,6 +113,113 @@ function latestDate(candles: OhlcvCandle[]) {
 
 function providerError(provider: ProviderName, message: string) {
   return `${provider}:${message}`;
+}
+
+function currentUtcDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function archiveProviderUsed(provider: ProviderName): ProviderUsed {
+  return provider === "POLYGON" ? "POLYGON_ARCHIVE" : "ALPHA_VANTAGE_ARCHIVE";
+}
+
+function parseArchivePayload(
+  payload: unknown,
+  provider: ProviderName,
+): {
+  candles: OhlcvCandle[];
+  summary: ProviderPayloadSummary;
+} | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const archivePayload = payload as {
+    summary?: Partial<ProviderPayloadSummary>;
+    candles?: Array<{
+      date?: string;
+      open?: unknown;
+      high?: unknown;
+      low?: unknown;
+      close?: unknown;
+      volume?: unknown;
+    }>;
+  };
+
+  const candles =
+    archivePayload.candles
+      ?.map<OhlcvCandle | null>((row) => {
+        const date = row.date ? toDate(row.date) : null;
+
+        return date
+          ? {
+              date,
+              open: toNumber(row.open),
+              high: toNumber(row.high),
+              low: toNumber(row.low),
+              close: toNumber(row.close),
+              volume: toNumber(row.volume),
+            }
+          : null;
+      })
+      .filter((row): row is OhlcvCandle => row != null && isValidCandle(row))
+      .sort((a, b) => a.date.getTime() - b.date.getTime()) ?? [];
+
+  if (candles.length === 0) {
+    return null;
+  }
+
+  return {
+    candles,
+    summary: {
+      provider,
+      endpointType:
+        archivePayload.summary?.endpointType ??
+        (provider === "POLYGON"
+          ? "POLYGON_AGGS_DAILY_ARCHIVE"
+          : "ALPHA_VANTAGE_TIME_SERIES_DAILY_ARCHIVE"),
+      resultCount:
+        typeof archivePayload.summary?.resultCount === "number"
+          ? archivePayload.summary.resultCount
+          : candles.length,
+      latestDate: archivePayload.summary?.latestDate ?? latestDate(candles),
+      status: archivePayload.summary?.status ?? "ARCHIVE_HIT",
+    },
+  };
+}
+
+async function getArchivedMarketData({
+  ticker,
+  provider,
+}: {
+  ticker: string;
+  provider: ProviderName;
+}): Promise<
+  | {
+      candles: OhlcvCandle[];
+      summary: ProviderPayloadSummary;
+    }
+  | null
+> {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("alpha_scout_market_data_archive")
+    .select("payload")
+    .eq("ticker", ticker)
+    .eq("provider", provider)
+    .eq("data_date", currentUtcDate())
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return parseArchivePayload(data.payload, provider);
 }
 
 async function fetchPolygonCandles(symbol: string): Promise<{
@@ -296,7 +408,7 @@ export async function archiveMarketDataIfPossible({
         {
           ticker,
           provider,
-          data_date: new Date().toISOString().slice(0, 10),
+          data_date: currentUtcDate(),
           payload: {
             summary: payloadSummary,
             candles: candles.map((candle) => ({
@@ -337,6 +449,27 @@ export async function fetchProviderCandles(
 
   try {
     providerPriorityTried.push("POLYGON");
+    const archivedPolygon = await getArchivedMarketData({
+      ticker: symbol,
+      provider: "POLYGON",
+    });
+
+    if (archivedPolygon) {
+      return {
+        candles: archivedPolygon.candles,
+        providerUsed: archiveProviderUsed("POLYGON"),
+        dataSource: "POLYGON",
+        quality: "REAL_PROVIDER",
+        providerPriorityTried,
+        providerErrors,
+        providerEndpointType: archivedPolygon.summary.endpointType,
+        archiveStatus: "ARCHIVE_HIT",
+        rawProviderPayloadSummary: archivedPolygon.summary,
+        providerCallBudget: getProviderBudgetSummary(),
+        providerCallsUsed: getProviderCallsUsedSummary(),
+      };
+    }
+
     const polygon = await fetchPolygonCandles(symbol);
     const archive = await archiveMarketDataIfPossible({
       ticker: symbol,
@@ -348,6 +481,7 @@ export async function fetchProviderCandles(
     return {
       candles: polygon.candles,
       providerUsed: "POLYGON",
+      dataSource: "POLYGON",
       quality: "REAL_PROVIDER",
       providerPriorityTried,
       providerErrors: archive.error
@@ -367,6 +501,27 @@ export async function fetchProviderCandles(
 
   try {
     providerPriorityTried.push("ALPHA_VANTAGE");
+    const archivedAlphaVantage = await getArchivedMarketData({
+      ticker: symbol,
+      provider: "ALPHA_VANTAGE",
+    });
+
+    if (archivedAlphaVantage) {
+      return {
+        candles: archivedAlphaVantage.candles,
+        providerUsed: archiveProviderUsed("ALPHA_VANTAGE"),
+        dataSource: "ALPHA_VANTAGE",
+        quality: "REAL_PROVIDER",
+        providerPriorityTried,
+        providerErrors,
+        providerEndpointType: archivedAlphaVantage.summary.endpointType,
+        archiveStatus: "ARCHIVE_HIT",
+        rawProviderPayloadSummary: archivedAlphaVantage.summary,
+        providerCallBudget: getProviderBudgetSummary(),
+        providerCallsUsed: getProviderCallsUsedSummary(),
+      };
+    }
+
     const alphaVantage = await fetchAlphaVantageCandles(symbol);
     const archive = await archiveMarketDataIfPossible({
       ticker: symbol,
@@ -378,6 +533,7 @@ export async function fetchProviderCandles(
     return {
       candles: alphaVantage.candles,
       providerUsed: "ALPHA_VANTAGE",
+      dataSource: "ALPHA_VANTAGE",
       quality: "REAL_PROVIDER",
       providerPriorityTried,
       providerErrors: archive.error

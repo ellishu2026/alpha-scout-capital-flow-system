@@ -1,5 +1,16 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.4 Archive-First Provider Fetch
+
+- Added archive-first lookup in `public.alpha_scout_market_data_archive` before external provider calls.
+- Archive lookups use `ticker`, provider, and current UTC `data_date`.
+- Polygon archive hits report `providerUsed = POLYGON_ARCHIVE`, `capitalFlowDataSource = POLYGON`, `capitalFlowQuality = REAL_PROVIDER`, and `archiveStatus = ARCHIVE_HIT`.
+- Alpha Vantage archive hits report `providerUsed = ALPHA_VANTAGE_ARCHIVE`, `capitalFlowDataSource = ALPHA_VANTAGE`, `capitalFlowQuality = REAL_PROVIDER`, and `archiveStatus = ARCHIVE_HIT`.
+- Archive hits do not consume provider call budget or increase provider call counters.
+- Archive misses still call Polygon / Alpha Vantage within configured budget and archive successful responses.
+- YFINANCE_CHAIKIN remains fallback when provider archive and live provider data are unavailable.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.6.3.1 Provider Endpoint Fix
 
 - Updated Polygon to use the REST aggregates daily endpoint with `limit=5000`.

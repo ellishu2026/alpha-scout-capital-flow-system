@@ -8,9 +8,9 @@ export const FLOW_CALCULATION_VERSION = "V1.6.1_CHAIKIN" as const;
 export const NORMALIZED_FLOW_CALCULATION_VERSION =
   "V1.6.2_NORMALIZED_CHAIKIN" as const;
 export const REAL_PROVIDER_FLOW_CALCULATION_VERSION =
-  "V1.6.3.1_REAL_PROVIDER_CHAIKIN" as const;
+  "V1.6.4_REAL_PROVIDER_CHAIKIN" as const;
 export const YFINANCE_FLOW_CALCULATION_VERSION =
-  "V1.6.3.1_YFINANCE_CHAIKIN" as const;
+  "V1.6.4_YFINANCE_CHAIKIN" as const;
 
 export type OhlcvCandle = {
   date: Date;

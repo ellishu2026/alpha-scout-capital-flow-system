@@ -18,6 +18,10 @@ export type CapitalFlowDataSource =
   | "ALPHA_VANTAGE"
   | "POLYGON"
   | "MOCK";
+export type ProviderUsed =
+  | CapitalFlowDataSource
+  | "ALPHA_VANTAGE_ARCHIVE"
+  | "POLYGON_ARCHIVE";
 export type CapitalFlowQuality = "LIVE_PROXY" | "REAL_PROVIDER" | "MOCK" | "FALLBACK";
 
 export type FinancialDataSource = "SEC" | "FALLBACK" | "N/A";
@@ -142,10 +146,12 @@ export type StockCandidate = {
     | "V1.6.3_REAL_PROVIDER_CHAIKIN"
     | "V1.6.3_YFINANCE_CHAIKIN"
     | "V1.6.3.1_REAL_PROVIDER_CHAIKIN"
-    | "V1.6.3.1_YFINANCE_CHAIKIN";
+    | "V1.6.3.1_YFINANCE_CHAIKIN"
+    | "V1.6.4_REAL_PROVIDER_CHAIKIN"
+    | "V1.6.4_YFINANCE_CHAIKIN";
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
-  providerUsed?: CapitalFlowDataSource;
+  providerUsed?: ProviderUsed;
   providerPriorityTried?: CapitalFlowDataSource[];
   providerErrors?: string[];
   providerEndpointType?: string;
