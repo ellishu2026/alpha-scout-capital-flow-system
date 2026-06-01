@@ -298,6 +298,17 @@ export type ProviderCoverageSummary = {
   };
 };
 
+export type SignalSnapshotCoverageSummary = {
+  fixedWatchlistRowsSaved: number;
+  marketScanRowsSaved: number;
+  fallbackRowsSaved: number;
+  totalRowsSaved: number;
+  uniqueTickersSaved: number;
+  overlappingTickers: string[];
+  fixedWatchlistTickers: string[];
+  marketScanTickers: string[];
+};
+
 export type SnapshotResponse = {
   updatedAt: string;
   dataMode: "Daily Close Snapshot";
@@ -325,6 +336,7 @@ export type SnapshotResponse = {
   signalSnapshotRowsSaved?: number;
   signalSnapshotError?: string | null;
   signalSnapshotLatestDate?: string | null;
+  signalSnapshotCoverageSummary?: SignalSnapshotCoverageSummary;
   timeoutGuardTriggered?: boolean;
   elapsedMs?: number;
   refreshWorkItemCount?: number;
@@ -366,6 +378,7 @@ export type RefreshResult = {
   signalSnapshotRowsSaved?: number;
   signalSnapshotError?: string | null;
   signalSnapshotLatestDate?: string | null;
+  signalSnapshotCoverageSummary?: SignalSnapshotCoverageSummary;
   timeoutGuardTriggered?: boolean;
   elapsedMs?: number;
   refreshWorkItemCount?: number;

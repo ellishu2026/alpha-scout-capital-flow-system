@@ -18,6 +18,7 @@
 - V1.6.9.1 Diagnostics Collapse & Quota Label Cleanup
 - V1.6.9.2 Scoring Label, Diagnostics Summary Wording & Sticky Ticker Column
 - V1.7.1 Signal Snapshot Table
+- V1.7.1.1 Signal Snapshot Coverage Alignment
 
 ## Next Recommended Steps
 
@@ -33,5 +34,7 @@
 ## Signal Snapshot Foundation
 
 V1.7.1 stores daily signal records in `alpha_scout_signal_snapshots`, one row per ticker, refresh date, mode, and source bucket. These rows preserve rank, scores, signal labels, provider metadata, and flow data quality diagnostics at the time of refresh.
+
+V1.7.1.1 aligned signal snapshot persistence to save both Fixed Watchlist and Market Scan Top15 rows. Overlapping tickers are intentionally saved separately when mode and source bucket differ.
 
 Forward return fields are included as placeholders and will be populated in V1.7.2. This table is the base for future win-rate and signal-quality analysis in V1.7.3 and signal upgrade work in V1.7.4.

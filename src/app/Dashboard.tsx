@@ -480,6 +480,7 @@ function DiagnosticsSection({
   const quality = coverage?.dataQualitySummary;
   const used = coverage?.providerCallsUsed;
   const remaining = coverage?.providerCallsRemaining;
+  const signalCoverage = snapshot.signalSnapshotCoverageSummary;
 
   if (!expanded) {
     return null;
@@ -532,6 +533,22 @@ function DiagnosticsSection({
             <DiagnosticMetric
               label="Signal Date"
               value={snapshot.signalSnapshotLatestDate}
+            />
+            <DiagnosticMetric
+              label="Fixed Rows"
+              value={signalCoverage?.fixedWatchlistRowsSaved}
+            />
+            <DiagnosticMetric
+              label="Market Rows"
+              value={signalCoverage?.marketScanRowsSaved}
+            />
+            <DiagnosticMetric
+              label="Unique Tickers"
+              value={signalCoverage?.uniqueTickersSaved}
+            />
+            <DiagnosticMetric
+              label="Overlap"
+              value={signalCoverage?.overlappingTickers.length}
             />
           </div>
         </article>
@@ -737,7 +754,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.1
+                AlphaScout Capital Flow System V1.7.1.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

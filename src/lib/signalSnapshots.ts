@@ -17,12 +17,26 @@ export type SignalSnapshotPersistenceResult = {
   rowsSaved: number;
   error: string | null;
   latestSignalDate: string | null;
+  coverageSummary: SignalSnapshotCoverageSummary;
 };
 
 type SignalSnapshotQuery = {
   date?: string;
   ticker?: string;
+  mode?: string;
+  sourceBucket?: string;
   limit?: number;
+};
+
+export type SignalSnapshotCoverageSummary = {
+  fixedWatchlistRowsSaved: number;
+  marketScanRowsSaved: number;
+  fallbackRowsSaved: number;
+  totalRowsSaved: number;
+  uniqueTickersSaved: number;
+  overlappingTickers: string[];
+  fixedWatchlistTickers: string[];
+  marketScanTickers: string[];
 };
 
 type SignalSnapshotRow = {
@@ -106,7 +120,9 @@ function signalRow({
     signal_date: signalDate,
     snapshot_created_at: snapshot.updatedAt,
     mode,
-    source_bucket: candidate.sourceBucket ?? mode,
+    source_bucket:
+      candidate.sourceBucket ??
+      (mode === "MARKET_SCAN" ? "MARKET_SCAN_TOP15" : mode),
     rank: candidate.rank,
     ticker: candidate.ticker,
     company_name: candidate.companyName,
@@ -154,14 +170,69 @@ function signalRow({
   };
 }
 
+function emptyCoverageSummary(): SignalSnapshotCoverageSummary {
+  return {
+    fixedWatchlistRowsSaved: 0,
+    marketScanRowsSaved: 0,
+    fallbackRowsSaved: 0,
+    totalRowsSaved: 0,
+    uniqueTickersSaved: 0,
+    overlappingTickers: [],
+    fixedWatchlistTickers: [],
+    marketScanTickers: [],
+  };
+}
+
+function buildCoverageSummary(rows: SignalSnapshotRow[]) {
+  const fixedWatchlistTickers = Array.from(
+    new Set(
+      rows
+        .filter((row) => row.mode === "FIXED_WATCHLIST")
+        .map((row) => row.ticker),
+    ),
+  ).sort();
+  const marketScanTickers = Array.from(
+    new Set(
+      rows
+        .filter((row) => row.mode === "MARKET_SCAN")
+        .map((row) => row.ticker),
+    ),
+  ).sort();
+  const fixedSet = new Set(fixedWatchlistTickers);
+  const overlappingTickers = marketScanTickers
+    .filter((ticker) => fixedSet.has(ticker))
+    .sort();
+
+  return {
+    fixedWatchlistRowsSaved: rows.filter(
+      (row) => row.mode === "FIXED_WATCHLIST",
+    ).length,
+    marketScanRowsSaved: rows.filter((row) => row.mode === "MARKET_SCAN")
+      .length,
+    fallbackRowsSaved: rows.filter(
+      (row) => row.mode !== "FIXED_WATCHLIST" && row.mode !== "MARKET_SCAN",
+    ).length,
+    totalRowsSaved: rows.length,
+    uniqueTickersSaved: new Set(rows.map((row) => row.ticker)).size,
+    overlappingTickers,
+    fixedWatchlistTickers,
+    marketScanTickers,
+  };
+}
+
 export async function upsertSignalSnapshots({
   marketSnapshot,
   fixedSnapshot,
+  fallbackSnapshot,
 }: {
-  marketSnapshot: SnapshotResponse;
+  marketSnapshot?: SnapshotResponse;
   fixedSnapshot?: SnapshotResponse;
+  fallbackSnapshot?: SnapshotResponse;
 }): Promise<SignalSnapshotPersistenceResult> {
-  const signalDate = getSnapshotDate(new Date(marketSnapshot.updatedAt));
+  const baseSnapshot = marketSnapshot ?? fixedSnapshot ?? fallbackSnapshot;
+  const signalDate = getSnapshotDate(
+    new Date(baseSnapshot?.updatedAt ?? new Date()),
+  );
 
   if (!isSupabaseConfigured()) {
     return {
@@ -169,6 +240,7 @@ export async function upsertSignalSnapshots({
       rowsSaved: 0,
       error: getSupabaseConfigStatus().reason ?? "SUPABASE_ENV_MISSING",
       latestSignalDate: signalDate,
+      coverageSummary: emptyCoverageSummary(),
     };
   }
 
@@ -180,27 +252,42 @@ export async function upsertSignalSnapshots({
       rowsSaved: 0,
       error: "SUPABASE_UNAVAILABLE",
       latestSignalDate: signalDate,
+      coverageSummary: emptyCoverageSummary(),
     };
   }
 
-  const rows = [
-    ...marketSnapshot.items.map((candidate) =>
+  const rows: SignalSnapshotRow[] = [
+    ...(marketSnapshot?.items.map((candidate) =>
       signalRow({
         signalDate,
         snapshot: marketSnapshot,
-        mode: marketSnapshot.mode ?? "MARKET_SCAN",
+        mode: "MARKET_SCAN",
         candidate,
       }),
-    ),
+    ) ?? []),
     ...(fixedSnapshot?.items.map((candidate) =>
       signalRow({
         signalDate,
         snapshot: fixedSnapshot,
-        mode: fixedSnapshot.mode ?? "FIXED_WATCHLIST",
+        mode: "FIXED_WATCHLIST",
         candidate,
       }),
     ) ?? []),
   ];
+
+  if (rows.length === 0 && fallbackSnapshot) {
+    rows.push(
+      ...fallbackSnapshot.items.map((candidate) =>
+        signalRow({
+          signalDate,
+          snapshot: fallbackSnapshot,
+          mode: fallbackSnapshot.mode ?? "MARKET_SCAN",
+          candidate,
+        }),
+      ),
+    );
+  }
+  const coverageSummary = buildCoverageSummary(rows);
 
   if (rows.length === 0) {
     return {
@@ -208,6 +295,7 @@ export async function upsertSignalSnapshots({
       rowsSaved: 0,
       error: "NO_SIGNAL_ROWS",
       latestSignalDate: signalDate,
+      coverageSummary,
     };
   }
 
@@ -224,6 +312,7 @@ export async function upsertSignalSnapshots({
         rowsSaved: 0,
         error: errorMessage(error),
         latestSignalDate: signalDate,
+        coverageSummary: emptyCoverageSummary(),
       };
     }
 
@@ -232,6 +321,7 @@ export async function upsertSignalSnapshots({
       rowsSaved: rows.length,
       error: null,
       latestSignalDate: signalDate,
+      coverageSummary,
     };
   } catch (error) {
     return {
@@ -239,6 +329,7 @@ export async function upsertSignalSnapshots({
       rowsSaved: 0,
       error: errorMessage(error),
       latestSignalDate: signalDate,
+      coverageSummary: emptyCoverageSummary(),
     };
   }
 }
@@ -246,6 +337,8 @@ export async function upsertSignalSnapshots({
 export async function querySignalSnapshots({
   date,
   ticker,
+  mode,
+  sourceBucket,
   limit = 50,
 }: SignalSnapshotQuery) {
   if (!isSupabaseConfigured()) {
@@ -283,6 +376,14 @@ export async function querySignalSnapshots({
     query = query.eq("ticker", ticker.toUpperCase());
   }
 
+  if (mode) {
+    query = query.eq("mode", mode);
+  }
+
+  if (sourceBucket) {
+    query = query.eq("source_bucket", sourceBucket);
+  }
+
   const { data, error } = await query;
 
   if (error) {
@@ -297,6 +398,13 @@ export async function querySignalSnapshots({
   return {
     ok: true,
     count: data?.length ?? 0,
+    filters: {
+      date,
+      ticker: ticker?.toUpperCase(),
+      mode,
+      source_bucket: sourceBucket,
+      limit: Math.min(Math.max(limit, 1), 200),
+    },
     rows: data ?? [],
   };
 }

@@ -1,5 +1,12 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.1.1 Signal Snapshot Coverage Alignment
+
+- Updated signal snapshot persistence to save full Market Scan Top15 rows and Fixed Watchlist rows separately.
+- Added signal snapshot coverage summary with fixed rows, market rows, unique ticker count, and overlaps.
+- Added `mode` and `source_bucket` filters to `/api/debug/signals`.
+- Updated dashboard diagnostics and title to V1.7.1.1.
+
 ## V1.7.1 Signal Snapshot Table
 
 - Added SQL for `alpha_scout_signal_snapshots` with daily per-ticker signal, score, provider, quality, and forward-return placeholder fields.

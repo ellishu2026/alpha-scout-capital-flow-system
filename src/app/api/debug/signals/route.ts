@@ -26,10 +26,14 @@ export async function GET(request: NextRequest) {
 
   const date = request.nextUrl.searchParams.get("date")?.trim();
   const ticker = request.nextUrl.searchParams.get("ticker")?.trim();
+  const mode = request.nextUrl.searchParams.get("mode")?.trim();
+  const sourceBucket = request.nextUrl.searchParams.get("source_bucket")?.trim();
   const limit = parseLimit(request.nextUrl.searchParams.get("limit"));
   const result = await querySignalSnapshots({
     date: date || undefined,
     ticker: ticker || undefined,
+    mode: mode || undefined,
+    sourceBucket: sourceBucket || undefined,
     limit,
   });
 

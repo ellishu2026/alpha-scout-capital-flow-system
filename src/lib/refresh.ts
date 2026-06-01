@@ -545,14 +545,19 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     ...timeoutSummary,
   };
   const signalSnapshotResult = await upsertSignalSnapshots({
-    marketSnapshot: snapshotWithoutSignalStatus,
+    marketSnapshot:
+      marketCoverageSnapshot.mode === "MARKET_SCAN"
+        ? marketCoverageSnapshot
+        : undefined,
     fixedSnapshot,
+    fallbackSnapshot: snapshotWithoutSignalStatus,
   });
   const signalSnapshotFields = {
     signalSnapshotPersistenceStatus: signalSnapshotResult.status,
     signalSnapshotRowsSaved: signalSnapshotResult.rowsSaved,
     signalSnapshotError: signalSnapshotResult.error,
     signalSnapshotLatestDate: signalSnapshotResult.latestSignalDate,
+    signalSnapshotCoverageSummary: signalSnapshotResult.coverageSummary,
   };
   const snapshot: SnapshotResponse = {
     ...snapshotWithoutSignalStatus,
