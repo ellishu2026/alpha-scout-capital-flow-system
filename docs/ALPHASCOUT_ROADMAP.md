@@ -15,6 +15,7 @@
 - V1.6.7.2 Refresh Metrics Cleanup
 - V1.6.8 Provider Data Quality Scoring
 - V1.6.9 Flow Data Dashboard Diagnostics
+- V1.6.9.1 Diagnostics Collapse & Quota Label Cleanup
 
 ## Next Recommended Steps
 

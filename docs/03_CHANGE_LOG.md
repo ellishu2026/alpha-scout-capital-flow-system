@@ -1,5 +1,12 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.9.1 Diagnostics Collapse & Quota Label Cleanup
+
+- Collapsed Flow Data Diagnostics by default behind a compact dashboard toggle.
+- Added a one-line diagnostics summary beside the scoring controls.
+- Updated provider quota labels to `Used X / Left Y`.
+- Updated dashboard title to V1.6.9.1.
+
 ## V1.6.9 Flow Data Dashboard Diagnostics
 
 - Added a compact dashboard diagnostics section for refresh health, provider coverage, data quality, provider quota, and source ticker lists.

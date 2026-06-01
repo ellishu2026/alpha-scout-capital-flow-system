@@ -207,6 +207,13 @@ function formatMaybeNumber(value: number | null | undefined, suffix = "") {
     : "N/A";
 }
 
+function quotaLabel(
+  used: number | null | undefined,
+  remaining: number | null | undefined,
+) {
+  return `Used ${formatMaybeNumber(used)} / Left ${formatMaybeNumber(remaining)}`;
+}
+
 function TickerList({
   label,
   tickers,
@@ -454,14 +461,20 @@ function MobileCandidateCard({ candidate }: { candidate: StockCandidate }) {
 function DiagnosticsSection({
   snapshot,
   updatedAt,
+  expanded,
 }: {
   snapshot: SnapshotResponse;
   updatedAt: string;
+  expanded: boolean;
 }) {
   const coverage = snapshot.providerCoverageSummary;
   const quality = coverage?.dataQualitySummary;
   const used = coverage?.providerCallsUsed;
   const remaining = coverage?.providerCallsRemaining;
+
+  if (!expanded) {
+    return null;
+  }
 
   return (
     <section className="mt-2.5 rounded border border-slate-200 bg-white p-2.5 shadow-sm">
@@ -557,35 +570,19 @@ function DiagnosticsSection({
           <div className="grid grid-cols-2 gap-1.5">
             <DiagnosticMetric
               label="Polygon"
-              value={
-                used && remaining
-                  ? `${used.polygon}/${remaining.polygon} left`
-                  : "N/A"
-              }
+              value={quotaLabel(used?.polygon, remaining?.polygon)}
             />
             <DiagnosticMetric
               label="Alpha Vantage"
-              value={
-                used && remaining
-                  ? `${used.alphaVantage}/${remaining.alphaVantage} left`
-                  : "N/A"
-              }
+              value={quotaLabel(used?.alphaVantage, remaining?.alphaVantage)}
             />
             <DiagnosticMetric
               label="Twelve Data"
-              value={
-                used && remaining
-                  ? `${used.twelveData}/${remaining.twelveData} left`
-                  : "N/A"
-              }
+              value={quotaLabel(used?.twelveData, remaining?.twelveData)}
             />
             <DiagnosticMetric
               label="EODHD"
-              value={
-                used && remaining
-                  ? `${used.eodhd}/${remaining.eodhd} left`
-                  : "N/A"
-              }
+              value={quotaLabel(used?.eodhd, remaining?.eodhd)}
             />
           </div>
         </article>
@@ -614,6 +611,7 @@ export function Dashboard({
   fixedSnapshot: SnapshotResponse | null;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("ALL");
+  const [diagnosticsExpanded, setDiagnosticsExpanded] = useState(false);
   const activeTabLabel =
     tabs.find((tab) => tab.id === activeTab)?.label ?? "All";
   const updatedAt = new Intl.DateTimeFormat("en-US", {
@@ -647,6 +645,13 @@ export function Dashboard({
   const droppedSymbols =
     activeTab === "FIXED_LIST" ? [] : (allSnapshot.droppedSymbols ?? []);
   const providerCoverage = allSnapshot.providerCoverageSummary;
+  const diagnosticsSummary = providerCoverage
+    ? `Real ${providerCoverage.realProviderCoveragePct}% · Data Q A${
+        providerCoverage.dataQualitySummary?.gradeACount ?? 0
+      } · Archive ${providerCoverage.archiveHitCount} · Proxy ${
+        providerCoverage.compositeProxyFallbackCount
+      }`
+    : "Diagnostics pending";
   const summaryCards = [
     {
       label: "Universe",
@@ -706,7 +711,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.6.9
+                AlphaScout Capital Flow System V1.6.9.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -739,13 +744,33 @@ export function Dashboard({
             </div>
           </div>
 
-          <div className="flex flex-col gap-0.5 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm sm:flex-row sm:items-center sm:justify-between">
-            <span className="font-medium text-slate-700">Scoring</span>
-            <span className="text-slate-600">
-              Margin 30% · FCF 40% · Capital Flow 30%
-            </span>
+          <div className="flex flex-col gap-1.5 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+              <span className="font-medium text-slate-700">Scoring</span>
+              <span className="text-slate-600">
+                Margin 30% · FCF 40% · Capital Flow 30%
+              </span>
+            </div>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
+              <span className="truncate text-slate-500">
+                {diagnosticsSummary}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setDiagnosticsExpanded((current) => !current)
+                }
+                className="min-h-8 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                {diagnosticsExpanded ? "Diagnostics ▴" : "Diagnostics ▾"}
+              </button>
+            </div>
           </div>
-          <DiagnosticsSection snapshot={allSnapshot} updatedAt={updatedAt} />
+          <DiagnosticsSection
+            snapshot={allSnapshot}
+            updatedAt={updatedAt}
+            expanded={diagnosticsExpanded}
+          />
         </div>
       </section>
 
