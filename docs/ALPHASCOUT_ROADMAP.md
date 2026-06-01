@@ -20,10 +20,10 @@
 - V1.7.1 Signal Snapshot Table
 - V1.7.1.1 Signal Snapshot Coverage Alignment
 - V1.7.1.2 Fixed Watchlist Signal Snapshot Persistence
+- V1.7.2 Forward Return Tracking
 
 ## Next Recommended Steps
 
-- V1.7.2 Forward Return Tracking
 - V1.7.3 Win Rate & Signal Quality Report
 - V1.7.4 Buy / Watch / Avoid Signal Upgrade
 
@@ -38,4 +38,10 @@ V1.7.1 stores daily signal records in `alpha_scout_signal_snapshots`, one row pe
 
 V1.7.1.1 aligned signal snapshot persistence to save both Fixed Watchlist and Market Scan Top15 rows. Overlapping tickers are intentionally saved separately when mode and source bucket differ.
 
-Forward return fields are included as placeholders and will be populated in V1.7.2. This table is the base for future win-rate and signal-quality analysis in V1.7.3 and signal upgrade work in V1.7.4.
+Forward return fields were added as placeholders in V1.7.1 and are populated by the V1.7.2 update job when enough future trading-day data is available. This table is the base for future win-rate and signal-quality analysis in V1.7.3 and signal upgrade work in V1.7.4.
+
+## Forward Return Tracking
+
+V1.7.2 calculates future returns for saved signal snapshots using trading-day windows: 1D, 3D, 5D, 10D, and 20D. Forward return fields are updated only when enough future trading-day data is available; otherwise they remain null until a later update run.
+
+Forward return price lookup uses the conservative ladder `ARCHIVE -> ALPHA_VANTAGE -> TWELVE_DATA -> EODHD -> YFINANCE`, preferring archived OHLCV before consuming live provider calls. V1.7.3 will use these populated fields to calculate win rate and signal quality.

@@ -503,7 +503,7 @@ function DiagnosticsSection({
         </p>
       </div>
 
-      <div className="mt-2 grid gap-1.5 md:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-2 grid gap-1.5 md:grid-cols-2 xl:grid-cols-6">
         <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
           <p className="mb-1 font-semibold text-slate-800">Refresh Health</p>
           <div className="grid grid-cols-2 gap-1.5">
@@ -621,6 +621,32 @@ function DiagnosticsSection({
             <DiagnosticMetric
               label="EODHD"
               value={quotaLabel(used?.eodhd, remaining?.eodhd)}
+            />
+          </div>
+        </article>
+
+        <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+          <p className="mb-1 font-semibold text-slate-800">Forward Returns</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <DiagnosticMetric
+              label="Status"
+              value={snapshot.forwardReturnUpdateStatus}
+            />
+            <DiagnosticMetric
+              label="Updated Rows"
+              value={snapshot.forwardReturnUpdatedRows}
+            />
+            <DiagnosticMetric
+              label="Checked Rows"
+              value={snapshot.forwardReturnCheckedRows}
+            />
+            <DiagnosticMetric
+              label="Insufficient"
+              value={snapshot.forwardReturnInsufficientFutureDataRows}
+            />
+            <DiagnosticMetric
+              label="Last Updated"
+              value={snapshot.forwardReturnLastUpdatedAt}
             />
           </div>
         </article>
@@ -754,7 +780,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.1.2
+                AlphaScout Capital Flow System V1.7.2
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

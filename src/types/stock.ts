@@ -309,6 +309,12 @@ export type SignalSnapshotCoverageSummary = {
   marketScanTickers: string[];
 };
 
+export type ForwardReturnUpdateStatus =
+  | "UPDATED"
+  | "PARTIAL_UPDATED"
+  | "NO_ELIGIBLE_ROWS"
+  | "FAILED";
+
 export type SnapshotResponse = {
   updatedAt: string;
   dataMode: "Daily Close Snapshot";
@@ -337,6 +343,11 @@ export type SnapshotResponse = {
   signalSnapshotError?: string | null;
   signalSnapshotLatestDate?: string | null;
   signalSnapshotCoverageSummary?: SignalSnapshotCoverageSummary;
+  forwardReturnUpdateStatus?: ForwardReturnUpdateStatus;
+  forwardReturnUpdatedRows?: number;
+  forwardReturnCheckedRows?: number;
+  forwardReturnInsufficientFutureDataRows?: number;
+  forwardReturnLastUpdatedAt?: string | null;
   timeoutGuardTriggered?: boolean;
   elapsedMs?: number;
   refreshWorkItemCount?: number;

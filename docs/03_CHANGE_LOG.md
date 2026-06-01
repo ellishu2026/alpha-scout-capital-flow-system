@@ -1,5 +1,11 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.2 Forward Return Tracking
+
+- Added `/api/cron/update-forward-returns` to populate 1D, 3D, 5D, 10D, and 20D forward return fields for saved signal snapshots.
+- Added `/api/debug/forward-returns` for authorized inspection of signal rows and forward return fields.
+- Added a compact Forward Returns diagnostics card and updated dashboard title to V1.7.2.
+
 ## V1.7.1.2 Fixed Watchlist Signal Snapshot Persistence
 
 - Built fixed watchlist snapshots before timeout-sensitive market scan expansion during cron refresh.
