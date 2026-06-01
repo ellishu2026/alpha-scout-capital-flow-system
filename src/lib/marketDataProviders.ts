@@ -1,6 +1,7 @@
 import "server-only";
 
 import type {
+  ArchiveHitProvider,
   CapitalFlowDataSource,
   CapitalFlowQuality,
   ProviderUsed,
@@ -30,9 +31,12 @@ export type ProviderPayloadSummary = {
 
 export type ProviderFetchMetadata = {
   providerUsed?: ProviderUsed;
-  providerPriorityTried: CapitalFlowDataSource[];
+  providerPriorityTried: string[];
   providerErrors: string[];
   providerEndpointType?: string;
+  archiveLookupTried: boolean;
+  archiveProviderChecked: ProviderName[];
+  archiveHitProvider: ArchiveHitProvider;
   archiveStatus?: string;
   rawProviderPayloadSummary?: ProviderPayloadSummary;
   providerCallBudget: {
@@ -75,6 +79,9 @@ export function emptyProviderMetadata(): ProviderFetchMetadata {
   return {
     providerPriorityTried: [],
     providerErrors: [],
+    archiveLookupTried: false,
+    archiveProviderChecked: [],
+    archiveHitProvider: null,
     providerCallBudget: getProviderBudgetSummary(),
     providerCallsUsed: getProviderCallsUsedSummary(),
   };
@@ -445,31 +452,60 @@ export async function fetchProviderCandles(
   symbol: string,
 ): Promise<ProviderOhlcvResult> {
   const providerErrors: string[] = [];
-  const providerPriorityTried: CapitalFlowDataSource[] = [];
+  const providerPriorityTried: string[] = [];
+  const archiveProviderChecked: ProviderName[] = ["POLYGON", "ALPHA_VANTAGE"];
+  const archiveLookupTried = true;
+
+  const archivedPolygon = await getArchivedMarketData({
+    ticker: symbol,
+    provider: "POLYGON",
+  });
+
+  if (archivedPolygon) {
+    return {
+      candles: archivedPolygon.candles,
+      providerUsed: archiveProviderUsed("POLYGON"),
+      dataSource: "POLYGON",
+      quality: "REAL_PROVIDER",
+      providerPriorityTried: ["ARCHIVE"],
+      providerErrors,
+      providerEndpointType: archivedPolygon.summary.endpointType,
+      archiveLookupTried,
+      archiveProviderChecked,
+      archiveHitProvider: "POLYGON",
+      archiveStatus: "ARCHIVE_HIT",
+      rawProviderPayloadSummary: archivedPolygon.summary,
+      providerCallBudget: getProviderBudgetSummary(),
+      providerCallsUsed: getProviderCallsUsedSummary(),
+    };
+  }
+
+  const archivedAlphaVantage = await getArchivedMarketData({
+    ticker: symbol,
+    provider: "ALPHA_VANTAGE",
+  });
+
+  if (archivedAlphaVantage) {
+    return {
+      candles: archivedAlphaVantage.candles,
+      providerUsed: archiveProviderUsed("ALPHA_VANTAGE"),
+      dataSource: "ALPHA_VANTAGE",
+      quality: "REAL_PROVIDER",
+      providerPriorityTried: ["ARCHIVE"],
+      providerErrors,
+      providerEndpointType: archivedAlphaVantage.summary.endpointType,
+      archiveLookupTried,
+      archiveProviderChecked,
+      archiveHitProvider: "ALPHA_VANTAGE",
+      archiveStatus: "ARCHIVE_HIT",
+      rawProviderPayloadSummary: archivedAlphaVantage.summary,
+      providerCallBudget: getProviderBudgetSummary(),
+      providerCallsUsed: getProviderCallsUsedSummary(),
+    };
+  }
 
   try {
     providerPriorityTried.push("POLYGON");
-    const archivedPolygon = await getArchivedMarketData({
-      ticker: symbol,
-      provider: "POLYGON",
-    });
-
-    if (archivedPolygon) {
-      return {
-        candles: archivedPolygon.candles,
-        providerUsed: archiveProviderUsed("POLYGON"),
-        dataSource: "POLYGON",
-        quality: "REAL_PROVIDER",
-        providerPriorityTried,
-        providerErrors,
-        providerEndpointType: archivedPolygon.summary.endpointType,
-        archiveStatus: "ARCHIVE_HIT",
-        rawProviderPayloadSummary: archivedPolygon.summary,
-        providerCallBudget: getProviderBudgetSummary(),
-        providerCallsUsed: getProviderCallsUsedSummary(),
-      };
-    }
-
     const polygon = await fetchPolygonCandles(symbol);
     const archive = await archiveMarketDataIfPossible({
       ticker: symbol,
@@ -488,6 +524,9 @@ export async function fetchProviderCandles(
         ? [...providerErrors, providerError("POLYGON", archive.error)]
         : providerErrors,
       providerEndpointType: polygon.summary.endpointType,
+      archiveLookupTried,
+      archiveProviderChecked,
+      archiveHitProvider: null,
       archiveStatus: archive.status,
       rawProviderPayloadSummary: polygon.summary,
       providerCallBudget: getProviderBudgetSummary(),
@@ -501,27 +540,6 @@ export async function fetchProviderCandles(
 
   try {
     providerPriorityTried.push("ALPHA_VANTAGE");
-    const archivedAlphaVantage = await getArchivedMarketData({
-      ticker: symbol,
-      provider: "ALPHA_VANTAGE",
-    });
-
-    if (archivedAlphaVantage) {
-      return {
-        candles: archivedAlphaVantage.candles,
-        providerUsed: archiveProviderUsed("ALPHA_VANTAGE"),
-        dataSource: "ALPHA_VANTAGE",
-        quality: "REAL_PROVIDER",
-        providerPriorityTried,
-        providerErrors,
-        providerEndpointType: archivedAlphaVantage.summary.endpointType,
-        archiveStatus: "ARCHIVE_HIT",
-        rawProviderPayloadSummary: archivedAlphaVantage.summary,
-        providerCallBudget: getProviderBudgetSummary(),
-        providerCallsUsed: getProviderCallsUsedSummary(),
-      };
-    }
-
     const alphaVantage = await fetchAlphaVantageCandles(symbol);
     const archive = await archiveMarketDataIfPossible({
       ticker: symbol,
@@ -540,6 +558,9 @@ export async function fetchProviderCandles(
         ? [...providerErrors, providerError("ALPHA_VANTAGE", archive.error)]
         : providerErrors,
       providerEndpointType: alphaVantage.summary.endpointType,
+      archiveLookupTried,
+      archiveProviderChecked,
+      archiveHitProvider: null,
       archiveStatus: archive.status,
       rawProviderPayloadSummary: alphaVantage.summary,
       providerCallBudget: getProviderBudgetSummary(),
@@ -558,6 +579,9 @@ export async function fetchProviderCandles(
     candles: [],
     providerPriorityTried,
     providerErrors,
+    archiveLookupTried,
+    archiveProviderChecked,
+    archiveHitProvider: null,
     providerCallBudget: getProviderBudgetSummary(),
     providerCallsUsed: getProviderCallsUsedSummary(),
   };

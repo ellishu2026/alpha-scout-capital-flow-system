@@ -1,5 +1,16 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.4.1 True Archive-First Provider Lookup
+
+- Added true archive-first provider lookup before any Polygon or Alpha Vantage network calls.
+- Reuses same-day archived OHLCV before external provider calls.
+- Checks Polygon archive, then Alpha Vantage archive, before live provider priority begins.
+- Prevents unnecessary Polygon 401 attempts when an Alpha Vantage archive row already exists.
+- Reduces Alpha Vantage quota usage on repeated same-day requests.
+- Added archive debug fields: `archiveLookupTried`, `archiveProviderChecked`, and `archiveHitProvider`.
+- Added archive-specific flow version `V1.6.4.1_ARCHIVE_PROVIDER_CHAIKIN`.
+- Validation remains lint/build only; no localhost validation was used.
+
 ## V1.6.4 Archive-First Provider Fetch
 
 - Added archive-first lookup in `public.alpha_scout_market_data_archive` before external provider calls.

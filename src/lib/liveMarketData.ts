@@ -13,6 +13,7 @@ import {
   calculateCapitalFlowChangeRatio,
   calculateCapitalFlowScore,
   calculateCapitalFlowsFromCandles,
+  ARCHIVE_PROVIDER_FLOW_CALCULATION_VERSION,
   NORMALIZED_FLOW_CALCULATION_VERSION,
   type CapitalFlows,
   zeroCapitalFlows,
@@ -121,6 +122,9 @@ function fallbackFlows(symbol: string): CapitalFlows {
     providerPriorityTried: [],
     providerErrors: [],
     providerEndpointType: "MOCK",
+    archiveLookupTried: false,
+    archiveProviderChecked: [],
+    archiveHitProvider: null,
     archiveStatus: "MOCK",
     rawProviderPayloadSummary: undefined,
     moneyFlowMultiplierLatest: null,
@@ -231,17 +235,26 @@ export async function resolveCapitalFlows(
     providerCandles.dataSource &&
     providerCandles.quality
   ) {
-    return {
-      ...calculateCapitalFlowsFromCandles({
+    const flows = calculateCapitalFlowsFromCandles({
         candles: providerCandles.candles,
         dataSource: providerCandles.dataSource,
         quality: providerCandles.quality,
         marketCap,
-      }),
+      });
+
+    return {
+      ...flows,
+      flowCalculationVersion:
+        providerCandles.archiveStatus === "ARCHIVE_HIT"
+          ? ARCHIVE_PROVIDER_FLOW_CALCULATION_VERSION
+          : flows.flowCalculationVersion,
       providerUsed: providerCandles.providerUsed,
       providerPriorityTried: providerCandles.providerPriorityTried,
       providerErrors: providerCandles.providerErrors,
       providerEndpointType: providerCandles.providerEndpointType,
+      archiveLookupTried: providerCandles.archiveLookupTried,
+      archiveProviderChecked: providerCandles.archiveProviderChecked,
+      archiveHitProvider: providerCandles.archiveHitProvider,
       archiveStatus: providerCandles.archiveStatus,
       rawProviderPayloadSummary: providerCandles.rawProviderPayloadSummary,
     };
@@ -260,6 +273,9 @@ export async function resolveCapitalFlows(
     providerPriorityTried: providerCandles.providerPriorityTried,
     providerErrors: providerCandles.providerErrors,
     providerEndpointType: "YFINANCE_HISTORICAL",
+    archiveLookupTried: providerCandles.archiveLookupTried,
+    archiveProviderChecked: providerCandles.archiveProviderChecked,
+    archiveHitProvider: providerCandles.archiveHitProvider,
     archiveStatus: "PROXY_PROVIDER",
   };
 }
@@ -629,6 +645,9 @@ export async function buildCapitalFlowDebug(symbol: string) {
     providerPriorityTried: flows.providerPriorityTried,
     providerErrors: flows.providerErrors,
     providerEndpointType: flows.providerEndpointType,
+    archiveLookupTried: flows.archiveLookupTried,
+    archiveProviderChecked: flows.archiveProviderChecked,
+    archiveHitProvider: flows.archiveHitProvider,
     archiveStatus: flows.archiveStatus,
     rawProviderPayloadSummary: flows.rawProviderPayloadSummary,
     moneyFlowMultiplierLatest: flows.moneyFlowMultiplierLatest,
