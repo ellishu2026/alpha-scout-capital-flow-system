@@ -48,8 +48,13 @@ export type RefreshTimeoutGuard = {
   startedAt: number;
   maxElapsedMs: number;
   triggered: boolean;
+  refreshWorkItemCount: number;
+  processedWorkItemCount: number;
+  skippedWorkItemCount: number;
   processedTickers: Set<string>;
   skippedTickers: Set<string>;
+  fixedWatchlistTickers: Set<string>;
+  marketScanTickers: Set<string>;
 };
 
 type LiveQuote = {
@@ -100,20 +105,72 @@ export function createRefreshTimeoutGuard(
     startedAt: Date.now(),
     maxElapsedMs,
     triggered: false,
+    refreshWorkItemCount: 0,
+    processedWorkItemCount: 0,
+    skippedWorkItemCount: 0,
     processedTickers: new Set<string>(),
     skippedTickers: new Set<string>(),
+    fixedWatchlistTickers: new Set<string>(),
+    marketScanTickers: new Set<string>(),
   };
 }
 
-export function getRefreshTimeoutSummary(guard: RefreshTimeoutGuard) {
+export function getRefreshTimeoutSummary({
+  guard,
+  finalCoverageTickerCount,
+  fixedWatchlistTickerCount,
+  marketScanTickerCount,
+  dedupedCoverageTickerCount,
+}: {
+  guard: RefreshTimeoutGuard;
+  finalCoverageTickerCount: number;
+  fixedWatchlistTickerCount: number;
+  marketScanTickerCount: number;
+  dedupedCoverageTickerCount: number;
+}) {
   const skippedTickers = Array.from(guard.skippedTickers).sort();
 
   return {
     timeoutGuardTriggered: guard.triggered,
-    processedTickerCount: guard.processedTickers.size,
-    skippedTickerCount: skippedTickers.length,
-    skippedTickers,
     elapsedMs: Date.now() - guard.startedAt,
+    refreshWorkItemCount: guard.refreshWorkItemCount,
+    processedWorkItemCount: guard.processedWorkItemCount,
+    skippedWorkItemCount: guard.skippedWorkItemCount,
+    finalCoverageTickerCount,
+    fixedWatchlistTickerCount,
+    marketScanTickerCount,
+    dedupedCoverageTickerCount,
+    processedTickerCount: guard.processedWorkItemCount,
+    skippedTickerCount: guard.skippedWorkItemCount,
+    skippedTickers,
+    metricDefinitions: {
+      timeoutGuardTriggered:
+        "True when the cron refresh stopped starting new ticker work to return before the production timeout.",
+      elapsedMs:
+        "Wall-clock milliseconds spent in the cron refresh handler before returning JSON.",
+      refreshWorkItemCount:
+        "Total internal ticker work items considered across quote, capital-flow, and fixed-watchlist passes.",
+      processedWorkItemCount:
+        "Internal ticker work items actually started and completed before the timeout guard stopped new work.",
+      skippedWorkItemCount:
+        "Internal ticker work items not started because the timeout guard stopped new work.",
+      finalCoverageTickerCount:
+        "Final unique ticker count included in the returned snapshot and providerCoverageSummary.",
+      fixedWatchlistTickerCount:
+        "Fixed-watchlist ticker rows included or attempted in this refresh response.",
+      marketScanTickerCount:
+        "Market-scan ticker rows included or attempted in this refresh response.",
+      dedupedCoverageTickerCount:
+        "Unique ticker count after combining fixed-watchlist and market-scan coverage.",
+      processedTickerCount:
+        "Backward-compatible alias for processedWorkItemCount; prefer processedWorkItemCount.",
+      skippedTickerCount:
+        "Backward-compatible alias for skippedWorkItemCount; prefer skippedWorkItemCount.",
+      skippedTickers:
+        "Unique ticker symbols associated with work items skipped by the timeout guard.",
+      providerCoverageSummary:
+        "Final unique ticker provider coverage only; it does not count internal quote or scan work items.",
+    },
   };
 }
 
@@ -160,12 +217,30 @@ async function mapWithConcurrency<T, R>(
   options?: {
     guard?: RefreshTimeoutGuard;
     getTicker?: (item: T) => string;
+    scope?: "FIXED_WATCHLIST" | "MARKET_SCAN";
   },
 ): Promise<R[]> {
   const results: R[] = [];
+  if (options?.guard) {
+    options.guard.refreshWorkItemCount += items.length;
+    if (options.getTicker && options.scope) {
+      const tickerSet =
+        options.scope === "FIXED_WATCHLIST"
+          ? options.guard.fixedWatchlistTickers
+          : options.guard.marketScanTickers;
+
+      for (const item of items) {
+        const ticker = options.getTicker(item);
+        if (ticker) tickerSet.add(ticker);
+      }
+    }
+  }
 
   for (let index = 0; index < items.length; index += limit) {
     if (!canStartTickerWork(options?.guard)) {
+      if (options?.guard) {
+        options.guard.skippedWorkItemCount += items.length - index;
+      }
       markSkipped(
         options?.guard,
         options?.getTicker
@@ -177,6 +252,9 @@ async function mapWithConcurrency<T, R>(
 
     const batch = items.slice(index, index + limit);
     results.push(...(await Promise.all(batch.map((item) => mapper(item)))));
+    if (options?.guard) {
+      options.guard.processedWorkItemCount += batch.length;
+    }
   }
 
   return results;
@@ -600,6 +678,7 @@ export async function buildFixedWatchlistSnapshot(
     {
       guard,
       getTicker: (symbol) => symbol,
+      scope: "FIXED_WATCHLIST",
     },
   );
 
@@ -624,7 +703,7 @@ export async function buildFixedWatchlistSnapshot(
     mode: "FIXED_WATCHLIST",
     status: "PARTIAL_LIVE",
     count: rankedCandidates.length,
-    scannedCount: symbols.length,
+    scannedCount: results.length,
     candidateCount: rankedCandidates.length,
     failedCount: results.filter((result) => result.usedFallback).length,
     movementSummary: buildMovementSummary(rankedCandidates),
@@ -644,6 +723,7 @@ export async function buildMarketScanSnapshot(
     {
       guard,
       getTicker: (symbol) => symbol,
+      scope: "MARKET_SCAN",
     },
   );
   const quoteFilteredCandidates = quoteResults.filter(
@@ -668,6 +748,7 @@ export async function buildMarketScanSnapshot(
     {
       guard,
       getTicker: (candidate) => candidate.symbol,
+      scope: "MARKET_SCAN",
     },
   );
 
@@ -701,7 +782,7 @@ export async function buildMarketScanSnapshot(
     mode: "MARKET_SCAN",
     status: "PARTIAL_LIVE",
     count: rankedCandidates.length,
-    scannedCount: symbols.length,
+    scannedCount: quoteResults.length,
     candidateCount: quoteFilteredCandidates.length,
     failedCount: quoteFailedCount + candleFallbackCount,
     movementSummary: buildMovementSummary(rankedCandidates),

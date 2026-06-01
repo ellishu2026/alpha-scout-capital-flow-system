@@ -1,5 +1,12 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.7.2 Refresh Metrics Cleanup
+
+- Added explicit cron refresh metric fields separating internal work-item counts from final unique ticker coverage.
+- Kept `processedTickerCount` and `skippedTickerCount` as backward-compatible aliases for work-item counts.
+- Added `metricDefinitions` to explain refresh metrics in the `/api/cron/refresh` JSON response.
+- Updated dashboard and flow labels to V1.6.7.2.
+
 ## V1.6.7.1 Cron Refresh Timeout Guard
 
 - Added a cron refresh elapsed-time guard that stops starting new ticker batches as the request approaches the production timeout.

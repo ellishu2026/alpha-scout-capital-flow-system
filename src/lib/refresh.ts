@@ -465,7 +465,22 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
         ? "SAVED"
         : "FAILED";
   const persistenceIssue = failedSaveResult ?? disabledSaveResult;
-  const timeoutSummary = getRefreshTimeoutSummary(timeoutGuard);
+  const timeoutSummary = getRefreshTimeoutSummary({
+    guard: timeoutGuard,
+    finalCoverageTickerCount: providerCoverageSummary.dedupedCoverageCount,
+    fixedWatchlistTickerCount:
+      timeoutGuard.fixedWatchlistTickers.size ||
+      fixedSnapshot?.scannedCount ||
+      fixedSnapshot?.items.length ||
+      0,
+    marketScanTickerCount:
+      timeoutGuard.marketScanTickers.size ||
+      (marketCoverageSnapshot.mode === "MARKET_SCAN"
+        ? marketCoverageSnapshot.scannedCount ??
+          marketCoverageSnapshot.items.length
+        : marketTop15Items.length),
+    dedupedCoverageTickerCount: providerCoverageSummary.dedupedCoverageCount,
+  });
   const snapshot: SnapshotResponse = {
     ...marketSnapshotForSave,
     persistenceStatus,
@@ -499,8 +514,8 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     message: liveMode
       ? usedLiveSnapshot
         ? timeoutSummary.timeoutGuardTriggered
-          ? `V1.6.7.1 refresh completed with timeout guard after ${timeoutSummary.elapsedMs}ms.`
-          : `V1.6.7.1 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`
+          ? `V1.6.7.2 refresh completed with timeout guard after ${timeoutSummary.elapsedMs}ms.`
+          : `V1.6.7.2 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`
         : "V1.4 yahoo-finance2 refresh failed; returned mock snapshot fallback."
       : "V1.0 mock snapshot refresh completed. Live yahoo-finance2 ingestion is not enabled.",
     snapshot,

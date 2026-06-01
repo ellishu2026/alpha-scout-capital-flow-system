@@ -178,7 +178,9 @@ export type StockCandidate = {
     | "V1.6.7_PROVIDER_LADDER_CHAIKIN"
     | "V1.6.7_COMPOSITE_PROXY"
     | "V1.6.7.1_PROVIDER_LADDER_CHAIKIN"
-    | "V1.6.7.1_COMPOSITE_PROXY";
+    | "V1.6.7.1_COMPOSITE_PROXY"
+    | "V1.6.7.2_PROVIDER_LADDER_CHAIKIN"
+    | "V1.6.7.2_COMPOSITE_PROXY";
   sourceBucket?: CoverageSourceBucket;
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
@@ -283,10 +285,18 @@ export type SnapshotResponse = {
   providerCallsUsed?: ProviderCoverageSummary["providerCallsUsed"];
   providerCallsRemaining?: ProviderCoverageSummary["providerCallsRemaining"];
   timeoutGuardTriggered?: boolean;
+  elapsedMs?: number;
+  refreshWorkItemCount?: number;
+  processedWorkItemCount?: number;
+  skippedWorkItemCount?: number;
+  finalCoverageTickerCount?: number;
+  fixedWatchlistTickerCount?: number;
+  marketScanTickerCount?: number;
+  dedupedCoverageTickerCount?: number;
   processedTickerCount?: number;
   skippedTickerCount?: number;
   skippedTickers?: string[];
-  elapsedMs?: number;
+  metricDefinitions?: Record<string, string>;
   movementSummary?: {
     newCount: number;
     upCount: number;
@@ -312,10 +322,18 @@ export type RefreshResult = {
   persistenceErrorDetails?: string;
   providerCoverageSummary?: ProviderCoverageSummary;
   timeoutGuardTriggered?: boolean;
+  elapsedMs?: number;
+  refreshWorkItemCount?: number;
+  processedWorkItemCount?: number;
+  skippedWorkItemCount?: number;
+  finalCoverageTickerCount?: number;
+  fixedWatchlistTickerCount?: number;
+  marketScanTickerCount?: number;
+  dedupedCoverageTickerCount?: number;
   processedTickerCount?: number;
   skippedTickerCount?: number;
   skippedTickers?: string[];
-  elapsedMs?: number;
+  metricDefinitions?: Record<string, string>;
   message: string;
   snapshot: SnapshotResponse;
 };
