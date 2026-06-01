@@ -12,15 +12,25 @@ export const POLYGON_DAILY_CALL_LIMIT = parseDailyLimit(
   process.env.POLYGON_DAILY_CALL_LIMIT,
   20,
 );
+export const TWELVE_DATA_DAILY_CALL_LIMIT = parseDailyLimit(
+  process.env.TWELVE_DATA_DAILY_CALL_LIMIT,
+  60,
+);
+export const EODHD_DAILY_CALL_LIMIT = parseDailyLimit(
+  process.env.EODHD_DAILY_CALL_LIMIT,
+  20,
+);
 
-type ProviderName = "ALPHA_VANTAGE" | "POLYGON";
+type ProviderName = "ALPHA_VANTAGE" | "POLYGON" | "TWELVE_DATA" | "EODHD";
 
 const usageByProvider = new Map<ProviderName, number>();
 
 export function getProviderLimit(provider: ProviderName) {
-  return provider === "ALPHA_VANTAGE"
-    ? ALPHA_VANTAGE_DAILY_CALL_LIMIT
-    : POLYGON_DAILY_CALL_LIMIT;
+  if (provider === "ALPHA_VANTAGE") return ALPHA_VANTAGE_DAILY_CALL_LIMIT;
+  if (provider === "TWELVE_DATA") return TWELVE_DATA_DAILY_CALL_LIMIT;
+  if (provider === "EODHD") return EODHD_DAILY_CALL_LIMIT;
+
+  return POLYGON_DAILY_CALL_LIMIT;
 }
 
 export function getProviderCallsUsed(provider: ProviderName) {

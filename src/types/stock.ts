@@ -17,13 +17,22 @@ export type CapitalFlowDataSource =
   | "YFINANCE_CHAIKIN"
   | "YFINANCE_COMPOSITE_PROXY"
   | "ALPHA_VANTAGE"
+  | "TWELVE_DATA"
+  | "EODHD"
   | "POLYGON"
   | "MOCK";
 export type ProviderUsed =
   | CapitalFlowDataSource
   | "ALPHA_VANTAGE_ARCHIVE"
+  | "TWELVE_DATA_ARCHIVE"
+  | "EODHD_ARCHIVE"
   | "POLYGON_ARCHIVE";
-export type ArchiveHitProvider = "POLYGON" | "ALPHA_VANTAGE" | null;
+export type ArchiveHitProvider =
+  | "POLYGON"
+  | "ALPHA_VANTAGE"
+  | "TWELVE_DATA"
+  | "EODHD"
+  | null;
 export type CapitalFlowQuality = "LIVE_PROXY" | "REAL_PROVIDER" | "MOCK" | "FALLBACK";
 export type CoverageSourceBucket =
   | "FIXED_WATCHLIST"
@@ -164,7 +173,9 @@ export type StockCandidate = {
     | "V1.6.5.1_ARCHIVE_PROVIDER_CHAIKIN"
     | "V1.6.5.1_REAL_PROVIDER_CHAIKIN"
     | "V1.6.5.1_YFINANCE_CHAIKIN"
-    | "V1.6.6_COMPOSITE_PROXY";
+    | "V1.6.6_COMPOSITE_PROXY"
+    | "V1.6.7_PROVIDER_LADDER_CHAIKIN"
+    | "V1.6.7_COMPOSITE_PROXY";
   sourceBucket?: CoverageSourceBucket;
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
@@ -215,6 +226,8 @@ export type ProviderCoverageSummary = {
   dedupedCoverageCount: number;
   archiveHitCount: number;
   alphaVantageLiveCount: number;
+  twelveDataLiveCount: number;
+  eodhdLiveCount: number;
   polygonLiveCount: number;
   yfinanceFallbackCount: number;
   compositeProxyFallbackCount: number;
@@ -223,14 +236,21 @@ export type ProviderCoverageSummary = {
   providerCallsUsed: {
     polygon: number;
     alphaVantage: number;
+    twelveData: number;
+    eodhd: number;
   };
   providerCallsRemaining: {
     polygon: number;
     alphaVantage: number;
+    twelveData: number;
+    eodhd: number;
   };
   polygonLiveEnabled: boolean;
   archiveHitTickers: string[];
   alphaVantageLiveTickers: string[];
+  twelveDataLiveTickers: string[];
+  eodhdLiveTickers: string[];
+  polygonLiveTickers: string[];
   yfinanceFallbackTickers: string[];
   compositeProxyFallbackTickers: string[];
   providerErrorTickers: string[];

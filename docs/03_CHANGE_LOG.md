@@ -1,5 +1,12 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.6.7 Provider Ladder Expansion
+
+- Added archive lookup support for `TWELVE_DATA` and `EODHD` after existing `POLYGON` and `ALPHA_VANTAGE` archive checks.
+- Added live provider ladder order `ALPHA_VANTAGE` -> `TWELVE_DATA` -> `EODHD` -> `YFINANCE_COMPOSITE_PROXY`.
+- Added Twelve Data and EODHD daily call budgets, coverage summary counters, ticker lists, and debug usage output.
+- Updated real provider labels to `V1.6.7_PROVIDER_LADDER_CHAIKIN` and fallback labels to `V1.6.7_COMPOSITE_PROXY`.
+
 ## V1.6.6 Composite Capital Flow Proxy
 
 - Replaced YFINANCE fallback flow with a composite proxy while keeping real provider and archive logic unchanged.

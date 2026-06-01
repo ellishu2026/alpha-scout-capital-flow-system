@@ -145,6 +145,8 @@ function buildProviderCoverageSummary({
     if (candidate.archiveStatus === "ARCHIVE_HIT") return 3;
     if (
       candidate.providerUsed === "ALPHA_VANTAGE" ||
+      candidate.providerUsed === "TWELVE_DATA" ||
+      candidate.providerUsed === "EODHD" ||
       candidate.providerUsed === "POLYGON"
     ) {
       return 2;
@@ -181,6 +183,12 @@ function buildProviderCoverageSummary({
   const alphaVantageLiveTickers = coverageItems
     .filter((candidate) => candidate.providerUsed === "ALPHA_VANTAGE")
     .map((candidate) => candidate.ticker);
+  const twelveDataLiveTickers = coverageItems
+    .filter((candidate) => candidate.providerUsed === "TWELVE_DATA")
+    .map((candidate) => candidate.ticker);
+  const eodhdLiveTickers = coverageItems
+    .filter((candidate) => candidate.providerUsed === "EODHD")
+    .map((candidate) => candidate.ticker);
   const polygonLiveTickers = coverageItems
     .filter((candidate) => candidate.providerUsed === "POLYGON")
     .map((candidate) => candidate.ticker);
@@ -204,6 +212,8 @@ function buildProviderCoverageSummary({
   const realProviderCoverageCount =
     archiveHitTickers.length +
     alphaVantageLiveTickers.length +
+    twelveDataLiveTickers.length +
+    eodhdLiveTickers.length +
     polygonLiveTickers.length;
   const totalTickers = coverageItems.length;
 
@@ -214,6 +224,8 @@ function buildProviderCoverageSummary({
     dedupedCoverageCount: totalTickers,
     archiveHitCount: archiveHitTickers.length,
     alphaVantageLiveCount: alphaVantageLiveTickers.length,
+    twelveDataLiveCount: twelveDataLiveTickers.length,
+    eodhdLiveCount: eodhdLiveTickers.length,
     polygonLiveCount: polygonLiveTickers.length,
     yfinanceFallbackCount: yfinanceFallbackTickers.length,
     compositeProxyFallbackCount: compositeProxyFallbackTickers.length,
@@ -225,14 +237,21 @@ function buildProviderCoverageSummary({
     providerCallsUsed: {
       polygon: providerBudget.polygon.callsUsed,
       alphaVantage: providerBudget.alphaVantage.callsUsed,
+      twelveData: providerBudget.twelveData.callsUsed,
+      eodhd: providerBudget.eodhd.callsUsed,
     },
     providerCallsRemaining: {
       polygon: providerBudget.polygon.remaining,
       alphaVantage: providerBudget.alphaVantage.remaining,
+      twelveData: providerBudget.twelveData.remaining,
+      eodhd: providerBudget.eodhd.remaining,
     },
     polygonLiveEnabled: getPolygonLiveEnabled(),
     archiveHitTickers,
     alphaVantageLiveTickers,
+    twelveDataLiveTickers,
+    eodhdLiveTickers,
+    polygonLiveTickers,
     yfinanceFallbackTickers,
     compositeProxyFallbackTickers,
     providerErrorTickers,
@@ -254,6 +273,8 @@ function attachProviderCoverageSummary(
     archiveHitCount: providerCoverageSummary.archiveHitCount,
     liveProviderSuccessCount:
       providerCoverageSummary.alphaVantageLiveCount +
+      providerCoverageSummary.twelveDataLiveCount +
+      providerCoverageSummary.eodhdLiveCount +
       providerCoverageSummary.polygonLiveCount,
     fallbackToYfinanceCount: providerCoverageSummary.yfinanceFallbackCount,
     providerCallsUsed: providerCoverageSummary.providerCallsUsed,

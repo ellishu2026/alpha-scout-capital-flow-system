@@ -8,13 +8,13 @@ export const FLOW_CALCULATION_VERSION = "V1.6.1_CHAIKIN" as const;
 export const NORMALIZED_FLOW_CALCULATION_VERSION =
   "V1.6.2_NORMALIZED_CHAIKIN" as const;
 export const REAL_PROVIDER_FLOW_CALCULATION_VERSION =
-  "V1.6.5.1_REAL_PROVIDER_CHAIKIN" as const;
+  "V1.6.7_PROVIDER_LADDER_CHAIKIN" as const;
 export const YFINANCE_FLOW_CALCULATION_VERSION =
   "V1.6.5.1_YFINANCE_CHAIKIN" as const;
 export const ARCHIVE_PROVIDER_FLOW_CALCULATION_VERSION =
-  "V1.6.5.1_ARCHIVE_PROVIDER_CHAIKIN" as const;
+  "V1.6.7_PROVIDER_LADDER_CHAIKIN" as const;
 export const COMPOSITE_PROXY_FLOW_CALCULATION_VERSION =
-  "V1.6.6_COMPOSITE_PROXY" as const;
+  "V1.6.7_COMPOSITE_PROXY" as const;
 export const COMPOSITE_FLOW_WEIGHTS = {
   chaikin: 0.45,
   priceChangeWeighted: 0.25,
@@ -203,7 +203,10 @@ function getFlowCalculationVersion(dataSource: CapitalFlowDataSource) {
     return COMPOSITE_PROXY_FLOW_CALCULATION_VERSION;
   }
 
-  return dataSource === "POLYGON" || dataSource === "ALPHA_VANTAGE"
+  return dataSource === "POLYGON" ||
+    dataSource === "ALPHA_VANTAGE" ||
+    dataSource === "TWELVE_DATA" ||
+    dataSource === "EODHD"
     ? REAL_PROVIDER_FLOW_CALCULATION_VERSION
     : YFINANCE_FLOW_CALCULATION_VERSION;
 }
@@ -429,14 +432,20 @@ export function calculateCapitalFlowsFromCandles({
     providerPriorityTried: [dataSource],
     providerErrors: [],
     providerEndpointType:
-      dataSource === "POLYGON" || dataSource === "ALPHA_VANTAGE"
+      dataSource === "POLYGON" ||
+      dataSource === "ALPHA_VANTAGE" ||
+      dataSource === "TWELVE_DATA" ||
+      dataSource === "EODHD"
         ? "REAL_PROVIDER"
         : "YFINANCE_HISTORICAL",
     archiveLookupTried: false,
     archiveProviderChecked: [],
     archiveHitProvider: null,
     archiveStatus:
-      dataSource === "POLYGON" || dataSource === "ALPHA_VANTAGE"
+      dataSource === "POLYGON" ||
+      dataSource === "ALPHA_VANTAGE" ||
+      dataSource === "TWELVE_DATA" ||
+      dataSource === "EODHD"
         ? undefined
         : "PROXY_PROVIDER",
     rawProviderPayloadSummary: undefined,

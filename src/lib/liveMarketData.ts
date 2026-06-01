@@ -671,6 +671,14 @@ export async function buildCapitalFlowDebug(symbol: string) {
     providerCallsUsed: {
       polygon: providerBudget.polygon.callsUsed,
       alphaVantage: providerBudget.alphaVantage.callsUsed,
+      twelveData: providerBudget.twelveData.callsUsed,
+      eodhd: providerBudget.eodhd.callsUsed,
+    },
+    providerCallsRemaining: {
+      polygon: providerBudget.polygon.remaining,
+      alphaVantage: providerBudget.alphaVantage.remaining,
+      twelveData: providerBudget.twelveData.remaining,
+      eodhd: providerBudget.eodhd.remaining,
     },
     recentDailyFlow: flows.recentDailyFlow ?? [],
   };
