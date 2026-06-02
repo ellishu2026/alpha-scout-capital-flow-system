@@ -565,6 +565,10 @@ function WinRateSection({
 }) {
   const overall = report?.summaries.overall;
   const hasSamples = (report?.availableForwardReturnRows ?? 0) > 0;
+  const readiness = report?.calibrationReadiness;
+  const readinessStatus = readiness?.isReadyForRuleCalibration
+    ? "Ready"
+    : "Not Ready";
 
   return (
     <section className="mt-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
@@ -616,6 +620,16 @@ function WinRateSection({
                   value={formatWinRateCell(overall.forward20D)}
                 />
               </div>
+              <p className="mt-1.5 border-t border-slate-200 pt-1.5 text-slate-600">
+                Calibration: {readinessStatus} · Samples{" "}
+                {readiness?.availableForwardReturnRows ?? 0} · Min{" "}
+                {readiness?.minRecommendedSamples ?? 30}
+              </p>
+              {readiness?.notReadyReason ? (
+                <p className="mt-0.5 text-slate-500">
+                  {readiness.notReadyReason}
+                </p>
+              ) : null}
             </article>
 
             <article className="overflow-hidden rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
@@ -669,8 +683,11 @@ function WinRateSection({
           </div>
         ) : (
           <p className="mt-1.5 rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600">
-            Forward return samples are not available yet. Win-rate report will
-            populate after future trading days are captured.
+            Calibration: {readinessStatus} · Samples{" "}
+            {readiness?.availableForwardReturnRows ?? 0} · Min recommended{" "}
+            {readiness?.minRecommendedSamples ?? 30}.{" "}
+            {readiness?.notReadyReason ??
+              "Forward return samples are not available yet. Win-rate report will populate after future trading days are captured."}
           </p>
         )
       ) : null}
@@ -1009,13 +1026,13 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.6
+                AlphaScout Capital Flow System V1.7.7
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
               </p>
             </div>
-            <div className="grid gap-x-3 gap-y-0.5 rounded border border-slate-200 bg-white px-2.5 py-2 text-[11px] shadow-sm sm:grid-cols-4 lg:min-w-[620px]">
+            <div className="grid gap-x-3 gap-y-0.5 rounded border border-slate-200 bg-white px-2.5 py-2 text-[11px] shadow-sm sm:grid-cols-3 lg:min-w-[520px]">
               <div>
                 <span className="text-slate-500">Data Mode</span>
                 <p className="font-medium text-slate-950">
@@ -1031,13 +1048,6 @@ export function Dashboard({
               <div>
                 <span className="text-slate-500">Last Updated</span>
                 <p className="font-medium text-slate-950">{updatedAt} UTC</p>
-              </div>
-              <div>
-                <span className="text-slate-500">Selected</span>
-                <p className="font-medium text-slate-950">
-                  Top {allSnapshot.count} ·{" "}
-                  {getDataStatusLabel(allSnapshot.status)}
-                </p>
               </div>
             </div>
           </div>

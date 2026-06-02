@@ -26,11 +26,12 @@
 - V1.7.4.1 Action Signal Rule Tuning
 - V1.7.5 Dashboard Action Layout Refinement
 - V1.7.6 Entry / Position Action Split
+- V1.7.7 Action Signal Calibration with Forward Returns
 
 ## Next Recommended Steps
 
-- V1.7.7 Action Signal Calibration with Forward Returns
 - V1.7.8 Dashboard Action History
+- V1.7.9 Calibration Threshold Tuning when samples are sufficient
 
 ## Later
 
@@ -68,3 +69,5 @@ V1.7.4.1 tunes the action rules so `NO_FORWARD_RETURN_HISTORY` and `MARKET_SCAN_
 V1.7.5 refines the dashboard action layout while keeping one ticker per row. Action and confidence are displayed before the raw signal, provider and financial data source are merged into `Source`, and the ticker remains sticky during horizontal scroll. Entry / Position action split is deferred to V1.7.6.
 
 V1.7.6 splits the action layer into entry action for no-position / new-entry decision support and position action for existing-position management. The system does not know actual holdings, so these fields are separate trade-assist views of the same signal context. Explicit database columns may be added later if action analytics require them.
+
+V1.7.7 adds calibration readiness metrics for action signal evaluation with forward returns. Win-rate summaries now group by Entry action, Position action, legacy action, entry confidence, position confidence, data quality, provider, source bucket, and score buckets. V1.7.7 does not change action thresholds while forward-return samples are insufficient; the recommended minimum for initial calibration is 30 observations per window or group. The top-right `Selected` status field was removed from the dashboard header.

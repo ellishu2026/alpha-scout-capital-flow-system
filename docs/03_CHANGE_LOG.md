@@ -1,5 +1,11 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.7 Action Signal Calibration with Forward Returns
+
+- Added calibration readiness metrics to the win-rate report without changing Entry or Position action thresholds.
+- Added win-rate summary groups for Entry actions, Position actions, legacy actions, and action confidence fields.
+- Removed the top-right Selected field from the dashboard header while preserving the ranked-section and summary-card context.
+
 ## V1.7.6 Entry / Position Action Split
 
 - Split the action layer into entry actions for no-position decisions and position actions for existing-position management.

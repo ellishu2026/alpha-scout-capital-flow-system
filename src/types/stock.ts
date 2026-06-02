@@ -387,6 +387,18 @@ export type WinRateGroupSummary = {
   forward20D: ForwardWindowStats;
 };
 
+export type CalibrationReadiness = {
+  totalSignals: number;
+  availableForwardReturnRows: number;
+  insufficientForwardReturnRows: number;
+  minRecommendedSamples: number;
+  isReadyForRuleCalibration: boolean;
+  readyWindows: Array<
+    "forward1D" | "forward3D" | "forward5D" | "forward10D" | "forward20D"
+  >;
+  notReadyReason: string | null;
+};
+
 export type WinRateReport = {
   ok: boolean;
   filters: Record<string, string | number | undefined>;
@@ -394,11 +406,18 @@ export type WinRateReport = {
   totalRowsScanned: number;
   availableForwardReturnRows: number;
   insufficientForwardReturnRows: number;
+  calibrationReadiness: CalibrationReadiness;
   summaries: {
     overall: WinRateGroupSummary;
     bySignal: WinRateGroupSummary[];
     byMode: WinRateGroupSummary[];
     bySourceBucket: WinRateGroupSummary[];
+    byEntryAction: WinRateGroupSummary[];
+    byPositionAction: WinRateGroupSummary[];
+    byLegacyAction: WinRateGroupSummary[];
+    byActionConfidence: WinRateGroupSummary[];
+    byEntryConfidence: WinRateGroupSummary[];
+    byPositionConfidence: WinRateGroupSummary[];
     byDataQualityGrade: WinRateGroupSummary[];
     byProviderUsed: WinRateGroupSummary[];
     byCapitalFlowScoreBucket: WinRateGroupSummary[];

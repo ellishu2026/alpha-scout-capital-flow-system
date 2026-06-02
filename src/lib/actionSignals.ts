@@ -98,7 +98,7 @@ function buildActionContext(candidate: StockCandidate): ActionContext {
       candidate.capitalFlowQuality !== "REAL_PROVIDER" ||
       !providerUsed);
 
-  // TODO V1.7.7: use forward-return win-rate statistics to calibrate
+  // TODO V1.7.9: use forward-return win-rate statistics to calibrate
   // thresholds once enough historical action samples have accumulated.
   riskFlags.push("NO_FORWARD_RETURN_HISTORY");
 

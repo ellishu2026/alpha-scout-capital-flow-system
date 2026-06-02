@@ -7,7 +7,9 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabaseAdmin";
 import type {
+  CalibrationReadiness,
   ForwardWindowStats,
+  StockCandidate,
   WinRateGroupSummary,
   WinRateReport,
 } from "@/types/stock";
@@ -35,6 +37,8 @@ const FORWARD_WINDOWS = [
   },
 ] as const;
 
+const MIN_RECOMMENDED_CALIBRATION_SAMPLES = 30;
+
 type WinRateReportQuery = {
   from?: string;
   to?: string;
@@ -55,12 +59,17 @@ type SignalPerformanceRow = {
   composite_score: number | string | null;
   flow_data_quality_grade: string | null;
   provider_used: string | null;
+  action_signal?: string | null;
+  action_confidence?: string | null;
+  raw_item?: StockCandidate | null;
   forward_1d_return_pct: number | string | null;
   forward_3d_return_pct: number | string | null;
   forward_5d_return_pct: number | string | null;
   forward_10d_return_pct: number | string | null;
   forward_20d_return_pct: number | string | null;
 };
+
+type ForwardWindowKey = (typeof FORWARD_WINDOWS)[number]["key"];
 
 const emptyWindowStats: ForwardWindowStats = {
   sampleCount: 0,
@@ -166,6 +175,74 @@ function hasAnyForwardReturn(row: SignalPerformanceRow) {
   );
 }
 
+function rawItem(row: SignalPerformanceRow) {
+  return row.raw_item && typeof row.raw_item === "object" ? row.raw_item : null;
+}
+
+function legacyAction(row: SignalPerformanceRow) {
+  return row.action_signal ?? rawItem(row)?.actionSignal ?? "Unknown";
+}
+
+function entryAction(row: SignalPerformanceRow) {
+  return (
+    rawItem(row)?.entryActionSignal ??
+    row.action_signal ??
+    rawItem(row)?.actionSignal ??
+    "Unknown"
+  );
+}
+
+function positionAction(row: SignalPerformanceRow) {
+  return rawItem(row)?.positionActionSignal ?? "Unknown";
+}
+
+function actionConfidence(row: SignalPerformanceRow) {
+  return row.action_confidence ?? rawItem(row)?.actionConfidence ?? "Unknown";
+}
+
+function entryConfidence(row: SignalPerformanceRow) {
+  return (
+    rawItem(row)?.entryActionConfidence ??
+    row.action_confidence ??
+    rawItem(row)?.actionConfidence ??
+    "Unknown"
+  );
+}
+
+function positionConfidence(row: SignalPerformanceRow) {
+  return rawItem(row)?.positionActionConfidence ?? "Unknown";
+}
+
+function buildCalibrationReadiness({
+  totalSignals,
+  availableForwardReturnRows,
+  insufficientForwardReturnRows,
+  overall,
+}: {
+  totalSignals: number;
+  availableForwardReturnRows: number;
+  insufficientForwardReturnRows: number;
+  overall: WinRateGroupSummary;
+}): CalibrationReadiness {
+  const readyWindows = FORWARD_WINDOWS.map((window) => window.key).filter(
+    (key): key is ForwardWindowKey =>
+      overall[key].sampleCount >= MIN_RECOMMENDED_CALIBRATION_SAMPLES,
+  );
+
+  return {
+    totalSignals,
+    availableForwardReturnRows,
+    insufficientForwardReturnRows,
+    minRecommendedSamples: MIN_RECOMMENDED_CALIBRATION_SAMPLES,
+    isReadyForRuleCalibration: readyWindows.length > 0,
+    readyWindows,
+    notReadyReason:
+      readyWindows.length > 0
+        ? null
+        : "Forward return samples are still insufficient for reliable calibration.",
+  };
+}
+
 function buildGroupSummary(groupName: string, rows: SignalPerformanceRow[]) {
   const summary = emptyGroup(groupName);
   summary.totalSignals = rows.length;
@@ -205,8 +282,18 @@ function groupedSummaries({
     }
   });
 
-  return Array.from(groups.entries())
-    .map(([name, groupRows]) => buildGroupSummary(name, groupRows))
+  const summaries = Array.from(groups.entries()).map(([name, groupRows]) =>
+    buildGroupSummary(name, groupRows),
+  );
+
+  if (!rows.some(hasAnyForwardReturn)) {
+    return summaries.sort(
+      (a, b) =>
+        b.totalSignals - a.totalSignals || a.groupName.localeCompare(b.groupName),
+    );
+  }
+
+  return summaries
     .filter((summary) =>
       Object.values(summary.availableSamplesByWindow).some(
         (sampleCount) => sampleCount >= minSamples,
@@ -235,6 +322,8 @@ function emptyReport({
   generatedAt: string;
   error?: string;
 }): WinRateReport {
+  const overall = emptyGroup("Overall");
+
   return {
     ok: error == null,
     filters,
@@ -242,11 +331,23 @@ function emptyReport({
     totalRowsScanned: 0,
     availableForwardReturnRows: 0,
     insufficientForwardReturnRows: 0,
+    calibrationReadiness: buildCalibrationReadiness({
+      totalSignals: 0,
+      availableForwardReturnRows: 0,
+      insufficientForwardReturnRows: 0,
+      overall,
+    }),
     summaries: {
-      overall: emptyGroup("Overall"),
+      overall,
       bySignal: [],
       byMode: [],
       bySourceBucket: [],
+      byEntryAction: [],
+      byPositionAction: [],
+      byLegacyAction: [],
+      byActionConfidence: [],
+      byEntryConfidence: [],
+      byPositionConfidence: [],
       byDataQualityGrade: [],
       byProviderUsed: [],
       byCapitalFlowScoreBucket: [],
@@ -330,6 +431,7 @@ export async function buildWinRateReport({
         "composite_score",
         "flow_data_quality_grade",
         "provider_used",
+        "raw_item",
         ...FORWARD_WINDOWS.map((window) => window.field),
       ].join(","),
     )
@@ -368,6 +470,8 @@ export async function buildWinRateReport({
 
   const rows = (data ?? []) as unknown as SignalPerformanceRow[];
   const availableForwardReturnRows = rows.filter(hasAnyForwardReturn).length;
+  const insufficientForwardReturnRows = rows.length - availableForwardReturnRows;
+  const overall = buildGroupSummary("Overall", rows);
 
   return {
     ok: true,
@@ -375,9 +479,15 @@ export async function buildWinRateReport({
     generatedAt,
     totalRowsScanned: rows.length,
     availableForwardReturnRows,
-    insufficientForwardReturnRows: rows.length - availableForwardReturnRows,
+    insufficientForwardReturnRows,
+    calibrationReadiness: buildCalibrationReadiness({
+      totalSignals: rows.length,
+      availableForwardReturnRows,
+      insufficientForwardReturnRows,
+      overall,
+    }),
     summaries: {
-      overall: buildGroupSummary("Overall", rows),
+      overall,
       bySignal: groupedSummaries({
         rows,
         groupName: (row) => row.signal ?? "Unknown",
@@ -391,6 +501,36 @@ export async function buildWinRateReport({
       bySourceBucket: groupedSummaries({
         rows,
         groupName: (row) => row.source_bucket ?? "Unknown",
+        minSamples: parsedMinSamples,
+      }),
+      byEntryAction: groupedSummaries({
+        rows,
+        groupName: entryAction,
+        minSamples: parsedMinSamples,
+      }),
+      byPositionAction: groupedSummaries({
+        rows,
+        groupName: positionAction,
+        minSamples: parsedMinSamples,
+      }),
+      byLegacyAction: groupedSummaries({
+        rows,
+        groupName: legacyAction,
+        minSamples: parsedMinSamples,
+      }),
+      byActionConfidence: groupedSummaries({
+        rows,
+        groupName: actionConfidence,
+        minSamples: parsedMinSamples,
+      }),
+      byEntryConfidence: groupedSummaries({
+        rows,
+        groupName: entryConfidence,
+        minSamples: parsedMinSamples,
+      }),
+      byPositionConfidence: groupedSummaries({
+        rows,
+        groupName: positionConfidence,
         minSamples: parsedMinSamples,
       }),
       byDataQualityGrade: groupedSummaries({
