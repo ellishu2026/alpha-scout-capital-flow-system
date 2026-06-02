@@ -315,6 +315,54 @@ export type ForwardReturnUpdateStatus =
   | "NO_ELIGIBLE_ROWS"
   | "FAILED";
 
+export type ForwardWindowStats = {
+  sampleCount: number;
+  winCount: number;
+  lossCount: number;
+  winRatePct: number | null;
+  avgReturnPct: number | null;
+  medianReturnPct: number | null;
+  bestReturnPct: number | null;
+  worstReturnPct: number | null;
+};
+
+export type WinRateGroupSummary = {
+  groupName: string;
+  totalSignals: number;
+  availableSamplesByWindow: {
+    forward1D: number;
+    forward3D: number;
+    forward5D: number;
+    forward10D: number;
+    forward20D: number;
+  };
+  forward1D: ForwardWindowStats;
+  forward3D: ForwardWindowStats;
+  forward5D: ForwardWindowStats;
+  forward10D: ForwardWindowStats;
+  forward20D: ForwardWindowStats;
+};
+
+export type WinRateReport = {
+  ok: boolean;
+  filters: Record<string, string | number | undefined>;
+  generatedAt: string;
+  totalRowsScanned: number;
+  availableForwardReturnRows: number;
+  insufficientForwardReturnRows: number;
+  summaries: {
+    overall: WinRateGroupSummary;
+    bySignal: WinRateGroupSummary[];
+    byMode: WinRateGroupSummary[];
+    bySourceBucket: WinRateGroupSummary[];
+    byDataQualityGrade: WinRateGroupSummary[];
+    byProviderUsed: WinRateGroupSummary[];
+    byCapitalFlowScoreBucket: WinRateGroupSummary[];
+    byCompositeScoreBucket: WinRateGroupSummary[];
+  };
+  error?: string;
+};
+
 export type SnapshotResponse = {
   updatedAt: string;
   dataMode: "Daily Close Snapshot";

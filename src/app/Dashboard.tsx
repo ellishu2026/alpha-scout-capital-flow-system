@@ -9,7 +9,13 @@ import {
   getDataStatusLabel,
   getPoolLabel,
 } from "@/lib/scoring";
-import type { SnapshotResponse, StockCandidate, StockPool } from "@/types/stock";
+import type {
+  SnapshotResponse,
+  StockCandidate,
+  StockPool,
+  WinRateGroupSummary,
+  WinRateReport,
+} from "@/types/stock";
 import { useMemo, useState } from "react";
 
 type TabId = "ALL" | "FIXED_LIST" | "MID_CAP" | "HIGH_PRICE" | "OVERLAP";
@@ -467,6 +473,174 @@ function MobileCandidateCard({ candidate }: { candidate: StockCandidate }) {
   );
 }
 
+function formatWinRateCell(
+  stats: WinRateGroupSummary["forward1D"],
+  includeAverage = false,
+) {
+  const rate =
+    stats.winRatePct == null ? "N/A" : `${stats.winRatePct.toFixed(0)}%`;
+  const sample = `n=${stats.sampleCount}`;
+
+  if (!includeAverage) {
+    return `${rate} / ${sample}`;
+  }
+
+  const average =
+    stats.avgReturnPct == null ? "avg N/A" : `avg ${stats.avgReturnPct}%`;
+
+  return `${rate} / ${sample} / ${average}`;
+}
+
+function WinRateSummaryRow({
+  summary,
+  showAverage5D = false,
+}: {
+  summary: WinRateGroupSummary;
+  showAverage5D?: boolean;
+}) {
+  return (
+    <tr className="border-t border-slate-200">
+      <td className="px-2 py-1.5 font-semibold text-slate-800">
+        {summary.groupName}
+      </td>
+      <td className="px-2 py-1.5">{formatWinRateCell(summary.forward1D)}</td>
+      <td className="px-2 py-1.5">{formatWinRateCell(summary.forward3D)}</td>
+      <td className="px-2 py-1.5">
+        {formatWinRateCell(summary.forward5D, showAverage5D)}
+      </td>
+    </tr>
+  );
+}
+
+function WinRateSection({
+  report,
+  expanded,
+  onToggle,
+}: {
+  report?: WinRateReport;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const overall = report?.summaries.overall;
+  const hasSamples = (report?.availableForwardReturnRows ?? 0) > 0;
+
+  return (
+    <section className="mt-2.5 rounded border border-slate-200 bg-white p-2.5 shadow-sm">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-950">
+            Win Rate & Signal Quality
+          </h2>
+          <p className="text-[11px] text-slate-600">
+            Stored signal outcomes from populated forward return fields.
+          </p>
+        </div>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
+          <span className="text-[11px] font-medium text-slate-500">
+            Samples {report?.availableForwardReturnRows ?? 0} / Rows{" "}
+            {report?.totalRowsScanned ?? 0}
+          </span>
+          <button
+            type="button"
+            onClick={onToggle}
+            className="min-h-8 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            {expanded ? "Win Rate ▴" : "Win Rate ▾"}
+          </button>
+        </div>
+      </div>
+
+      {expanded ? (
+        hasSamples && overall ? (
+          <div className="mt-2 grid gap-2 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.35fr)_minmax(0,0.9fr)]">
+            <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+              <p className="mb-1 font-semibold text-slate-800">
+                Overall Performance
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                <DiagnosticMetric
+                  label="1D"
+                  value={formatWinRateCell(overall.forward1D)}
+                />
+                <DiagnosticMetric
+                  label="3D"
+                  value={formatWinRateCell(overall.forward3D)}
+                />
+                <DiagnosticMetric
+                  label="5D"
+                  value={formatWinRateCell(overall.forward5D)}
+                />
+                <DiagnosticMetric
+                  label="10D"
+                  value={formatWinRateCell(overall.forward10D)}
+                />
+                <DiagnosticMetric
+                  label="20D"
+                  value={formatWinRateCell(overall.forward20D)}
+                />
+              </div>
+            </article>
+
+            <article className="overflow-hidden rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+              <p className="mb-1 font-semibold text-slate-800">By Signal</p>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-left">
+                  <thead className="text-[9px] uppercase text-slate-500">
+                    <tr>
+                      <th className="px-2 py-1">Signal</th>
+                      <th className="px-2 py-1">1D</th>
+                      <th className="px-2 py-1">3D</th>
+                      <th className="px-2 py-1">5D / Avg</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.summaries.bySignal.slice(0, 6).map((summary) => (
+                      <WinRateSummaryRow
+                        key={summary.groupName}
+                        summary={summary}
+                        showAverage5D
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
+            <article className="overflow-hidden rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+              <p className="mb-1 font-semibold text-slate-800">By Mode</p>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[360px] text-left">
+                  <thead className="text-[9px] uppercase text-slate-500">
+                    <tr>
+                      <th className="px-2 py-1">Mode</th>
+                      <th className="px-2 py-1">1D</th>
+                      <th className="px-2 py-1">3D</th>
+                      <th className="px-2 py-1">5D</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.summaries.byMode.map((summary) => (
+                      <WinRateSummaryRow
+                        key={summary.groupName}
+                        summary={summary}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        ) : (
+          <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2.5 py-2 text-[12px] text-slate-600">
+            Forward return samples are not available yet. Win-rate report will
+            populate after future trading days are captured.
+          </p>
+        )
+      ) : null}
+    </section>
+  );
+}
+
 function DiagnosticsSection({
   snapshot,
   updatedAt,
@@ -670,12 +844,15 @@ function DiagnosticsSection({
 export function Dashboard({
   allSnapshot,
   fixedSnapshot,
+  winRateReport,
 }: {
   allSnapshot: SnapshotResponse;
   fixedSnapshot: SnapshotResponse | null;
+  winRateReport?: WinRateReport;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("ALL");
   const [diagnosticsExpanded, setDiagnosticsExpanded] = useState(false);
+  const [winRateExpanded, setWinRateExpanded] = useState(false);
   const activeTabLabel =
     tabs.find((tab) => tab.id === activeTab)?.label ?? "All";
   const updatedAt = new Intl.DateTimeFormat("en-US", {
@@ -780,7 +957,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.2
+                AlphaScout Capital Flow System V1.7.3
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -841,6 +1018,11 @@ export function Dashboard({
             snapshot={allSnapshot}
             updatedAt={updatedAt}
             expanded={diagnosticsExpanded}
+          />
+          <WinRateSection
+            report={winRateReport}
+            expanded={winRateExpanded}
+            onToggle={() => setWinRateExpanded((current) => !current)}
           />
         </div>
       </section>

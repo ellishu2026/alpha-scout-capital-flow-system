@@ -1,5 +1,11 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.3 Win Rate & Signal Quality Report
+
+- Added `/api/debug/win-rate` to summarize stored signal snapshot outcomes by forward return window.
+- Excluded null forward returns from win-rate calculations so unavailable future samples are not counted as losses.
+- Added a compact dashboard Win Rate & Signal Quality section and updated dashboard title to V1.7.3.
+
 ## V1.7.2 Forward Return Tracking
 
 - Added `/api/cron/update-forward-returns` to populate 1D, 3D, 5D, 10D, and 20D forward return fields for saved signal snapshots.

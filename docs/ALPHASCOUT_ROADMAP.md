@@ -21,10 +21,10 @@
 - V1.7.1.1 Signal Snapshot Coverage Alignment
 - V1.7.1.2 Fixed Watchlist Signal Snapshot Persistence
 - V1.7.2 Forward Return Tracking
+- V1.7.3 Win Rate & Signal Quality Report
 
 ## Next Recommended Steps
 
-- V1.7.3 Win Rate & Signal Quality Report
 - V1.7.4 Buy / Watch / Avoid Signal Upgrade
 
 ## Later
@@ -45,3 +45,9 @@ Forward return fields were added as placeholders in V1.7.1 and are populated by 
 V1.7.2 calculates future returns for saved signal snapshots using trading-day windows: 1D, 3D, 5D, 10D, and 20D. Forward return fields are updated only when enough future trading-day data is available; otherwise they remain null until a later update run.
 
 Forward return price lookup uses the conservative ladder `ARCHIVE -> ALPHA_VANTAGE -> TWELVE_DATA -> EODHD -> YFINANCE`, preferring archived OHLCV before consuming live provider calls. V1.7.3 will use these populated fields to calculate win rate and signal quality.
+
+## Win Rate & Signal Quality Report
+
+V1.7.3 summarizes stored signal outcomes using populated forward return fields in `alpha_scout_signal_snapshots`. Null forward returns are excluded from win-rate and return calculations instead of being treated as losses.
+
+The report groups performance by signal, mode, source bucket, data quality grade, provider, capital flow score bucket, and composite score bucket. It becomes more meaningful as more signal dates and forward return samples accumulate.
