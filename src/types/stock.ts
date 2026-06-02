@@ -46,6 +46,12 @@ export type ActionSignal =
   | "Avoid"
   | "Insufficient Data";
 export type ActionConfidence = "High" | "Medium" | "Low";
+export type PositionActionSignal =
+  | "Hold"
+  | "Reduce"
+  | "Sell Candidate"
+  | "Exit"
+  | "Insufficient Data";
 
 export type FlowDataQualityInputs = {
   providerUsed?: ProviderUsed;
@@ -255,6 +261,10 @@ export type StockCandidate = {
   flowDataQualityGrade?: FlowDataQualityGrade;
   flowDataQualityReasons?: string[];
   flowDataQualityInputs?: FlowDataQualityInputs;
+  entryActionSignal?: ActionSignal;
+  entryActionConfidence?: ActionConfidence;
+  positionActionSignal?: PositionActionSignal;
+  positionActionConfidence?: ActionConfidence;
   actionSignal?: ActionSignal;
   actionConfidence?: ActionConfidence;
   actionReasons?: string[];
@@ -327,6 +337,19 @@ export type ActionSignalSummary = {
   buyCandidateTickers: string[];
   watchTickers: string[];
   avoidTickers: string[];
+  insufficientDataTickers: string[];
+};
+
+export type PositionActionSummary = {
+  holdCount: number;
+  reduceCount: number;
+  sellCandidateCount: number;
+  exitCount: number;
+  insufficientDataCount: number;
+  holdTickers: string[];
+  reduceTickers: string[];
+  sellCandidateTickers: string[];
+  exitTickers: string[];
   insufficientDataTickers: string[];
 };
 
@@ -413,6 +436,8 @@ export type SnapshotResponse = {
   signalSnapshotLatestDate?: string | null;
   signalSnapshotCoverageSummary?: SignalSnapshotCoverageSummary;
   actionSignalSummary?: ActionSignalSummary;
+  entryActionSummary?: ActionSignalSummary;
+  positionActionSummary?: PositionActionSummary;
   forwardReturnUpdateStatus?: ForwardReturnUpdateStatus;
   forwardReturnUpdatedRows?: number;
   forwardReturnCheckedRows?: number;
@@ -456,6 +481,8 @@ export type RefreshResult = {
   persistenceErrorDetails?: string;
   providerCoverageSummary?: ProviderCoverageSummary;
   actionSignalSummary?: ActionSignalSummary;
+  entryActionSummary?: ActionSignalSummary;
+  positionActionSummary?: PositionActionSummary;
   signalSnapshotPersistenceStatus?: "SAVED" | "FAILED" | "SKIPPED";
   signalSnapshotRowsSaved?: number;
   signalSnapshotError?: string | null;

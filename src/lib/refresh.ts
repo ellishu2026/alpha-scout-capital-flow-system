@@ -3,6 +3,7 @@ import {
   applyActionSignalsToItems,
   applyActionSignalsToSnapshot,
   buildActionSignalSummary,
+  buildPositionActionSummary,
 } from "@/lib/actionSignals";
 import {
   COVERAGE_MARKET_SCAN_LIMIT,
@@ -486,6 +487,9 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
   const actionSignalSummary = buildActionSignalSummary(
     marketSnapshotWithActions.items,
   );
+  const positionActionSummary = buildPositionActionSummary(
+    marketSnapshotWithActions.items,
+  );
   const marketSnapshotForSave = {
     ...attachProviderCoverageSummary(
       timeoutGuard.triggered
@@ -497,6 +501,8 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
       providerCoverageSummary,
     ),
     actionSignalSummary,
+    entryActionSummary: actionSignalSummary,
+    positionActionSummary,
   };
   const marketSaveResult =
     currentMode === "MARKET_SCAN"
@@ -521,6 +527,12 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
             {
               ...(fixedSnapshotWithActions ?? fixedSnapshot),
               actionSignalSummary: buildActionSignalSummary(
+                (fixedSnapshotWithActions ?? fixedSnapshot).items,
+              ),
+              entryActionSummary: buildActionSignalSummary(
+                (fixedSnapshotWithActions ?? fixedSnapshot).items,
+              ),
+              positionActionSummary: buildPositionActionSummary(
                 (fixedSnapshotWithActions ?? fixedSnapshot).items,
               ),
             },
@@ -569,6 +581,8 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     persistenceErrorDetails: persistenceIssue?.errorDetails,
     fixedSnapshot: fixedSnapshotWithActions,
     actionSignalSummary,
+    entryActionSummary: actionSignalSummary,
+    positionActionSummary,
     ...timeoutSummary,
   };
   const signalSnapshotResult = await upsertSignalSnapshots({
@@ -619,6 +633,8 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     persistenceErrorDetails: snapshot.persistenceErrorDetails,
     providerCoverageSummary,
     actionSignalSummary,
+    entryActionSummary: actionSignalSummary,
+    positionActionSummary,
     ...signalSnapshotFields,
     ...timeoutSummary,
     message: liveMode

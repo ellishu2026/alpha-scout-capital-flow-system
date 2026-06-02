@@ -210,6 +210,13 @@ function withRawItemActionFields(row: Record<string, unknown>) {
 
   return {
     ...row,
+    entry_action_signal: row.entry_action_signal ?? rawItem.entryActionSignal,
+    entry_action_confidence:
+      row.entry_action_confidence ?? rawItem.entryActionConfidence,
+    position_action_signal:
+      row.position_action_signal ?? rawItem.positionActionSignal,
+    position_action_confidence:
+      row.position_action_confidence ?? rawItem.positionActionConfidence,
     action_signal: row.action_signal ?? rawItem.actionSignal,
     action_confidence: row.action_confidence ?? rawItem.actionConfidence,
     action_reasons: row.action_reasons ?? rawItem.actionReasons,

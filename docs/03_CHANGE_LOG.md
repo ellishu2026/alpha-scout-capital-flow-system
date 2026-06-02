@@ -1,5 +1,11 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.6 Entry / Position Action Split
+
+- Split the action layer into entry actions for no-position decisions and position actions for existing-position management.
+- Kept legacy `actionSignal` mapped to the entry action for backward compatibility.
+- Updated the dashboard table and diagnostics to show Entry Act., Position Act., and separate action summaries.
+
 ## V1.7.5 Dashboard Action Layout Refinement
 
 - Kept ranked candidates as one ticker per row across desktop and mobile with horizontal table scrolling.

@@ -46,7 +46,8 @@ const tableHeaders = [
   "Margin Δ",
   "FCF Δ",
   "Flow Δ",
-  "Action",
+  "Entry Act.",
+  "Position Act.",
   "Conf.",
   "Signal",
   "Data Q",
@@ -193,6 +194,39 @@ function actionClass(action?: StockCandidate["actionSignal"]) {
 
   if (action === "Insufficient Data") {
     return "bg-amber-50 text-amber-800 ring-amber-200";
+  }
+
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function compactPositionAction(
+  action?: StockCandidate["positionActionSignal"],
+) {
+  if (action === "Sell Candidate") return "Sell Cand.";
+  if (action === "Insufficient Data") return "Insuff.";
+
+  return action ?? "N/A";
+}
+
+function positionActionClass(action?: StockCandidate["positionActionSignal"]) {
+  if (action === "Hold") {
+    return "bg-emerald-50 text-emerald-800 ring-emerald-200";
+  }
+
+  if (action === "Reduce") {
+    return "bg-amber-50 text-amber-800 ring-amber-200";
+  }
+
+  if (action === "Sell Candidate") {
+    return "bg-orange-50 text-orange-800 ring-orange-200";
+  }
+
+  if (action === "Exit") {
+    return "bg-rose-50 text-rose-700 ring-rose-200";
+  }
+
+  if (action === "Insufficient Data") {
+    return "bg-slate-100 text-slate-600 ring-slate-200";
   }
 
   return "bg-slate-100 text-slate-600 ring-slate-200";
@@ -426,15 +460,27 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
             candidate.actionReasons?.join("; ") ?? "None"
           } · Risk: ${candidate.actionRiskFlags?.join(", ") ?? "None"}`}
           className={`inline-flex max-w-28 truncate rounded px-1 py-0.5 text-[9px] font-bold ring-1 ${actionClass(
-            candidate.actionSignal,
+            candidate.entryActionSignal ?? candidate.actionSignal,
           )}`}
         >
-          {compactActionSignal(candidate.actionSignal)}
+          {compactActionSignal(candidate.entryActionSignal ?? candidate.actionSignal)}
+        </span>
+      </td>
+      <td className="px-1.5 py-1.5">
+        <span
+          title={`Confidence: ${candidate.positionActionConfidence ?? "N/A"} · Reasons: ${
+            candidate.actionReasons?.join("; ") ?? "None"
+          } · Risk: ${candidate.actionRiskFlags?.join(", ") ?? "None"}`}
+          className={`inline-flex max-w-28 truncate rounded px-1 py-0.5 text-[9px] font-bold ring-1 ${positionActionClass(
+            candidate.positionActionSignal,
+          )}`}
+        >
+          {compactPositionAction(candidate.positionActionSignal)}
         </span>
       </td>
       <td className="px-1.5 py-1.5">
         <span className="inline-flex min-w-10 justify-center rounded bg-slate-100 px-1 py-0.5 text-[9px] font-bold text-slate-700 ring-1 ring-slate-200">
-          {compactConfidence(candidate.actionConfidence)}
+          {compactConfidence(candidate.entryActionConfidence ?? candidate.actionConfidence)}
         </span>
       </td>
       <td className="px-1.5 py-1.5">
@@ -651,7 +697,8 @@ function DiagnosticsSection({
   const used = coverage?.providerCallsUsed;
   const remaining = coverage?.providerCallsRemaining;
   const signalCoverage = snapshot.signalSnapshotCoverageSummary;
-  const actionSummary = snapshot.actionSignalSummary;
+  const entrySummary = snapshot.entryActionSummary ?? snapshot.actionSignalSummary;
+  const positionSummary = snapshot.positionActionSummary;
 
   if (!expanded) {
     return null;
@@ -722,14 +769,28 @@ function DiagnosticsSection({
               value={signalCoverage?.overlappingTickers.length}
             />
             <DiagnosticMetric
-              label="Buy"
-              value={actionSummary?.buyCandidateCount}
+              label="Entry Buy"
+              value={entrySummary?.buyCandidateCount}
             />
-            <DiagnosticMetric label="Watch" value={actionSummary?.watchCount} />
-            <DiagnosticMetric label="Avoid" value={actionSummary?.avoidCount} />
             <DiagnosticMetric
-              label="Insufficient"
-              value={actionSummary?.insufficientDataCount}
+              label="Entry Watch"
+              value={entrySummary?.watchCount}
+            />
+            <DiagnosticMetric label="Entry Avoid" value={entrySummary?.avoidCount} />
+            <DiagnosticMetric
+              label="Entry Insuff."
+              value={entrySummary?.insufficientDataCount}
+            />
+            <DiagnosticMetric label="Hold" value={positionSummary?.holdCount} />
+            <DiagnosticMetric label="Reduce" value={positionSummary?.reduceCount} />
+            <DiagnosticMetric
+              label="Sell Cand."
+              value={positionSummary?.sellCandidateCount}
+            />
+            <DiagnosticMetric label="Exit" value={positionSummary?.exitCount} />
+            <DiagnosticMetric
+              label="Pos. Insuff."
+              value={positionSummary?.insufficientDataCount}
             />
           </div>
         </article>
@@ -894,7 +955,8 @@ export function Dashboard({
     activeTab === "FIXED_LIST" ? [] : (allSnapshot.droppedSymbols ?? []);
   const providerCoverage = allSnapshot.providerCoverageSummary;
   const qualitySummary = providerCoverage?.dataQualitySummary;
-  const actionSummary = allSnapshot.actionSignalSummary;
+  const entrySummary = allSnapshot.entryActionSummary ?? allSnapshot.actionSignalSummary;
+  const positionSummary = allSnapshot.positionActionSummary;
   const diagnosticsSummary = providerCoverage
     ? `Real ${providerCoverage.realProviderCoveragePct}% · Quality A:${
         qualitySummary?.gradeACount ?? 0
@@ -944,13 +1006,22 @@ export function Dashboard({
           : "Awaiting refresh coverage summary",
     },
     {
-      label: "Action Signals",
-      value: actionSummary
-        ? `${actionSummary.buyCandidateCount} Buy · ${actionSummary.watchCount} Watch`
+      label: "Entry Actions",
+      value: entrySummary
+        ? `${entrySummary.buyCandidateCount} Buy · ${entrySummary.watchCount} Watch`
         : "N/A",
-      detail: actionSummary
-        ? `Avoid ${actionSummary.avoidCount} · Insufficient ${actionSummary.insufficientDataCount}`
-        : "Awaiting action signal summary",
+      detail: entrySummary
+        ? `Avoid ${entrySummary.avoidCount} · Insufficient ${entrySummary.insufficientDataCount}`
+        : "Awaiting entry action summary",
+    },
+    {
+      label: "Position Actions",
+      value: positionSummary
+        ? `${positionSummary.holdCount} Hold · ${positionSummary.reduceCount} Reduce`
+        : "N/A",
+      detail: positionSummary
+        ? `Sell ${positionSummary.sellCandidateCount} · Exit ${positionSummary.exitCount}`
+        : "Awaiting position action summary",
     },
     {
       label: "Avg Data Quality",
@@ -974,7 +1045,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.5
+                AlphaScout Capital Flow System V1.7.6
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -1045,7 +1116,7 @@ export function Dashboard({
       </section>
 
       <section className="mx-auto w-full max-w-[1600px] px-2.5 py-2.5 sm:px-3 lg:px-4">
-        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-7">
+        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
           {summaryCards.map((card) => (
             <article
               key={card.label}
@@ -1105,7 +1176,7 @@ export function Dashboard({
 
         <div className="mt-1.5 overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
           <div className="max-h-[calc(100vh-205px)] overflow-auto">
-            <table className="w-full min-w-[1400px] border-collapse text-left">
+            <table className="w-full min-w-[1480px] border-collapse text-left">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
                   {tableHeaders.map((header) => {

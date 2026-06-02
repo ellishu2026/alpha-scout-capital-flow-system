@@ -25,10 +25,10 @@
 - V1.7.4 Buy / Watch / Avoid Signal Upgrade
 - V1.7.4.1 Action Signal Rule Tuning
 - V1.7.5 Dashboard Action Layout Refinement
+- V1.7.6 Entry / Position Action Split
 
 ## Next Recommended Steps
 
-- V1.7.6 Entry / Position Action Split
 - V1.7.7 Action Signal Calibration with Forward Returns
 - V1.7.8 Dashboard Action History
 
@@ -66,3 +66,5 @@ Data quality and provider type can downgrade raw accumulation signals. `YFINANCE
 V1.7.4.1 tunes the action rules so `NO_FORWARD_RETURN_HISTORY` and `MARKET_SCAN_ONLY` are risk flags only, not hard Avoid triggers. `PROVIDER_ERRORS_PRESENT` only forces a strong downgrade when final data quality is weak or the final provider failed. A-grade real-provider positive signals should not become Avoid unless severe score, breadth, or multi-window flow deterioration exists.
 
 V1.7.5 refines the dashboard action layout while keeping one ticker per row. Action and confidence are displayed before the raw signal, provider and financial data source are merged into `Source`, and the ticker remains sticky during horizontal scroll. Entry / Position action split is deferred to V1.7.6.
+
+V1.7.6 splits the action layer into entry action for no-position / new-entry decision support and position action for existing-position management. The system does not know actual holdings, so these fields are separate trade-assist views of the same signal context. Explicit database columns may be added later if action analytics require them.
