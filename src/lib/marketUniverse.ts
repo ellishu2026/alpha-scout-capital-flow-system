@@ -6,7 +6,7 @@ export const FIXED_WATCHLIST_SYMBOLS = [
   "VRT",
   "MSFT",
   "GOOGL",
-  "DXYZ",
+  "ORCL",
   "RKLB",
   "LLY",
   "IONQ",
