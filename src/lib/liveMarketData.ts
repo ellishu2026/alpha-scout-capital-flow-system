@@ -38,6 +38,8 @@ import type {
   StockPool,
   UniverseCoverageSummary,
   UniverseDebugRow,
+  UniverseMembershipBucket,
+  UniverseSourceBucket,
 } from "@/types/stock";
 import YahooFinance from "yahoo-finance2";
 
@@ -95,6 +97,8 @@ type DeepScoringCandidate = {
   quote: LiveQuote;
   pool: StockPool;
   failed: boolean;
+  universeSourceBucket: UniverseSourceBucket;
+  universeSourceBuckets: UniverseMembershipBucket[];
 };
 
 const yahooFinance = new YahooFinance({
@@ -512,8 +516,8 @@ function universeSourceBuckets({
 }: {
   symbol: string;
   quote: LiveQuote | null;
-}): UniverseDebugRow["sourceBuckets"] {
-  const buckets: UniverseDebugRow["sourceBuckets"] = [];
+}): UniverseMembershipBucket[] {
+  const buckets: UniverseMembershipBucket[] = [];
   const marketCap = quote?.marketCap ?? null;
   const price = quote?.price ?? null;
 
@@ -537,11 +541,22 @@ function universeSourceBuckets({
 }
 
 function universeSourceBucket(
-  buckets: UniverseDebugRow["sourceBuckets"],
+  buckets: UniverseMembershipBucket[],
 ): UniverseDebugRow["sourceBucket"] {
   if (buckets.length > 1) return "MULTI_BUCKET";
+  if (buckets.length === 0) return "OUTSIDE_V1_7_9_POOLS";
 
-  return buckets[0] ?? "MULTI_BUCKET";
+  return buckets[0];
+}
+
+function universeSourceBucketForCandidate({
+  symbol,
+  quote,
+}: {
+  symbol: string;
+  quote: LiveQuote | null;
+}) {
+  return universeSourceBucket(universeSourceBuckets({ symbol, quote }));
 }
 
 function missingReason({
@@ -713,12 +728,16 @@ async function buildCandidateFromParts({
   flows,
   pool,
   usedMarketFallback,
+  universeSourceBucket,
+  candidateUniverseSourceBuckets,
 }: {
   symbol: string;
   quote: LiveQuote | null;
   flows: CapitalFlows;
   pool: StockPool;
   usedMarketFallback: boolean;
+  universeSourceBucket?: UniverseSourceBucket;
+  candidateUniverseSourceBuckets?: UniverseMembershipBucket[];
 }): Promise<StockCandidate> {
   const mockCandidate = getMockCandidateFallback(symbol);
   const financials = await resolveFinancials(symbol);
@@ -754,6 +773,11 @@ async function buildCandidateFromParts({
       capitalFlowScore,
     ),
     dataStatus: usedMarketFallback ? "PARTIAL_LIVE" : "LIVE_MARKET",
+    universeSourceBucket:
+      universeSourceBucket ??
+      universeSourceBucketForCandidate({ symbol, quote }),
+    universeSourceBuckets:
+      candidateUniverseSourceBuckets ?? universeSourceBuckets({ symbol, quote }),
   };
 }
 
@@ -875,6 +899,8 @@ export async function buildUniverseLightScan({
       quote: result.quote,
       pool: result.pool,
       failed: result.failed,
+      universeSourceBucket: result.row.sourceBucket,
+      universeSourceBuckets: result.row.sourceBuckets,
     })),
   ).slice(0, topN);
   const rows = quoteResults.map((result) => result.row);
@@ -896,11 +922,15 @@ async function buildScanCandidateFromQuote({
   symbol,
   quote,
   pool,
+  universeSourceBucket,
+  universeSourceBuckets,
   guard,
 }: {
   symbol: string;
   quote: LiveQuote;
   pool: StockPool;
+  universeSourceBucket: UniverseSourceBucket;
+  universeSourceBuckets: UniverseMembershipBucket[];
   guard?: RefreshTimeoutGuard;
 }): Promise<{
   candidate: StockCandidate;
@@ -927,6 +957,8 @@ async function buildScanCandidateFromQuote({
       flows: flows ?? fallbackFlows(symbol),
       pool,
       usedMarketFallback: usedFallback,
+      universeSourceBucket,
+      candidateUniverseSourceBuckets: universeSourceBuckets,
     }),
   };
 

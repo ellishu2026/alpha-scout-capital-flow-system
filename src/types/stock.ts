@@ -43,7 +43,12 @@ export type UniverseSourceBucket =
   | "FIXED_WATCHLIST"
   | "MARKET_CAP_50B_300B"
   | "HIGH_PRICE_OVER_800"
-  | "MULTI_BUCKET";
+  | "MULTI_BUCKET"
+  | "OUTSIDE_V1_7_9_POOLS";
+export type UniverseMembershipBucket = Exclude<
+  UniverseSourceBucket,
+  "MULTI_BUCKET" | "OUTSIDE_V1_7_9_POOLS"
+>;
 export type FlowDataQualityGrade = "A" | "B" | "C" | "D";
 export type ActionSignal =
   | "Buy Candidate"
@@ -222,6 +227,8 @@ export type StockCandidate = {
     | "V1.6.8_PROVIDER_LADDER_CHAIKIN"
     | "V1.6.8_COMPOSITE_PROXY";
   sourceBucket?: CoverageSourceBucket;
+  universeSourceBucket?: UniverseSourceBucket;
+  universeSourceBuckets?: UniverseMembershipBucket[];
   capitalFlowDataSource?: CapitalFlowDataSource;
   capitalFlowQuality?: CapitalFlowQuality;
   providerUsed?: ProviderUsed;
@@ -362,7 +369,7 @@ export type UniverseDebugRow = {
   price: number | null;
   marketCap: number | null;
   sourceBucket: UniverseSourceBucket;
-  sourceBuckets: Exclude<UniverseSourceBucket, "MULTI_BUCKET">[];
+  sourceBuckets: UniverseMembershipBucket[];
   includedByMarketCapRange: boolean;
   includedByHighPrice: boolean;
   includedByFixedWatchlist: boolean;

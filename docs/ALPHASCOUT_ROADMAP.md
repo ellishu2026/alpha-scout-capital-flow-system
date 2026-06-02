@@ -29,6 +29,7 @@
 - V1.7.7 Action Signal Calibration with Forward Returns
 - V1.7.8 Dashboard Action History + Calibration Simulation Foundation
 - V1.7.9 Full Universe Scan Coverage
+- V1.7.9.1 Universe Metadata Cleanup
 
 ## Next Recommended Steps
 
@@ -91,7 +92,16 @@ Updated roadmap:
 
 - V1.7.8 Dashboard Action History + Calibration Simulation Foundation
 - V1.7.9 Full Universe Scan Coverage
+- V1.7.9.1 Universe Metadata Cleanup
 - V1.8.0 Candidate Threshold Simulation Report
 - V1.8.1 Approved Rule Promotion Workflow
 - V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
+
+## Universe Metadata Cleanup
+
+V1.7.9.1 cleans up universe metadata without changing universe selection, scoring, provider ladder behavior, Entry / Position action rules, or production thresholds.
+
+Rows that are present in the deterministic seed list but outside all V1.7.9 pools now report `sourceBucket: "OUTSIDE_V1_7_9_POOLS"` when `sourceBuckets` is empty. `MULTI_BUCKET` is reserved only for tickers that actually have more than one universe membership.
+
+Ranked refresh items and their persisted `raw_item` payload now carry universe bucket metadata separately from the compatibility `sourceBucket` field. Existing `sourceBucket` values such as `MARKET_SCAN_TOP15` and `BOTH` remain unchanged, while `universeSourceBucket` and `universeSourceBuckets` expose the V1.7.9 membership labels.
