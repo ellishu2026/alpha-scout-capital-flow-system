@@ -28,15 +28,17 @@
 - V1.7.6 Entry / Position Action Split
 - V1.7.7 Action Signal Calibration with Forward Returns
 - V1.7.8 Dashboard Action History + Calibration Simulation Foundation
+- V1.7.9 Full Universe Scan Coverage
 
 ## Next Recommended Steps
 
-- V1.7.9 Calibration Threshold Simulation Report
-- V1.8.0 Approved Rule Promotion Workflow
+- V1.8.0 Candidate Threshold Simulation Report
+- V1.8.1 Approved Rule Promotion Workflow
+- V1.8.2 Old vs New Threshold A/B Comparison
+- V1.8.3 Rolling-window Auto Recommendation without automatic production activation
 
 ## Later
 
-- V1.5.1 Expand market universe
 - V1.5.2 Scan performance optimization
 
 ## Signal Snapshot Foundation
@@ -73,4 +75,23 @@ V1.7.6 splits the action layer into entry action for no-position / new-entry dec
 
 V1.7.7 adds calibration readiness metrics for action signal evaluation with forward returns. Win-rate summaries now group by Entry action, Position action, legacy action, entry confidence, position confidence, data quality, provider, source bucket, and score buckets. V1.7.7 does not change action thresholds while forward-return samples are insufficient; the recommended minimum for initial calibration is 30 observations per window or group. The top-right `Selected` status field was removed from the dashboard header.
 
-V1.7.8 adds a compact Action History display and `/api/debug/action-history` so recent Entry and Position action changes can be compared against prior signal snapshots. It also adds a calibration simulation foundation to the win-rate report. Candidate threshold simulation is reporting-only in V1.7.8: production thresholds do not auto-change, and any future candidate rule must have sufficient sample size, improved win rate, improved average return, no material downside deterioration, and explicit review before production activation.
+V1.7.8 adds a compact Action History display and `/api/debug/action-history` so recent Entry and Position action changes can be compared against prior signal snapshots. It also adds a calibration simulation foundation to the win-rate report. Candidate threshold simulation is deferred until universe coverage is complete: production thresholds do not auto-change, and any future candidate rule must have sufficient sample size, improved win rate, improved average return, no material downside deterioration, and explicit review before production activation.
+
+## Full Universe Scan Coverage
+
+V1.7.9 was reprioritized ahead of candidate threshold simulation because incomplete universe coverage would bias win-rate optimization, threshold simulation, and future A/B tests. The release expands and diagnoses scan coverage across three logical pools: the preserved Fixed Watchlist 11, market cap $50B-$300B, and stock price above $800.
+
+V1.7.9 uses a deterministic curated US liquid-equity seed universe as an interim full-universe foundation. The seed is light-filtered first with quote, price, and market-cap metadata, then merged and deduped with source bucket diagnostics. `/api/debug/universe` and `/api/cron/refresh` expose `universeCoverageSummary`, including deduped count, market-cap pool count, high-price pool count, overlap, missing quote fields, timeout skips, quota exhaustion, and proxy fallback tickers.
+
+Provider quota protection is part of the release design. The expanded universe is not fully scored ticker by ticker. Light filtering determines membership first, then Margin / FCF / Capital Flow scoring runs only on the selected scan candidate subset. Existing archive-first behavior, provider budgets, timeout guard, and `YFINANCE_COMPOSITE_PROXY` fallback remain in force. Proxy-provider rows remain marked as proxy data and must not be treated as A-grade real-provider confirmation.
+
+V1.7.9 does not change production Entry or Position action thresholds, scoring weights, provider ladder core logic, signal snapshot persistence, forward return tracking, win-rate calculation, calibration readiness, calibration simulation, or action history behavior.
+
+Updated roadmap:
+
+- V1.7.8 Dashboard Action History + Calibration Simulation Foundation
+- V1.7.9 Full Universe Scan Coverage
+- V1.8.0 Candidate Threshold Simulation Report
+- V1.8.1 Approved Rule Promotion Workflow
+- V1.8.2 Old vs New Threshold A/B Comparison
+- V1.8.3 Rolling-window Auto Recommendation without automatic production activation

@@ -712,6 +712,7 @@ function DiagnosticsSection({
   const signalCoverage = snapshot.signalSnapshotCoverageSummary;
   const entrySummary = snapshot.entryActionSummary ?? snapshot.actionSignalSummary;
   const positionSummary = snapshot.positionActionSummary;
+  const universeCoverage = snapshot.universeCoverageSummary;
 
   if (!expanded) {
     return null;
@@ -735,6 +736,52 @@ function DiagnosticsSection({
       </div>
 
       <div className="mt-2 grid gap-1.5 md:grid-cols-2 xl:grid-cols-6">
+        <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+          <p className="mb-1 font-semibold text-slate-800">Universe Coverage</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <DiagnosticMetric
+              label="Deduped"
+              value={universeCoverage?.dedupedUniverseCount}
+            />
+            <DiagnosticMetric
+              label="50-300B"
+              value={universeCoverage?.marketCap50To300BPoolCount}
+            />
+            <DiagnosticMetric
+              label="Price >800"
+              value={universeCoverage?.highPriceOver800PoolCount}
+            />
+            <DiagnosticMetric
+              label="Overlap"
+              value={universeCoverage?.overlappingTickerCount}
+            />
+            <DiagnosticMetric
+              label="Missing MC"
+              value={universeCoverage?.missingMarketCapCount}
+            />
+            <DiagnosticMetric
+              label="Missing Price"
+              value={universeCoverage?.missingPriceCount}
+            />
+            <DiagnosticMetric
+              label="Timeout Skip"
+              value={universeCoverage?.skippedByTimeoutCount}
+            />
+            <DiagnosticMetric
+              label="Proxy"
+              value={universeCoverage?.yfinanceProxyFallbackCount}
+            />
+            <DiagnosticMetric
+              label="Quota Exhaust"
+              value={universeCoverage?.providerQuotaExhaustedCount}
+            />
+            <DiagnosticMetric
+              label="Deep Scored"
+              value={universeCoverage?.deepScoringCandidateCount}
+            />
+          </div>
+        </article>
+
         <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
           <p className="mb-1 font-semibold text-slate-800">Refresh Health</p>
           <div className="grid grid-cols-2 gap-1.5">
@@ -1066,22 +1113,29 @@ export function Dashboard({
   const qualitySummary = providerCoverage?.dataQualitySummary;
   const entrySummary = allSnapshot.entryActionSummary ?? allSnapshot.actionSignalSummary;
   const positionSummary = allSnapshot.positionActionSummary;
-  const diagnosticsSummary = providerCoverage
-    ? `Real ${providerCoverage.realProviderCoveragePct}% · Quality A:${
-        qualitySummary?.gradeACount ?? 0
-      } B:${qualitySummary?.gradeBCount ?? 0} C:${
-        qualitySummary?.gradeCCount ?? 0
-      } D:${qualitySummary?.gradeDCount ?? 0} · Archive ${
-        providerCoverage.archiveHitCount
-      } · Proxy ${
-        providerCoverage.compositeProxyFallbackCount
-      }`
-    : "Diagnostics pending";
+  const universeCoverage = allSnapshot.universeCoverageSummary;
+  const diagnosticsSummary = universeCoverage
+    ? `Universe: deduped ${universeCoverage.dedupedUniverseCount} · MarketCap 50-300B: ${universeCoverage.marketCap50To300BPoolCount} · Price >800: ${universeCoverage.highPriceOver800PoolCount} · Overlap: ${universeCoverage.overlappingTickerCount} · Missing MC: ${universeCoverage.missingMarketCapCount} · Missing Price: ${universeCoverage.missingPriceCount} · Timeout skipped: ${universeCoverage.skippedByTimeoutCount} · Proxy fallback: ${universeCoverage.yfinanceProxyFallbackCount} · Quota exhausted: ${universeCoverage.providerQuotaExhaustedCount}`
+    : providerCoverage
+      ? `Real ${providerCoverage.realProviderCoveragePct}% · Quality A:${
+          qualitySummary?.gradeACount ?? 0
+        } B:${qualitySummary?.gradeBCount ?? 0} C:${
+          qualitySummary?.gradeCCount ?? 0
+        } D:${qualitySummary?.gradeDCount ?? 0} · Archive ${
+          providerCoverage.archiveHitCount
+        } · Proxy ${
+          providerCoverage.compositeProxyFallbackCount
+        }`
+      : "Diagnostics pending";
   const summaryCards = [
     {
       label: "Universe",
-      value: "Market Scan",
-      detail: "Market cap $50B-$300B or price > $800",
+      value: universeCoverage
+        ? `Deduped ${universeCoverage.dedupedUniverseCount}`
+        : "Market Scan",
+      detail: universeCoverage
+        ? `50-300B: ${universeCoverage.marketCap50To300BPoolCount} · >$800: ${universeCoverage.highPriceOver800PoolCount}`
+        : "Market cap $50B-$300B or price > $800",
     },
     {
       label: "Top 11",
@@ -1123,7 +1177,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.8
+                AlphaScout Capital Flow System V1.7.9
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

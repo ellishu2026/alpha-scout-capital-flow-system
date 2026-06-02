@@ -32,7 +32,13 @@ import {
   FIXED_WATCHLIST_SYMBOLS,
   MARKET_SCAN_SYMBOLS,
 } from "@/lib/marketUniverse";
-import type { SnapshotResponse, StockCandidate, StockPool } from "@/types/stock";
+import type {
+  SnapshotResponse,
+  StockCandidate,
+  StockPool,
+  UniverseCoverageSummary,
+  UniverseDebugRow,
+} from "@/types/stock";
 import YahooFinance from "yahoo-finance2";
 
 const MID_CAP_MIN = 50_000_000_000;
@@ -40,6 +46,7 @@ const MID_CAP_MAX = 300_000_000_000;
 const HIGH_PRICE_MIN = 800;
 export const TOP_CANDIDATE_LIMIT = 11;
 export const COVERAGE_MARKET_SCAN_LIMIT = 15;
+export const UNIVERSE_BUILD_VERSION = "V1.7.9_SEED_UNIVERSE_LIGHT_FILTER";
 const QUOTE_CONCURRENCY = 8;
 const CANDLE_CONCURRENCY = 4;
 export const CRON_REFRESH_TIMEOUT_GUARD_MS = 45_000;
@@ -75,9 +82,25 @@ type HistoricalDailyCandle = {
   volume: number | null;
 };
 
+type ScanQuoteResult = {
+  symbol: string;
+  quote: LiveQuote | null;
+  pool: StockPool | null;
+  failed: boolean;
+  row: UniverseDebugRow;
+};
+
+type DeepScoringCandidate = {
+  symbol: string;
+  quote: LiveQuote;
+  pool: StockPool;
+  failed: boolean;
+};
+
 const yahooFinance = new YahooFinance({
   suppressNotices: ["yahooSurvey", "ripHistorical"],
 });
+const fixedWatchlistSymbolSet = new Set<string>(FIXED_WATCHLIST_SYMBOLS);
 
 const fallbackCompanyNames: Record<string, string> = {
   SOXL: "Direxion Daily Semiconductor Bull 3X Shares",
@@ -483,6 +506,207 @@ function classifyPool(quote: LiveQuote): StockPool | null {
   return null;
 }
 
+function universeSourceBuckets({
+  symbol,
+  quote,
+}: {
+  symbol: string;
+  quote: LiveQuote | null;
+}): UniverseDebugRow["sourceBuckets"] {
+  const buckets: UniverseDebugRow["sourceBuckets"] = [];
+  const marketCap = quote?.marketCap ?? null;
+  const price = quote?.price ?? null;
+
+  if (fixedWatchlistSymbolSet.has(symbol)) {
+    buckets.push("FIXED_WATCHLIST");
+  }
+
+  if (
+    typeof marketCap === "number" &&
+    marketCap >= MID_CAP_MIN &&
+    marketCap <= MID_CAP_MAX
+  ) {
+    buckets.push("MARKET_CAP_50B_300B");
+  }
+
+  if (typeof price === "number" && price > HIGH_PRICE_MIN) {
+    buckets.push("HIGH_PRICE_OVER_800");
+  }
+
+  return buckets;
+}
+
+function universeSourceBucket(
+  buckets: UniverseDebugRow["sourceBuckets"],
+): UniverseDebugRow["sourceBucket"] {
+  if (buckets.length > 1) return "MULTI_BUCKET";
+
+  return buckets[0] ?? "MULTI_BUCKET";
+}
+
+function missingReason({
+  quote,
+  failed,
+  buckets,
+}: {
+  quote: LiveQuote | null;
+  failed: boolean;
+  buckets: UniverseDebugRow["sourceBuckets"];
+}) {
+  if (failed) return "QUOTE_FAILED";
+  if (buckets.length > 0) return undefined;
+
+  const missing: string[] = [];
+  if (!quote?.marketCap) missing.push("MISSING_MARKET_CAP");
+  if (!quote?.price) missing.push("MISSING_PRICE");
+
+  return missing.length > 0 ? missing.join(",") : "OUTSIDE_V1_7_9_POOLS";
+}
+
+function scanQuoteToDebugRow(result: {
+  symbol: string;
+  quote: LiveQuote | null;
+  failed: boolean;
+}): UniverseDebugRow {
+  const buckets = universeSourceBuckets({
+    symbol: result.symbol,
+    quote: result.quote,
+  });
+
+  return {
+    ticker: result.symbol,
+    companyName: result.quote?.companyName ?? fallbackCompanyNames[result.symbol],
+    price: result.quote?.price ?? null,
+    marketCap: result.quote?.marketCap ?? null,
+    sourceBucket: universeSourceBucket(buckets),
+    sourceBuckets: buckets,
+    includedByMarketCapRange: buckets.includes("MARKET_CAP_50B_300B"),
+    includedByHighPrice: buckets.includes("HIGH_PRICE_OVER_800"),
+    includedByFixedWatchlist: buckets.includes("FIXED_WATCHLIST"),
+    quoteStatus: result.failed ? "FAILED" : "OK",
+    missingReason: missingReason({
+      quote: result.quote,
+      failed: result.failed,
+      buckets,
+    }),
+  };
+}
+
+function sortDeepScoringCandidates(
+  candidates: DeepScoringCandidate[],
+): DeepScoringCandidate[] {
+  return [...candidates].sort((a, b) => {
+    const aBucketCount = universeSourceBuckets({
+      symbol: a.symbol,
+      quote: a.quote,
+    }).length;
+    const bBucketCount = universeSourceBuckets({
+      symbol: b.symbol,
+      quote: b.quote,
+    }).length;
+    const bucketDiff = bBucketCount - aBucketCount;
+
+    if (bucketDiff !== 0) return bucketDiff;
+
+    const volumeDiff =
+      (b.quote.regularMarketVolume ?? 0) - (a.quote.regularMarketVolume ?? 0);
+
+    if (volumeDiff !== 0) return volumeDiff;
+
+    return (b.quote.marketCap ?? 0) - (a.quote.marketCap ?? 0);
+  });
+}
+
+function buildUniverseCoverageSummary({
+  rows,
+  deepScoringCandidateCount,
+  finalRankedCount,
+  topN,
+  guard,
+  providerQuotaExhaustedTickers = [],
+  yfinanceProxyFallbackTickers = [],
+}: {
+  rows: UniverseDebugRow[];
+  deepScoringCandidateCount: number;
+  finalRankedCount: number;
+  topN: number;
+  guard?: RefreshTimeoutGuard;
+  providerQuotaExhaustedTickers?: string[];
+  yfinanceProxyFallbackTickers?: string[];
+}): UniverseCoverageSummary {
+  const includedRows = rows.filter((row) => row.sourceBuckets.length > 0);
+  const marketCap50To300BTickers = includedRows
+    .filter((row) => row.includedByMarketCapRange)
+    .map((row) => row.ticker)
+    .sort();
+  const highPriceOver800Tickers = includedRows
+    .filter((row) => row.includedByHighPrice)
+    .map((row) => row.ticker)
+    .sort();
+  const overlappingTickers = includedRows
+    .filter((row) => row.sourceBuckets.length > 1)
+    .map((row) => row.ticker)
+    .sort();
+  const missingMarketCapTickers = rows
+    .filter((row) => row.quoteStatus !== "FAILED" && row.marketCap == null)
+    .map((row) => row.ticker)
+    .sort();
+  const missingPriceTickers = rows
+    .filter((row) => row.quoteStatus !== "FAILED" && row.price == null)
+    .map((row) => row.ticker)
+    .sort();
+  const failedQuoteTickers = rows
+    .filter((row) => row.quoteStatus === "FAILED")
+    .map((row) => row.ticker)
+    .sort();
+  const includedSourceBuckets = Array.from(
+    new Set(includedRows.map((row) => row.sourceBucket)),
+  ).sort() as UniverseCoverageSummary["includedSourceBuckets"];
+  const skippedByTimeoutTickers = Array.from(guard?.skippedTickers ?? []).sort();
+
+  return {
+    fixedWatchlistCount: FIXED_WATCHLIST_SYMBOLS.length,
+    marketCap50To300BPoolCount: marketCap50To300BTickers.length,
+    highPriceOver800PoolCount: highPriceOver800Tickers.length,
+    mergedUniverseCount:
+      FIXED_WATCHLIST_SYMBOLS.length +
+      marketCap50To300BTickers.length +
+      highPriceOver800Tickers.length,
+    dedupedUniverseCount: includedRows.length,
+    lightFilterTickerCount: rows.length,
+    deepScoringCandidateCount,
+    deepScoringSkippedCount: Math.max(
+      0,
+      includedRows.length - deepScoringCandidateCount,
+    ),
+    scanCandidateCount: includedRows.length,
+    finalRankedCount,
+    topN,
+    overlappingTickerCount: overlappingTickers.length,
+    overlappingTickers,
+    missingMarketCapCount: missingMarketCapTickers.length,
+    missingMarketCapTickers,
+    missingPriceCount: missingPriceTickers.length,
+    missingPriceTickers,
+    failedQuoteCount: failedQuoteTickers.length,
+    failedQuoteTickers,
+    skippedByTimeoutCount: skippedByTimeoutTickers.length,
+    skippedByTimeoutTickers,
+    providerQuotaExhaustedCount: providerQuotaExhaustedTickers.length,
+    providerQuotaExhaustedTickers,
+    yfinanceProxyFallbackCount: yfinanceProxyFallbackTickers.length,
+    yfinanceProxyFallbackTickers,
+    includedSourceBuckets,
+    universeBuildVersion: UNIVERSE_BUILD_VERSION,
+    marketCap50To300BTickers,
+    highPriceOver800Tickers,
+    dedupedUniverseSampleTickers: includedRows
+      .map((row) => row.ticker)
+      .sort()
+      .slice(0, 40),
+  };
+}
+
 async function buildCandidateFromParts({
   symbol,
   quote,
@@ -603,6 +827,69 @@ async function fetchQuoteForScan(symbol: string): Promise<{
       failed: true,
     };
   }
+}
+
+export async function buildUniverseLightScan({
+  topN = COVERAGE_MARKET_SCAN_LIMIT,
+  guard,
+}: {
+  topN?: number;
+  guard?: RefreshTimeoutGuard;
+} = {}): Promise<{
+  rows: UniverseDebugRow[];
+  deepScoringCandidates: DeepScoringCandidate[];
+  universeCoverageSummary: UniverseCoverageSummary;
+}> {
+  const symbols = Array.from(new Set(MARKET_SCAN_SYMBOLS));
+  const quoteResults = (await mapWithConcurrency(
+    symbols,
+    QUOTE_CONCURRENCY,
+    async (symbol): Promise<ScanQuoteResult> => {
+      const quoteResult = await fetchQuoteForScan(symbol);
+
+      return {
+        ...quoteResult,
+        row: scanQuoteToDebugRow(quoteResult),
+      };
+    },
+    {
+      guard,
+      getTicker: (symbol) => symbol,
+      scope: "MARKET_SCAN",
+    },
+  )) satisfies ScanQuoteResult[];
+  const allDeepScoringCandidates = quoteResults.filter(
+    (
+      result,
+    ): result is ScanQuoteResult & {
+      quote: LiveQuote;
+      pool: StockPool;
+    } =>
+      result.quote != null &&
+      result.pool != null &&
+      result.row.sourceBuckets.length > 0,
+  );
+  const deepScoringCandidates = sortDeepScoringCandidates(
+    allDeepScoringCandidates.map((result) => ({
+      symbol: result.symbol,
+      quote: result.quote,
+      pool: result.pool,
+      failed: result.failed,
+    })),
+  ).slice(0, topN);
+  const rows = quoteResults.map((result) => result.row);
+
+  return {
+    rows,
+    deepScoringCandidates,
+    universeCoverageSummary: buildUniverseCoverageSummary({
+      rows,
+      deepScoringCandidateCount: deepScoringCandidates.length,
+      finalRankedCount: 0,
+      topN,
+      guard,
+    }),
+  };
 }
 
 async function buildScanCandidateFromQuote({
@@ -734,27 +1021,8 @@ export async function buildMarketScanSnapshot(
   limit = TOP_CANDIDATE_LIMIT,
   guard?: RefreshTimeoutGuard,
 ): Promise<SnapshotResponse> {
-  const symbols = Array.from(new Set(MARKET_SCAN_SYMBOLS));
-  const quoteResults = await mapWithConcurrency(
-    symbols,
-    QUOTE_CONCURRENCY,
-    fetchQuoteForScan,
-    {
-      guard,
-      getTicker: (symbol) => symbol,
-      scope: "MARKET_SCAN",
-    },
-  );
-  const quoteFilteredCandidates = quoteResults.filter(
-    (
-      result,
-    ): result is {
-      symbol: string;
-      quote: LiveQuote;
-      pool: StockPool;
-      failed: boolean;
-    } => result.quote != null && result.pool != null,
-  );
+  const universeLightScan = await buildUniverseLightScan({ topN: limit, guard });
+  const quoteFilteredCandidates = universeLightScan.deepScoringCandidates;
 
   if (quoteFilteredCandidates.length === 0) {
     throw new Error("Market scan quote filter returned no candidates.");
@@ -789,10 +1057,35 @@ export async function buildMarketScanSnapshot(
   const selectedResults = scanResults.filter((result) =>
     selectedTickers.has(result.candidate.ticker),
   );
-  const quoteFailedCount = quoteResults.filter((result) => result.failed).length;
+  const quoteFailedCount =
+    universeLightScan.universeCoverageSummary.failedQuoteCount;
   const candleFallbackCount = selectedResults.filter(
     (result) => result.usedFallback,
   ).length;
+  const yfinanceProxyFallbackTickers = selectedResults
+    .filter(
+      (result) =>
+        result.candidate.capitalFlowDataSource === "YFINANCE_COMPOSITE_PROXY",
+    )
+    .map((result) => result.candidate.ticker)
+    .sort();
+  const providerQuotaExhaustedTickers = selectedResults
+    .filter((result) =>
+      (result.candidate.providerErrors ?? []).some((error) =>
+        error.includes("CALL_BUDGET_EXHAUSTED"),
+      ),
+    )
+    .map((result) => result.candidate.ticker)
+    .sort();
+  const universeCoverageSummary = buildUniverseCoverageSummary({
+    rows: universeLightScan.rows,
+    deepScoringCandidateCount: quoteFilteredCandidates.length,
+    finalRankedCount: rankedCandidates.length,
+    topN: limit,
+    guard,
+    providerQuotaExhaustedTickers,
+    yfinanceProxyFallbackTickers,
+  });
 
   return {
     updatedAt: new Date().toISOString(),
@@ -801,9 +1094,10 @@ export async function buildMarketScanSnapshot(
     mode: "MARKET_SCAN",
     status: "PARTIAL_LIVE",
     count: rankedCandidates.length,
-    scannedCount: quoteResults.length,
+    scannedCount: universeLightScan.rows.length,
     candidateCount: quoteFilteredCandidates.length,
     failedCount: quoteFailedCount + candleFallbackCount,
+    universeCoverageSummary,
     movementSummary: buildMovementSummary(rankedCandidates),
     items: rankedCandidates,
   };

@@ -45,10 +45,11 @@ function withoutFixedSnapshot(snapshot: SnapshotResponse): SnapshotResponse {
 
 async function buildFreshMarketSnapshotForRefresh(
   guard?: RefreshTimeoutGuard,
+  topN = COVERAGE_MARKET_SCAN_LIMIT,
 ): Promise<SnapshotResponse> {
   if (process.env.YAHOO_FINANCE_ENABLED === "true") {
     try {
-      return await buildMarketScanSnapshot(COVERAGE_MARKET_SCAN_LIMIT, guard);
+      return await buildMarketScanSnapshot(topN, guard);
     } catch {
       try {
         return await buildFixedWatchlistSnapshot(guard);
@@ -443,13 +444,17 @@ export async function buildLatestSnapshotWithFixed(): Promise<SnapshotResponse> 
   };
 }
 
-export async function refreshDailySnapshot(): Promise<RefreshResult> {
+export async function refreshDailySnapshot({
+  topN = COVERAGE_MARKET_SCAN_LIMIT,
+}: {
+  topN?: number;
+} = {}): Promise<RefreshResult> {
   const timeoutGuard = createRefreshTimeoutGuard();
   const liveMode = process.env.YAHOO_FINANCE_ENABLED === "true";
   const freshFixedSnapshot =
     await buildFreshFixedSnapshotForRefresh(timeoutGuard);
   const marketCoverageSnapshot =
-    await buildFreshMarketSnapshotForRefresh(timeoutGuard);
+    await buildFreshMarketSnapshotForRefresh(timeoutGuard, topN);
   const currentMarketSnapshot = withTopCandidateLimit(marketCoverageSnapshot);
   const currentMode = currentMarketSnapshot.mode ?? "MARKET_SCAN";
   const snapshotDate = getSnapshotDate(new Date(currentMarketSnapshot.updatedAt));
@@ -503,6 +508,7 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     actionSignalSummary,
     entryActionSummary: actionSignalSummary,
     positionActionSummary,
+    universeCoverageSummary: marketCoverageSnapshot.universeCoverageSummary,
   };
   const marketSaveResult =
     currentMode === "MARKET_SCAN"
@@ -632,6 +638,7 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     persistenceErrorCode: snapshot.persistenceErrorCode,
     persistenceErrorDetails: snapshot.persistenceErrorDetails,
     providerCoverageSummary,
+    universeCoverageSummary: marketCoverageSnapshot.universeCoverageSummary,
     actionSignalSummary,
     entryActionSummary: actionSignalSummary,
     positionActionSummary,

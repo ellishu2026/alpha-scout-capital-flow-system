@@ -11,12 +11,24 @@ function isAuthorized(request: NextRequest) {
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 
+function parseTopN(value: string | null) {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) return 15;
+
+  const topN = Math.floor(parsed);
+
+  return [15, 20, 30].includes(topN) ? topN : 15;
+}
+
 async function handleRefresh(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await refreshDailySnapshot();
+  const result = await refreshDailySnapshot({
+    topN: parseTopN(request.nextUrl.searchParams.get("topN")),
+  });
 
   return NextResponse.json(result);
 }

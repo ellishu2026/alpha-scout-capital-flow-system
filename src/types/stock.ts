@@ -39,6 +39,11 @@ export type CoverageSourceBucket =
   | "FIXED_WATCHLIST"
   | "MARKET_SCAN_TOP15"
   | "BOTH";
+export type UniverseSourceBucket =
+  | "FIXED_WATCHLIST"
+  | "MARKET_CAP_50B_300B"
+  | "HIGH_PRICE_OVER_800"
+  | "MULTI_BUCKET";
 export type FlowDataQualityGrade = "A" | "B" | "C" | "D";
 export type ActionSignal =
   | "Buy Candidate"
@@ -318,6 +323,53 @@ export type ProviderCoverageSummary = {
   };
 };
 
+export type UniverseCoverageSummary = {
+  fixedWatchlistCount: number;
+  marketCap50To300BPoolCount: number;
+  highPriceOver800PoolCount: number;
+  mergedUniverseCount: number;
+  dedupedUniverseCount: number;
+  lightFilterTickerCount: number;
+  deepScoringCandidateCount: number;
+  deepScoringSkippedCount: number;
+  scanCandidateCount: number;
+  finalRankedCount: number;
+  topN: number;
+  overlappingTickerCount: number;
+  overlappingTickers: string[];
+  missingMarketCapCount: number;
+  missingMarketCapTickers: string[];
+  missingPriceCount: number;
+  missingPriceTickers: string[];
+  failedQuoteCount: number;
+  failedQuoteTickers: string[];
+  skippedByTimeoutCount: number;
+  skippedByTimeoutTickers: string[];
+  providerQuotaExhaustedCount: number;
+  providerQuotaExhaustedTickers: string[];
+  yfinanceProxyFallbackCount: number;
+  yfinanceProxyFallbackTickers: string[];
+  includedSourceBuckets: UniverseSourceBucket[];
+  universeBuildVersion: string;
+  marketCap50To300BTickers: string[];
+  highPriceOver800Tickers: string[];
+  dedupedUniverseSampleTickers: string[];
+};
+
+export type UniverseDebugRow = {
+  ticker: string;
+  companyName?: string;
+  price: number | null;
+  marketCap: number | null;
+  sourceBucket: UniverseSourceBucket;
+  sourceBuckets: Exclude<UniverseSourceBucket, "MULTI_BUCKET">[];
+  includedByMarketCapRange: boolean;
+  includedByHighPrice: boolean;
+  includedByFixedWatchlist: boolean;
+  quoteStatus: "OK" | "FAILED" | "SKIPPED_TIMEOUT";
+  missingReason?: string;
+};
+
 export type SignalSnapshotCoverageSummary = {
   fixedWatchlistRowsSaved: number;
   marketScanRowsSaved: number;
@@ -501,6 +553,7 @@ export type SnapshotResponse = {
   persistenceErrorCode?: string;
   persistenceErrorDetails?: string;
   providerCoverageSummary?: ProviderCoverageSummary;
+  universeCoverageSummary?: UniverseCoverageSummary;
   realProviderCoveragePct?: number;
   archiveHitCount?: number;
   liveProviderSuccessCount?: number;
@@ -557,6 +610,7 @@ export type RefreshResult = {
   persistenceErrorCode?: string;
   persistenceErrorDetails?: string;
   providerCoverageSummary?: ProviderCoverageSummary;
+  universeCoverageSummary?: UniverseCoverageSummary;
   actionSignalSummary?: ActionSignalSummary;
   entryActionSummary?: ActionSignalSummary;
   positionActionSummary?: PositionActionSummary;
