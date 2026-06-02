@@ -12,7 +12,7 @@ import {
   getSupabaseConfigStatus,
   isSupabaseConfigured,
 } from "@/lib/supabaseAdmin";
-import type { ForwardReturnUpdateStatus } from "@/types/stock";
+import type { ForwardReturnUpdateStatus, StockCandidate } from "@/types/stock";
 
 const FORWARD_WINDOWS = [1, 3, 5, 10, 20] as const;
 const FORWARD_RETURN_FIELDS = [
@@ -120,6 +120,22 @@ function daysBetween(startDate: string) {
 
 function roundPct(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+function withRawItemActionFields(row: Record<string, unknown>) {
+  const rawItem = row.raw_item as StockCandidate | undefined;
+
+  if (!rawItem) {
+    return row;
+  }
+
+  return {
+    ...row,
+    action_signal: row.action_signal ?? rawItem.actionSignal,
+    action_confidence: row.action_confidence ?? rawItem.actionConfidence,
+    action_reasons: row.action_reasons ?? rawItem.actionReasons,
+    action_risk_flags: row.action_risk_flags ?? rawItem.actionRiskFlags,
+  };
 }
 
 function budgetFields() {
@@ -485,6 +501,7 @@ export async function queryForwardReturns({
         "capital_flow_score",
         "flow_data_quality_grade",
         "provider_used",
+        "raw_item",
       ].join(","),
     )
     .order("signal_date", { ascending: false })
@@ -528,6 +545,8 @@ export async function queryForwardReturns({
       source_bucket: sourceBucket,
       limit: parseLimit(limit),
     },
-    rows: data ?? [],
+    rows: (data ?? []).map((row) =>
+      withRawItemActionFields(row as unknown as Record<string, unknown>),
+    ),
   };
 }

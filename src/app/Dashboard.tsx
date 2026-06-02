@@ -47,6 +47,7 @@ const tableHeaders = [
   "FCF Δ",
   "Flow Δ",
   "Signal",
+  "Action",
   "Data Q",
   "Provider",
   "Data",
@@ -159,6 +160,33 @@ function signalClass(signal: string) {
 
   if (label === "Weak") {
     return "bg-rose-50 text-rose-700 ring-rose-200";
+  }
+
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function compactActionSignal(action?: StockCandidate["actionSignal"]) {
+  if (action === "Buy Candidate") return "Buy";
+  if (action === "Insufficient Data") return "Insufficient";
+
+  return action ?? "N/A";
+}
+
+function actionClass(action?: StockCandidate["actionSignal"]) {
+  if (action === "Buy Candidate") {
+    return "bg-emerald-50 text-emerald-800 ring-emerald-200";
+  }
+
+  if (action === "Watch") {
+    return "bg-blue-50 text-blue-700 ring-blue-200";
+  }
+
+  if (action === "Avoid") {
+    return "bg-rose-50 text-rose-700 ring-rose-200";
+  }
+
+  if (action === "Insufficient Data") {
+    return "bg-amber-50 text-amber-800 ring-amber-200";
   }
 
   return "bg-slate-100 text-slate-600 ring-slate-200";
@@ -401,6 +429,19 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
       </td>
       <td className="px-1.5 py-1.5">
         <span
+          title={`Confidence: ${candidate.actionConfidence ?? "N/A"} · Reasons: ${
+            candidate.actionReasons?.join("; ") ?? "None"
+          } · Risk: ${candidate.actionRiskFlags?.join(", ") ?? "None"}`}
+          className={`inline-flex max-w-28 truncate rounded px-1 py-0.5 text-[9px] font-bold ring-1 ${actionClass(
+            candidate.actionSignal,
+          )}`}
+        >
+          {compactActionSignal(candidate.actionSignal)}{" "}
+          {candidate.actionConfidence ? `· ${candidate.actionConfidence}` : ""}
+        </span>
+      </td>
+      <td className="px-1.5 py-1.5">
+        <span
           className={`inline-flex min-w-10 justify-center rounded px-1 py-0.5 text-[9px] font-bold tabular-nums ring-1 ${qualityClass(
             candidate.flowDataQualityGrade,
           )}`}
@@ -448,11 +489,24 @@ function MobileCandidateCard({ candidate }: { candidate: StockCandidate }) {
           {compactSignal(candidate.signal)}
         </span>
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-1.5 text-[11px]">
+      <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px]">
+        <div>
+          <span className="text-slate-500">Action</span>
+          <p className="font-semibold text-slate-950">
+            {compactActionSignal(candidate.actionSignal)} ·{" "}
+            {candidate.actionConfidence ?? "N/A"}
+          </p>
+        </div>
         <div>
           <span className="text-slate-500">Composite</span>
           <p className="font-semibold text-slate-950">
             {candidate.compositeScore.toFixed(1)}
+          </p>
+        </div>
+        <div>
+          <span className="text-slate-500">Flow Score</span>
+          <p className="font-semibold text-slate-950">
+            {candidate.capitalFlowScore.toFixed(1)}
           </p>
         </div>
         <div>
@@ -655,6 +709,7 @@ function DiagnosticsSection({
   const used = coverage?.providerCallsUsed;
   const remaining = coverage?.providerCallsRemaining;
   const signalCoverage = snapshot.signalSnapshotCoverageSummary;
+  const actionSummary = snapshot.actionSignalSummary;
 
   if (!expanded) {
     return null;
@@ -723,6 +778,16 @@ function DiagnosticsSection({
             <DiagnosticMetric
               label="Overlap"
               value={signalCoverage?.overlappingTickers.length}
+            />
+            <DiagnosticMetric
+              label="Buy"
+              value={actionSummary?.buyCandidateCount}
+            />
+            <DiagnosticMetric label="Watch" value={actionSummary?.watchCount} />
+            <DiagnosticMetric label="Avoid" value={actionSummary?.avoidCount} />
+            <DiagnosticMetric
+              label="Insufficient"
+              value={actionSummary?.insufficientDataCount}
             />
           </div>
         </article>
@@ -887,6 +952,7 @@ export function Dashboard({
     activeTab === "FIXED_LIST" ? [] : (allSnapshot.droppedSymbols ?? []);
   const providerCoverage = allSnapshot.providerCoverageSummary;
   const qualitySummary = providerCoverage?.dataQualitySummary;
+  const actionSummary = allSnapshot.actionSignalSummary;
   const diagnosticsSummary = providerCoverage
     ? `Real ${providerCoverage.realProviderCoveragePct}% · Quality A:${
         qualitySummary?.gradeACount ?? 0
@@ -936,6 +1002,15 @@ export function Dashboard({
           : "Awaiting refresh coverage summary",
     },
     {
+      label: "Action Signals",
+      value: actionSummary
+        ? `${actionSummary.buyCandidateCount} Buy · ${actionSummary.watchCount} Watch`
+        : "N/A",
+      detail: actionSummary
+        ? `Avoid ${actionSummary.avoidCount} · Insufficient ${actionSummary.insufficientDataCount}`
+        : "Awaiting action signal summary",
+    },
+    {
       label: "Avg Data Quality",
       value:
         providerCoverage?.dataQualitySummary?.averageFlowDataQualityScore != null
@@ -957,7 +1032,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.3
+                AlphaScout Capital Flow System V1.7.4
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -1028,7 +1103,7 @@ export function Dashboard({
       </section>
 
       <section className="mx-auto w-full max-w-[1600px] px-2.5 py-2.5 sm:px-3 lg:px-4">
-        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-7">
           {summaryCards.map((card) => (
             <article
               key={card.label}
@@ -1097,7 +1172,7 @@ export function Dashboard({
 
         <div className="mt-1.5 hidden overflow-hidden rounded border border-slate-200 bg-white shadow-sm md:block">
           <div className="max-h-[calc(100vh-205px)] overflow-auto">
-            <table className="w-full min-w-[1320px] border-collapse text-left">
+            <table className="w-full min-w-[1420px] border-collapse text-left">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
                   {tableHeaders.map((header) => {

@@ -84,6 +84,10 @@ type SignalSnapshotRow = {
   flow_data_quality_grade?: string;
   flow_data_quality_reasons?: string[];
   flow_data_quality_inputs?: Record<string, unknown>;
+  action_signal?: string;
+  action_confidence?: string;
+  action_reasons?: string[];
+  action_risk_flags?: string[];
   provider_errors?: string[];
   raw_item: StockCandidate;
 };
@@ -165,8 +169,51 @@ function signalRow({
     flow_data_quality_grade: candidate.flowDataQualityGrade,
     flow_data_quality_reasons: candidate.flowDataQualityReasons ?? [],
     flow_data_quality_inputs: candidate.flowDataQualityInputs,
+    action_signal: candidate.actionSignal,
+    action_confidence: candidate.actionConfidence,
+    action_reasons: candidate.actionReasons ?? [],
+    action_risk_flags: candidate.actionRiskFlags ?? [],
     provider_errors: candidate.providerErrors ?? [],
     raw_item: JSON.parse(JSON.stringify(candidate)) as StockCandidate,
+  };
+}
+
+function withoutActionColumns(row: SignalSnapshotRow): SignalSnapshotRow {
+  const fallbackRow = { ...row };
+
+  delete fallbackRow.action_signal;
+  delete fallbackRow.action_confidence;
+  delete fallbackRow.action_reasons;
+  delete fallbackRow.action_risk_flags;
+
+  return fallbackRow;
+}
+
+function shouldRetryWithoutActionColumns(error: unknown) {
+  const message = errorMessage(error).toLowerCase();
+
+  return (
+    message.includes("action_signal") ||
+    message.includes("action_confidence") ||
+    message.includes("action_reasons") ||
+    message.includes("action_risk_flags") ||
+    message.includes("schema cache")
+  );
+}
+
+function withRawItemActionFields(row: Record<string, unknown>) {
+  const rawItem = row.raw_item as StockCandidate | undefined;
+
+  if (!rawItem) {
+    return row;
+  }
+
+  return {
+    ...row,
+    action_signal: row.action_signal ?? rawItem.actionSignal,
+    action_confidence: row.action_confidence ?? rawItem.actionConfidence,
+    action_reasons: row.action_reasons ?? rawItem.actionReasons,
+    action_risk_flags: row.action_risk_flags ?? rawItem.actionRiskFlags,
   };
 }
 
@@ -307,6 +354,32 @@ export async function upsertSignalSnapshots({
       });
 
     if (error) {
+      if (shouldRetryWithoutActionColumns(error)) {
+        const { error: fallbackError } = await supabase
+          .from(signalSnapshotTableName)
+          .upsert(rows.map(withoutActionColumns), {
+            onConflict: "signal_date,mode,ticker,source_bucket",
+          });
+
+        if (!fallbackError) {
+          return {
+            status: "SAVED",
+            rowsSaved: rows.length,
+            error: null,
+            latestSignalDate: signalDate,
+            coverageSummary,
+          };
+        }
+
+        return {
+          status: "FAILED",
+          rowsSaved: 0,
+          error: errorMessage(fallbackError),
+          latestSignalDate: signalDate,
+          coverageSummary: emptyCoverageSummary(),
+        };
+      }
+
       return {
         status: "FAILED",
         rowsSaved: 0,
@@ -405,6 +478,8 @@ export async function querySignalSnapshots({
       source_bucket: sourceBucket,
       limit: Math.min(Math.max(limit, 1), 200),
     },
-    rows: data ?? [],
+    rows: (data ?? []).map((row) =>
+      withRawItemActionFields(row as unknown as Record<string, unknown>),
+    ),
   };
 }

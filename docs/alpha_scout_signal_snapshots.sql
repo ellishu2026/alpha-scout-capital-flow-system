@@ -45,6 +45,10 @@ create table if not exists public.alpha_scout_signal_snapshots (
   flow_data_quality_grade text,
   flow_data_quality_reasons jsonb,
   flow_data_quality_inputs jsonb,
+  action_signal text,
+  action_confidence text,
+  action_reasons jsonb,
+  action_risk_flags jsonb,
   provider_errors jsonb,
   raw_item jsonb,
   forward_1d_return_pct numeric,
@@ -75,3 +79,12 @@ on public.alpha_scout_signal_snapshots (source_bucket);
 
 create index if not exists idx_alpha_scout_signal_snapshots_mode
 on public.alpha_scout_signal_snapshots (mode);
+
+alter table public.alpha_scout_signal_snapshots
+  add column if not exists action_signal text,
+  add column if not exists action_confidence text,
+  add column if not exists action_reasons jsonb,
+  add column if not exists action_risk_flags jsonb;
+
+create index if not exists idx_alpha_scout_signal_snapshots_action_signal
+on public.alpha_scout_signal_snapshots (action_signal);

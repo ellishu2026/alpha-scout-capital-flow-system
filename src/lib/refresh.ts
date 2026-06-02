@@ -1,5 +1,10 @@
 import { mockSnapshot } from "@/data/mockSnapshot";
 import {
+  applyActionSignalsToItems,
+  applyActionSignalsToSnapshot,
+  buildActionSignalSummary,
+} from "@/lib/actionSignals";
+import {
   COVERAGE_MARKET_SCAN_LIMIT,
   buildFixedWatchlistSnapshot,
   buildMarketScanSnapshot,
@@ -467,19 +472,32 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
         ? marketCoverageSnapshot.items
         : currentMarketSnapshot.items,
   });
+  const marketSnapshotWithActions =
+    applyActionSignalsToSnapshot(marketSnapshotWithBuckets);
+  const fixedSnapshotWithActions = fixedSnapshot
+    ? applyActionSignalsToSnapshot(fixedSnapshot)
+    : undefined;
+  const marketTop15ItemsWithActions =
+    applyActionSignalsToItems(marketTop15Items);
   const providerCoverageSummary = buildProviderCoverageSummary({
-    fixedSnapshot,
-    marketTop15Items,
+    fixedSnapshot: fixedSnapshotWithActions,
+    marketTop15Items: marketTop15ItemsWithActions,
   });
-  const marketSnapshotForSave = attachProviderCoverageSummary(
-    timeoutGuard.triggered
-      ? {
-          ...marketSnapshotWithBuckets,
-          status: "PARTIAL_LIVE_TIMEOUT_GUARDED",
-        }
-      : marketSnapshotWithBuckets,
-    providerCoverageSummary,
+  const actionSignalSummary = buildActionSignalSummary(
+    marketSnapshotWithActions.items,
   );
+  const marketSnapshotForSave = {
+    ...attachProviderCoverageSummary(
+      timeoutGuard.triggered
+        ? {
+            ...marketSnapshotWithActions,
+            status: "PARTIAL_LIVE_TIMEOUT_GUARDED",
+          }
+        : marketSnapshotWithActions,
+      providerCoverageSummary,
+    ),
+    actionSignalSummary,
+  };
   const marketSaveResult =
     currentMode === "MARKET_SCAN"
       ? await upsertTodaySnapshot(
@@ -499,7 +517,15 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     ? await upsertTodaySnapshot(
         "FIXED_WATCHLIST",
         withoutFixedSnapshot(
-          attachProviderCoverageSummary(fixedSnapshot, providerCoverageSummary),
+          attachProviderCoverageSummary(
+            {
+              ...(fixedSnapshotWithActions ?? fixedSnapshot),
+              actionSignalSummary: buildActionSignalSummary(
+                (fixedSnapshotWithActions ?? fixedSnapshot).items,
+              ),
+            },
+            providerCoverageSummary,
+          ),
         ),
       )
     : undefined;
@@ -541,15 +567,20 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     persistenceError: persistenceIssue?.error,
     persistenceErrorCode: persistenceIssue?.errorCode,
     persistenceErrorDetails: persistenceIssue?.errorDetails,
-    fixedSnapshot,
+    fixedSnapshot: fixedSnapshotWithActions,
+    actionSignalSummary,
     ...timeoutSummary,
   };
   const signalSnapshotResult = await upsertSignalSnapshots({
     marketSnapshot:
       marketCoverageSnapshot.mode === "MARKET_SCAN"
-        ? marketCoverageSnapshot
+        ? {
+            ...marketCoverageSnapshot,
+            items: marketTop15ItemsWithActions,
+          }
         : undefined,
-    fixedSnapshot: fixedSnapshot ?? snapshotWithoutSignalStatus.fixedSnapshot,
+    fixedSnapshot:
+      fixedSnapshotWithActions ?? snapshotWithoutSignalStatus.fixedSnapshot,
     fallbackSnapshot: snapshotWithoutSignalStatus,
   });
   const signalSnapshotFields = {
@@ -587,6 +618,7 @@ export async function refreshDailySnapshot(): Promise<RefreshResult> {
     persistenceErrorCode: snapshot.persistenceErrorCode,
     persistenceErrorDetails: snapshot.persistenceErrorDetails,
     providerCoverageSummary,
+    actionSignalSummary,
     ...signalSnapshotFields,
     ...timeoutSummary,
     message: liveMode

@@ -22,10 +22,12 @@
 - V1.7.1.2 Fixed Watchlist Signal Snapshot Persistence
 - V1.7.2 Forward Return Tracking
 - V1.7.3 Win Rate & Signal Quality Report
+- V1.7.4 Buy / Watch / Avoid Signal Upgrade
 
 ## Next Recommended Steps
 
-- V1.7.4 Buy / Watch / Avoid Signal Upgrade
+- V1.7.5 Action Signal Calibration with Forward Returns
+- V1.7.6 Dashboard Action History
 
 ## Later
 
@@ -51,3 +53,9 @@ Forward return price lookup uses the conservative ladder `ARCHIVE -> ALPHA_VANTA
 V1.7.3 summarizes stored signal outcomes using populated forward return fields in `alpha_scout_signal_snapshots`. Null forward returns are excluded from win-rate and return calculations instead of being treated as losses.
 
 The report groups performance by signal, mode, source bucket, data quality grade, provider, capital flow score bucket, and composite score bucket. It becomes more meaningful as more signal dates and forward return samples accumulate.
+
+## Action Signal Layer
+
+V1.7.4 creates a final decision-support action layer: Buy Candidate, Watch, Avoid, or Insufficient Data. This is not auto-trading; it is a trade-assist signal derived from the existing raw signal, score inputs, provider metadata, data quality, source bucket, and risk controls.
+
+Data quality and provider type can downgrade raw accumulation signals. `YFINANCE_COMPOSITE_PROXY` signals should not become Buy Candidate until validated, and B/C quality signals are downgraded to Watch unless risk controls require Avoid. Future versions may use V1.7.3 win-rate statistics to further calibrate action thresholds.

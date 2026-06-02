@@ -40,6 +40,12 @@ export type CoverageSourceBucket =
   | "MARKET_SCAN_TOP15"
   | "BOTH";
 export type FlowDataQualityGrade = "A" | "B" | "C" | "D";
+export type ActionSignal =
+  | "Buy Candidate"
+  | "Watch"
+  | "Avoid"
+  | "Insufficient Data";
+export type ActionConfidence = "High" | "Medium" | "Low";
 
 export type FlowDataQualityInputs = {
   providerUsed?: ProviderUsed;
@@ -249,6 +255,10 @@ export type StockCandidate = {
   flowDataQualityGrade?: FlowDataQualityGrade;
   flowDataQualityReasons?: string[];
   flowDataQualityInputs?: FlowDataQualityInputs;
+  actionSignal?: ActionSignal;
+  actionConfidence?: ActionConfidence;
+  actionReasons?: string[];
+  actionRiskFlags?: string[];
 };
 
 export type ProviderCoverageSummary = {
@@ -307,6 +317,17 @@ export type SignalSnapshotCoverageSummary = {
   overlappingTickers: string[];
   fixedWatchlistTickers: string[];
   marketScanTickers: string[];
+};
+
+export type ActionSignalSummary = {
+  buyCandidateCount: number;
+  watchCount: number;
+  avoidCount: number;
+  insufficientDataCount: number;
+  buyCandidateTickers: string[];
+  watchTickers: string[];
+  avoidTickers: string[];
+  insufficientDataTickers: string[];
 };
 
 export type ForwardReturnUpdateStatus =
@@ -391,6 +412,7 @@ export type SnapshotResponse = {
   signalSnapshotError?: string | null;
   signalSnapshotLatestDate?: string | null;
   signalSnapshotCoverageSummary?: SignalSnapshotCoverageSummary;
+  actionSignalSummary?: ActionSignalSummary;
   forwardReturnUpdateStatus?: ForwardReturnUpdateStatus;
   forwardReturnUpdatedRows?: number;
   forwardReturnCheckedRows?: number;
@@ -433,6 +455,7 @@ export type RefreshResult = {
   persistenceErrorCode?: string;
   persistenceErrorDetails?: string;
   providerCoverageSummary?: ProviderCoverageSummary;
+  actionSignalSummary?: ActionSignalSummary;
   signalSnapshotPersistenceStatus?: "SAVED" | "FAILED" | "SKIPPED";
   signalSnapshotRowsSaved?: number;
   signalSnapshotError?: string | null;

@@ -1,5 +1,11 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.4 Buy / Watch / Avoid Signal Upgrade
+
+- Added final action signals with confidence, reasons, and risk flags to ranked candidates.
+- Added data-quality and proxy-provider downgrade rules so lower-quality or `YFINANCE_COMPOSITE_PROXY` signals cannot become Buy Candidate.
+- Added dashboard action badges and action signal counts, plus optional signal snapshot SQL columns for future action history analysis.
+
 ## V1.7.3 Win Rate & Signal Quality Report
 
 - Added `/api/debug/win-rate` to summarize stored signal snapshot outcomes by forward return window.
