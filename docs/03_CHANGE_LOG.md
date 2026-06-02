@@ -1,5 +1,11 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.4.1 Action Signal Rule Tuning
+
+- Tuned Avoid logic so forward-return history gaps, market-scan-only source, provider warnings, and negative short-term acceleration are risk flags rather than hard Avoid triggers.
+- Preserved Buy Candidate selectivity while allowing A-grade real-provider positive signals to remain Buy Candidate or Watch unless severe score or flow deterioration exists.
+- Replaced generic Avoid reasons with specific score, breadth, data quality, provider, or multi-window flow explanations.
+
 ## V1.7.4 Buy / Watch / Avoid Signal Upgrade
 
 - Added final action signals with confidence, reasons, and risk flags to ranked candidates.

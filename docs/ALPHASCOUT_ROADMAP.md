@@ -23,11 +23,13 @@
 - V1.7.2 Forward Return Tracking
 - V1.7.3 Win Rate & Signal Quality Report
 - V1.7.4 Buy / Watch / Avoid Signal Upgrade
+- V1.7.4.1 Action Signal Rule Tuning
 
 ## Next Recommended Steps
 
-- V1.7.5 Action Signal Calibration with Forward Returns
-- V1.7.6 Dashboard Action History
+- V1.7.5 Dashboard Action Layout Refinement
+- V1.7.6 Entry / Position Action Split
+- V1.7.7 Action Signal Calibration with Forward Returns
 
 ## Later
 
@@ -59,3 +61,5 @@ The report groups performance by signal, mode, source bucket, data quality grade
 V1.7.4 creates a final decision-support action layer: Buy Candidate, Watch, Avoid, or Insufficient Data. This is not auto-trading; it is a trade-assist signal derived from the existing raw signal, score inputs, provider metadata, data quality, source bucket, and risk controls.
 
 Data quality and provider type can downgrade raw accumulation signals. `YFINANCE_COMPOSITE_PROXY` signals should not become Buy Candidate until validated, and B/C quality signals are downgraded to Watch unless risk controls require Avoid. Future versions may use V1.7.3 win-rate statistics to further calibrate action thresholds.
+
+V1.7.4.1 tunes the action rules so `NO_FORWARD_RETURN_HISTORY` and `MARKET_SCAN_ONLY` are risk flags only, not hard Avoid triggers. `PROVIDER_ERRORS_PRESENT` only forces a strong downgrade when final data quality is weak or the final provider failed. A-grade real-provider positive signals should not become Avoid unless severe score, breadth, or multi-window flow deterioration exists.
