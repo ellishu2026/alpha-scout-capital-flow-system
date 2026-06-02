@@ -1,5 +1,11 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.8 Dashboard Action History + Calibration Simulation Foundation
+
+- Added `/api/debug/action-history` to compare recent Entry and Position actions against prior signal snapshots.
+- Added a compact dashboard Action History panel with recent action, rank, composite, and signal changes.
+- Added reporting-only calibration simulation metadata to `/api/debug/win-rate`; production thresholds are not changed automatically.
+
 ## V1.7.7 Action Signal Calibration with Forward Returns
 
 - Added calibration readiness metrics to the win-rate report without changing Entry or Position action thresholds.

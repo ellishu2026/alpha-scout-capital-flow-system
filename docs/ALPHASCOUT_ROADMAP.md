@@ -27,11 +27,12 @@
 - V1.7.5 Dashboard Action Layout Refinement
 - V1.7.6 Entry / Position Action Split
 - V1.7.7 Action Signal Calibration with Forward Returns
+- V1.7.8 Dashboard Action History + Calibration Simulation Foundation
 
 ## Next Recommended Steps
 
-- V1.7.8 Dashboard Action History
-- V1.7.9 Calibration Threshold Tuning when samples are sufficient
+- V1.7.9 Calibration Threshold Simulation Report
+- V1.8.0 Approved Rule Promotion Workflow
 
 ## Later
 
@@ -71,3 +72,5 @@ V1.7.5 refines the dashboard action layout while keeping one ticker per row. Act
 V1.7.6 splits the action layer into entry action for no-position / new-entry decision support and position action for existing-position management. The system does not know actual holdings, so these fields are separate trade-assist views of the same signal context. Explicit database columns may be added later if action analytics require them.
 
 V1.7.7 adds calibration readiness metrics for action signal evaluation with forward returns. Win-rate summaries now group by Entry action, Position action, legacy action, entry confidence, position confidence, data quality, provider, source bucket, and score buckets. V1.7.7 does not change action thresholds while forward-return samples are insufficient; the recommended minimum for initial calibration is 30 observations per window or group. The top-right `Selected` status field was removed from the dashboard header.
+
+V1.7.8 adds a compact Action History display and `/api/debug/action-history` so recent Entry and Position action changes can be compared against prior signal snapshots. It also adds a calibration simulation foundation to the win-rate report. Candidate threshold simulation is reporting-only in V1.7.8: production thresholds do not auto-change, and any future candidate rule must have sufficient sample size, improved win rate, improved average return, no material downside deterioration, and explicit review before production activation.

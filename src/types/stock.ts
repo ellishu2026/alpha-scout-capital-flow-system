@@ -399,6 +399,17 @@ export type CalibrationReadiness = {
   notReadyReason: string | null;
 };
 
+export type CalibrationSimulation = {
+  isReady: boolean;
+  minRecommendedSamples: number;
+  availableForwardReturnRows: number;
+  candidateRuleSetsEvaluated: number;
+  bestCandidateRuleSet: Record<string, unknown> | null;
+  productionRuleSet: string;
+  recommendation: string;
+  notReadyReason: string | null;
+};
+
 export type WinRateReport = {
   ok: boolean;
   filters: Record<string, string | number | undefined>;
@@ -407,6 +418,7 @@ export type WinRateReport = {
   availableForwardReturnRows: number;
   insufficientForwardReturnRows: number;
   calibrationReadiness: CalibrationReadiness;
+  calibrationSimulation: CalibrationSimulation;
   summaries: {
     overall: WinRateGroupSummary;
     bySignal: WinRateGroupSummary[];
@@ -423,6 +435,52 @@ export type WinRateReport = {
     byCapitalFlowScoreBucket: WinRateGroupSummary[];
     byCompositeScoreBucket: WinRateGroupSummary[];
   };
+  error?: string;
+};
+
+export type ActionHistoryRow = {
+  ticker: string;
+  signalDate: string;
+  mode: string | null;
+  sourceBucket: string | null;
+  rank: number | null;
+  previousRank: number | null;
+  rankChange: number | null;
+  entryActionSignal: string;
+  previousEntryActionSignal: string;
+  entryActionChange: string;
+  positionActionSignal: string;
+  previousPositionActionSignal: string;
+  positionActionChange: string;
+  actionSignal: string;
+  previousActionSignal: string;
+  compositeScore: number | null;
+  previousCompositeScore: number | null;
+  signal: string;
+  previousSignal: string;
+  flowDataQualityGrade: string | null;
+  providerUsed: string | null;
+  createdAt: string | null;
+  previousCreatedAt: string | null;
+};
+
+export type ActionHistorySummary = {
+  totalRows: number;
+  newBuyCandidateCount: number;
+  entryUpgradeCount: number;
+  entryDowngradeCount: number;
+  positionUpgradeCount: number;
+  positionDowngradeCount: number;
+  newSellCandidateCount: number;
+  newExitCount: number;
+  noChangeCount: number;
+};
+
+export type ActionHistoryReport = {
+  ok: boolean;
+  count: number;
+  actionHistorySummary: ActionHistorySummary;
+  rows: ActionHistoryRow[];
   error?: string;
 };
 

@@ -10,6 +10,7 @@ import {
   getPoolLabel,
 } from "@/lib/scoring";
 import type {
+  ActionHistoryReport,
   SnapshotResponse,
   StockCandidate,
   StockPool,
@@ -921,18 +922,114 @@ function DiagnosticsSection({
   );
 }
 
+function ActionHistorySection({
+  report,
+  expanded,
+  onToggle,
+}: {
+  report?: ActionHistoryReport;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const summary = report?.actionHistorySummary;
+
+  return (
+    <section className="mt-1.5 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+          <h2 className="font-semibold text-slate-950">Action History</h2>
+          <span className="text-slate-500">
+            New Buy {summary?.newBuyCandidateCount ?? 0} · Entry Up{" "}
+            {summary?.entryUpgradeCount ?? 0} · Entry Down{" "}
+            {summary?.entryDowngradeCount ?? 0} · Position Down{" "}
+            {summary?.positionDowngradeCount ?? 0}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="min-h-8 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+        >
+          {expanded ? "History ▴" : "History ▾"}
+        </button>
+      </div>
+
+      {expanded ? (
+        report?.rows.length ? (
+          <div className="mt-1.5 overflow-x-auto rounded border border-slate-200">
+            <table className="w-full min-w-[980px] text-left">
+              <thead className="bg-slate-50 text-[9px] uppercase text-slate-500">
+                <tr>
+                  <th className="px-2 py-1">Ticker</th>
+                  <th className="px-2 py-1">Entry</th>
+                  <th className="px-2 py-1">Entry Change</th>
+                  <th className="px-2 py-1">Position</th>
+                  <th className="px-2 py-1">Position Change</th>
+                  <th className="px-2 py-1">Rank</th>
+                  <th className="px-2 py-1">Composite</th>
+                  <th className="px-2 py-1">Signal</th>
+                  <th className="px-2 py-1">Last Seen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.rows.slice(0, 20).map((row) => (
+                  <tr
+                    key={`${row.ticker}-${row.mode}-${row.sourceBucket}-${row.signalDate}`}
+                    className="border-t border-slate-200"
+                  >
+                    <td className="px-2 py-1.5 font-bold text-slate-950">
+                      {row.ticker}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {row.previousEntryActionSignal} → {row.entryActionSignal}
+                    </td>
+                    <td className="px-2 py-1.5">{row.entryActionChange}</td>
+                    <td className="px-2 py-1.5">
+                      {row.previousPositionActionSignal} →{" "}
+                      {row.positionActionSignal}
+                    </td>
+                    <td className="px-2 py-1.5">{row.positionActionChange}</td>
+                    <td className="px-2 py-1.5 tabular-nums">
+                      {row.previousRank ?? "N/A"} → {row.rank ?? "N/A"}
+                    </td>
+                    <td className="px-2 py-1.5 tabular-nums">
+                      {row.previousCompositeScore ?? "N/A"} →{" "}
+                      {row.compositeScore ?? "N/A"}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {row.previousSignal} → {row.signal}
+                    </td>
+                    <td className="px-2 py-1.5">{row.signalDate}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-1.5 rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-slate-600">
+            Action history is not available yet.
+          </p>
+        )
+      ) : null}
+    </section>
+  );
+}
+
 export function Dashboard({
   allSnapshot,
   fixedSnapshot,
   winRateReport,
+  actionHistoryReport,
 }: {
   allSnapshot: SnapshotResponse;
   fixedSnapshot: SnapshotResponse | null;
   winRateReport?: WinRateReport;
+  actionHistoryReport?: ActionHistoryReport;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("ALL");
   const [diagnosticsExpanded, setDiagnosticsExpanded] = useState(false);
   const [winRateExpanded, setWinRateExpanded] = useState(false);
+  const [actionHistoryExpanded, setActionHistoryExpanded] = useState(false);
   const activeTabLabel =
     tabs.find((tab) => tab.id === activeTab)?.label ?? "All";
   const updatedAt = new Intl.DateTimeFormat("en-US", {
@@ -1026,7 +1123,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.7
+                AlphaScout Capital Flow System V1.7.8
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -1108,6 +1205,12 @@ export function Dashboard({
             </article>
           ))}
         </div>
+
+        <ActionHistorySection
+          report={actionHistoryReport}
+          expanded={actionHistoryExpanded}
+          onToggle={() => setActionHistoryExpanded((current) => !current)}
+        />
 
         <div className="mt-2.5 flex flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between">
           <div>

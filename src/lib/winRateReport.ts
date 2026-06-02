@@ -8,6 +8,7 @@ import {
 } from "@/lib/supabaseAdmin";
 import type {
   CalibrationReadiness,
+  CalibrationSimulation,
   ForwardWindowStats,
   StockCandidate,
   WinRateGroupSummary,
@@ -243,6 +244,24 @@ function buildCalibrationReadiness({
   };
 }
 
+function buildCalibrationSimulation(
+  readiness: CalibrationReadiness,
+): CalibrationSimulation {
+  return {
+    isReady: readiness.isReadyForRuleCalibration,
+    minRecommendedSamples: readiness.minRecommendedSamples,
+    availableForwardReturnRows: readiness.availableForwardReturnRows,
+    candidateRuleSetsEvaluated: readiness.isReadyForRuleCalibration ? 0 : 0,
+    bestCandidateRuleSet: null,
+    productionRuleSet: "V1.7.6_ENTRY_POSITION_ACTION_RULES",
+    recommendation:
+      "Hold current production thresholds until forward return samples are sufficient.",
+    notReadyReason: readiness.isReadyForRuleCalibration
+      ? null
+      : readiness.notReadyReason,
+  };
+}
+
 function buildGroupSummary(groupName: string, rows: SignalPerformanceRow[]) {
   const summary = emptyGroup(groupName);
   summary.totalSignals = rows.length;
@@ -323,6 +342,12 @@ function emptyReport({
   error?: string;
 }): WinRateReport {
   const overall = emptyGroup("Overall");
+  const calibrationReadiness = buildCalibrationReadiness({
+    totalSignals: 0,
+    availableForwardReturnRows: 0,
+    insufficientForwardReturnRows: 0,
+    overall,
+  });
 
   return {
     ok: error == null,
@@ -331,12 +356,8 @@ function emptyReport({
     totalRowsScanned: 0,
     availableForwardReturnRows: 0,
     insufficientForwardReturnRows: 0,
-    calibrationReadiness: buildCalibrationReadiness({
-      totalSignals: 0,
-      availableForwardReturnRows: 0,
-      insufficientForwardReturnRows: 0,
-      overall,
-    }),
+    calibrationReadiness,
+    calibrationSimulation: buildCalibrationSimulation(calibrationReadiness),
     summaries: {
       overall,
       bySignal: [],
@@ -472,6 +493,12 @@ export async function buildWinRateReport({
   const availableForwardReturnRows = rows.filter(hasAnyForwardReturn).length;
   const insufficientForwardReturnRows = rows.length - availableForwardReturnRows;
   const overall = buildGroupSummary("Overall", rows);
+  const calibrationReadiness = buildCalibrationReadiness({
+    totalSignals: rows.length,
+    availableForwardReturnRows,
+    insufficientForwardReturnRows,
+    overall,
+  });
 
   return {
     ok: true,
@@ -480,12 +507,8 @@ export async function buildWinRateReport({
     totalRowsScanned: rows.length,
     availableForwardReturnRows,
     insufficientForwardReturnRows,
-    calibrationReadiness: buildCalibrationReadiness({
-      totalSignals: rows.length,
-      availableForwardReturnRows,
-      insufficientForwardReturnRows,
-      overall,
-    }),
+    calibrationReadiness,
+    calibrationSimulation: buildCalibrationSimulation(calibrationReadiness),
     summaries: {
       overall,
       bySignal: groupedSummaries({
