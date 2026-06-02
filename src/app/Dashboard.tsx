@@ -567,18 +567,13 @@ function WinRateSection({
   const hasSamples = (report?.availableForwardReturnRows ?? 0) > 0;
 
   return (
-    <section className="mt-2.5 rounded border border-slate-200 bg-white p-2.5 shadow-sm">
+    <section className="mt-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-slate-950">
-            Win Rate & Signal Quality
-          </h2>
-          <p className="text-[11px] text-slate-600">
-            Stored signal outcomes from populated forward return fields.
-          </p>
-        </div>
+        <h2 className="font-semibold text-slate-950">
+          Win Rate & Signal Quality
+        </h2>
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
-          <span className="text-[11px] font-medium text-slate-500">
+          <span className="font-medium text-slate-500">
             Samples {report?.availableForwardReturnRows ?? 0} / Rows{" "}
             {report?.totalRowsScanned ?? 0}
           </span>
@@ -594,7 +589,7 @@ function WinRateSection({
 
       {expanded ? (
         hasSamples && overall ? (
-          <div className="mt-2 grid gap-2 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.35fr)_minmax(0,0.9fr)]">
+          <div className="mt-1.5 grid gap-2 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.35fr)_minmax(0,0.9fr)]">
             <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
               <p className="mb-1 font-semibold text-slate-800">
                 Overall Performance
@@ -673,7 +668,7 @@ function WinRateSection({
             </article>
           </div>
         ) : (
-          <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-2.5 py-2 text-[12px] text-slate-600">
+          <p className="mt-1.5 rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600">
             Forward return samples are not available yet. Win-rate report will
             populate after future trading days are captured.
           </p>
@@ -980,30 +975,9 @@ export function Dashboard({
       detail: `${allSnapshot.candidateCount ?? allSnapshot.count} passed quote filter from ${allSnapshot.scannedCount ?? "seed"} symbols`,
     },
     {
-      label: "Scoring Model",
-      value: "30 / 40 / 30",
-      detail: "Margin, FCF, and capital flow weighted scoring",
-    },
-    {
       label: "Data Status",
       value: getDataStatusLabel(allSnapshot.status),
       detail: `Snapshot: ${getPersistenceLabel(allSnapshot)}`,
-    },
-    {
-      label: "Provider Coverage",
-      value:
-        providerCoverage != null
-          ? `${providerCoverage.realProviderCoveragePct}%`
-          : "N/A",
-      detail:
-        providerCoverage != null
-          ? `Archive ${providerCoverage.archiveHitCount} · Live ${
-              providerCoverage.alphaVantageLiveCount +
-              providerCoverage.twelveDataLiveCount +
-              providerCoverage.eodhdLiveCount +
-              providerCoverage.polygonLiveCount
-            } · Fallback ${providerCoverage.yfinanceFallbackCount}`
-          : "Awaiting refresh coverage summary",
     },
     {
       label: "Entry Actions",
@@ -1023,22 +997,12 @@ export function Dashboard({
         ? `Sell ${positionSummary.sellCandidateCount} · Exit ${positionSummary.exitCount}`
         : "Awaiting position action summary",
     },
-    {
-      label: "Avg Data Quality",
-      value:
-        providerCoverage?.dataQualitySummary?.averageFlowDataQualityScore != null
-          ? `${providerCoverage.dataQualitySummary.averageFlowDataQualityScore}`
-          : "N/A",
-      detail: providerCoverage?.dataQualitySummary
-        ? `A ${providerCoverage.dataQualitySummary.gradeACount} · B ${providerCoverage.dataQualitySummary.gradeBCount} · C ${providerCoverage.dataQualitySummary.gradeCCount} · D ${providerCoverage.dataQualitySummary.gradeDCount}`
-        : "Awaiting quality summary",
-    },
   ];
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
       <section className="border-b border-slate-200 bg-slate-50">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-2.5 py-2.5 sm:px-3 lg:px-4">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-1.5 px-2.5 py-2 sm:px-3 lg:px-4">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
@@ -1078,10 +1042,10 @@ export function Dashboard({
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-              <span className="font-medium text-slate-700">
-                Scoring:{" "}
+              <span>
+                <span className="font-semibold text-slate-950">Scoring:</span>{" "}
                 <span className="font-normal text-slate-600">
                   Margin 30% · FCF 40% · Capital Flow 30%
                 </span>
@@ -1115,8 +1079,8 @@ export function Dashboard({
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-[1600px] px-2.5 py-2.5 sm:px-3 lg:px-4">
-        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+      <section className="mx-auto w-full max-w-[1600px] px-2.5 py-1.5 sm:px-3 lg:px-4">
+        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-5">
           {summaryCards.map((card) => (
             <article
               key={card.label}
