@@ -1,5 +1,11 @@
 # AlphaScout Capital Flow System - Change Log
 
+## V1.7.5 Dashboard Action Layout Refinement
+
+- Kept ranked candidates as one ticker per row across desktop and mobile with horizontal table scrolling.
+- Moved Action and Conf. columns before the raw Signal column.
+- Merged provider and financial data source into one compact Source column.
+
 ## V1.7.4.1 Action Signal Rule Tuning
 
 - Tuned Avoid logic so forward-return history gaps, market-scan-only source, provider warnings, and negative short-term acceleration are risk flags rather than hard Avoid triggers.

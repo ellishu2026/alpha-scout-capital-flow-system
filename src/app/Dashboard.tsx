@@ -46,11 +46,11 @@ const tableHeaders = [
   "Margin Δ",
   "FCF Δ",
   "Flow Δ",
-  "Signal",
   "Action",
+  "Conf.",
+  "Signal",
   "Data Q",
-  "Provider",
-  "Data",
+  "Source",
 ];
 
 const stickyHeaderClass =
@@ -166,10 +166,16 @@ function signalClass(signal: string) {
 }
 
 function compactActionSignal(action?: StockCandidate["actionSignal"]) {
-  if (action === "Buy Candidate") return "Buy";
-  if (action === "Insufficient Data") return "Insufficient";
+  if (action === "Buy Candidate") return "Buy Cand.";
+  if (action === "Insufficient Data") return "Insuff.";
 
   return action ?? "N/A";
+}
+
+function compactConfidence(confidence?: StockCandidate["actionConfidence"]) {
+  if (confidence === "Medium") return "Med";
+
+  return confidence ?? "N/A";
 }
 
 function actionClass(action?: StockCandidate["actionSignal"]) {
@@ -220,15 +226,15 @@ function qualityClass(grade?: StockCandidate["flowDataQualityGrade"]) {
 function providerShortLabel(provider?: StockCandidate["providerUsed"]) {
   const labels: Record<string, string> = {
     ALPHA_VANTAGE_ARCHIVE: "AV Archive",
-    TWELVE_DATA_ARCHIVE: "Twelve Archive",
+    TWELVE_DATA_ARCHIVE: "TWELVE Archive",
     EODHD_ARCHIVE: "EODHD Archive",
     POLYGON_ARCHIVE: "Polygon Archive",
-    ALPHA_VANTAGE: "AV Live",
-    TWELVE_DATA: "Twelve Live",
-    EODHD: "EODHD Live",
+    ALPHA_VANTAGE: "Alpha",
+    TWELVE_DATA: "TWELVE",
+    EODHD: "EODHD",
     POLYGON: "Polygon Live",
     YFINANCE_COMPOSITE_PROXY: "YF Proxy",
-    YFINANCE_CHAIKIN: "YF Chaikin",
+    YFINANCE_CHAIKIN: "YFinance",
     MOCK: "Mock",
   };
 
@@ -300,15 +306,11 @@ function hasUnavailableFinancials(candidate: StockCandidate) {
 }
 
 function financialDataLabel(candidate: StockCandidate) {
-  if (candidate.financialDataSource === "SEC") {
-    return "SEC";
-  }
+  return candidate.financialDataSource ?? "N/A";
+}
 
-  if (candidate.financialDataSource === "N/A") {
-    return "N/A";
-  }
-
-  return "Fallback";
+function sourceLabel(candidate: StockCandidate) {
+  return `${providerShortLabel(candidate.providerUsed)} / ${financialDataLabel(candidate)}`;
 }
 
 function getPersistenceLabel(snapshot: SnapshotResponse) {
@@ -420,15 +422,6 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
       </td>
       <td className="px-1.5 py-1.5">
         <span
-          className={`inline-flex rounded px-1 py-0.5 text-[9px] font-semibold ring-1 ${signalClass(
-            candidate.signal,
-          )}`}
-        >
-          {compactSignal(candidate.signal)}
-        </span>
-      </td>
-      <td className="px-1.5 py-1.5">
-        <span
           title={`Confidence: ${candidate.actionConfidence ?? "N/A"} · Reasons: ${
             candidate.actionReasons?.join("; ") ?? "None"
           } · Risk: ${candidate.actionRiskFlags?.join(", ") ?? "None"}`}
@@ -436,8 +429,21 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
             candidate.actionSignal,
           )}`}
         >
-          {compactActionSignal(candidate.actionSignal)}{" "}
-          {candidate.actionConfidence ? `· ${candidate.actionConfidence}` : ""}
+          {compactActionSignal(candidate.actionSignal)}
+        </span>
+      </td>
+      <td className="px-1.5 py-1.5">
+        <span className="inline-flex min-w-10 justify-center rounded bg-slate-100 px-1 py-0.5 text-[9px] font-bold text-slate-700 ring-1 ring-slate-200">
+          {compactConfidence(candidate.actionConfidence)}
+        </span>
+      </td>
+      <td className="px-1.5 py-1.5">
+        <span
+          className={`inline-flex rounded px-1 py-0.5 text-[9px] font-semibold ring-1 ${signalClass(
+            candidate.signal,
+          )}`}
+        >
+          {compactSignal(candidate.signal)}
         </span>
       </td>
       <td className="px-1.5 py-1.5">
@@ -454,76 +460,12 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
       <td className="px-1.5 py-1.5">
         <span
           title={`${candidate.archiveStatus ?? "NO_ARCHIVE_STATUS"} · ${compactFlowVersion(candidate.flowCalculationVersion)}`}
-          className="inline-flex max-w-24 truncate rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold text-slate-600 ring-1 ring-slate-200"
+          className="inline-flex max-w-32 truncate rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold text-slate-600 ring-1 ring-slate-200"
         >
-          {providerShortLabel(candidate.providerUsed)}
-        </span>
-      </td>
-      <td className="px-1.5 py-1.5">
-        <span className="inline-flex rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold text-slate-600 ring-1 ring-slate-200">
-          {financialDataLabel(candidate)}
+          {sourceLabel(candidate)}
         </span>
       </td>
     </tr>
-  );
-}
-
-function MobileCandidateCard({ candidate }: { candidate: StockCandidate }) {
-  return (
-    <article className="rounded border border-slate-200 bg-white px-2.5 py-2 shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-sm font-bold text-slate-950">
-            #{candidate.rank} {candidate.ticker}
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-500">
-            {providerShortLabel(candidate.providerUsed)} ·{" "}
-            {candidate.archiveStatus ?? "NO_ARCHIVE_STATUS"}
-          </p>
-        </div>
-        <span
-          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ring-1 ${signalClass(
-            candidate.signal,
-          )}`}
-        >
-          {compactSignal(candidate.signal)}
-        </span>
-      </div>
-      <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px]">
-        <div>
-          <span className="text-slate-500">Action</span>
-          <p className="font-semibold text-slate-950">
-            {compactActionSignal(candidate.actionSignal)} ·{" "}
-            {candidate.actionConfidence ?? "N/A"}
-          </p>
-        </div>
-        <div>
-          <span className="text-slate-500">Composite</span>
-          <p className="font-semibold text-slate-950">
-            {candidate.compositeScore.toFixed(1)}
-          </p>
-        </div>
-        <div>
-          <span className="text-slate-500">Flow Score</span>
-          <p className="font-semibold text-slate-950">
-            {candidate.capitalFlowScore.toFixed(1)}
-          </p>
-        </div>
-        <div>
-          <span className="text-slate-500">Data Q</span>
-          <p className="font-semibold text-slate-950">
-            {candidate.flowDataQualityGrade ?? "N/A"}{" "}
-            {candidate.flowDataQualityScore ?? ""}
-          </p>
-        </div>
-        <div>
-          <span className="text-slate-500">Flow</span>
-          <p className="font-semibold text-slate-950">
-            {compactFlowVersion(candidate.flowCalculationVersion)}
-          </p>
-        </div>
-      </div>
-    </article>
   );
 }
 
@@ -1032,7 +974,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.4.1
+                AlphaScout Capital Flow System V1.7.5
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -1161,18 +1103,9 @@ export function Dashboard({
           </div>
         </div>
 
-        <div className="mt-1.5 grid gap-1.5 md:hidden">
-          {displayedItems.map((candidate) => (
-            <MobileCandidateCard
-              key={candidate.ticker}
-              candidate={candidate}
-            />
-          ))}
-        </div>
-
-        <div className="mt-1.5 hidden overflow-hidden rounded border border-slate-200 bg-white shadow-sm md:block">
+        <div className="mt-1.5 overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
           <div className="max-h-[calc(100vh-205px)] overflow-auto">
-            <table className="w-full min-w-[1420px] border-collapse text-left">
+            <table className="w-full min-w-[1400px] border-collapse text-left">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
                   {tableHeaders.map((header) => {

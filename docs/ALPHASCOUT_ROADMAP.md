@@ -24,12 +24,13 @@
 - V1.7.3 Win Rate & Signal Quality Report
 - V1.7.4 Buy / Watch / Avoid Signal Upgrade
 - V1.7.4.1 Action Signal Rule Tuning
+- V1.7.5 Dashboard Action Layout Refinement
 
 ## Next Recommended Steps
 
-- V1.7.5 Dashboard Action Layout Refinement
 - V1.7.6 Entry / Position Action Split
 - V1.7.7 Action Signal Calibration with Forward Returns
+- V1.7.8 Dashboard Action History
 
 ## Later
 
@@ -63,3 +64,5 @@ V1.7.4 creates a final decision-support action layer: Buy Candidate, Watch, Avoi
 Data quality and provider type can downgrade raw accumulation signals. `YFINANCE_COMPOSITE_PROXY` signals should not become Buy Candidate until validated, and B/C quality signals are downgraded to Watch unless risk controls require Avoid. Future versions may use V1.7.3 win-rate statistics to further calibrate action thresholds.
 
 V1.7.4.1 tunes the action rules so `NO_FORWARD_RETURN_HISTORY` and `MARKET_SCAN_ONLY` are risk flags only, not hard Avoid triggers. `PROVIDER_ERRORS_PRESENT` only forces a strong downgrade when final data quality is weak or the final provider failed. A-grade real-provider positive signals should not become Avoid unless severe score, breadth, or multi-window flow deterioration exists.
+
+V1.7.5 refines the dashboard action layout while keeping one ticker per row. Action and confidence are displayed before the raw signal, provider and financial data source are merged into `Source`, and the ticker remains sticky during horizontal scroll. Entry / Position action split is deferred to V1.7.6.
