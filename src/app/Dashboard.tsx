@@ -14,7 +14,6 @@ import type {
   SnapshotResponse,
   StockCandidate,
   StockPool,
-  WinRateGroupSummary,
   WinRateReport,
 } from "@/types/stock";
 import { useMemo, useState } from "react";
@@ -516,42 +515,44 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
   );
 }
 
-function formatWinRateCell(
-  stats: WinRateGroupSummary["forward1D"],
-  includeAverage = false,
-) {
-  const rate =
-    stats.winRatePct == null ? "N/A" : `${stats.winRatePct.toFixed(0)}%`;
-  const sample = `n=${stats.sampleCount}`;
-
-  if (!includeAverage) {
-    return `${rate} / ${sample}`;
-  }
-
-  const average =
-    stats.avgReturnPct == null ? "avg N/A" : `avg ${stats.avgReturnPct}%`;
-
-  return `${rate} / ${sample} / ${average}`;
-}
-
-function WinRateSummaryRow({
-  summary,
-  showAverage5D = false,
+function ControlPill({
+  label,
+  active = false,
+  disabled = false,
 }: {
-  summary: WinRateGroupSummary;
-  showAverage5D?: boolean;
+  label: string;
+  active?: boolean;
+  disabled?: boolean;
 }) {
   return (
-    <tr className="border-t border-slate-200">
-      <td className="px-2 py-1.5 font-semibold text-slate-800">
-        {summary.groupName}
-      </td>
-      <td className="px-2 py-1.5">{formatWinRateCell(summary.forward1D)}</td>
-      <td className="px-2 py-1.5">{formatWinRateCell(summary.forward3D)}</td>
-      <td className="px-2 py-1.5">
-        {formatWinRateCell(summary.forward5D, showAverage5D)}
-      </td>
-    </tr>
+    <button
+      type="button"
+      disabled={disabled}
+      className={`h-6 whitespace-nowrap rounded-full border px-2.5 text-[10px] font-semibold transition-colors ${
+        active
+          ? "border-slate-900 bg-slate-900 text-white"
+          : disabled
+            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+            : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function ControlStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) {
+  return (
+    <span className="whitespace-nowrap">
+      <span className="font-medium text-slate-500">{label}:</span>{" "}
+      <span className="font-semibold text-slate-800">{value ?? "N/A"}</span>
+    </span>
   );
 }
 
@@ -564,26 +565,31 @@ function WinRateSection({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const overall = report?.summaries.overall;
-  const hasSamples = (report?.availableForwardReturnRows ?? 0) > 0;
   const readiness = report?.calibrationReadiness;
   const readinessStatus = readiness?.isReadyForRuleCalibration
     ? "Ready"
     : "Not Ready";
   const thresholdSummary = report?.thresholdSimulationSummary;
   const thresholdStatus = thresholdSummary?.status ?? "Not Ready";
-  const thresholdReadyWindows =
-    thresholdSummary?.readyWindows.length && thresholdSummary.readyWindows.length > 0
-      ? thresholdSummary.readyWindows.join(", ")
-      : "none";
-  const thresholdRecommendation =
-    thresholdSummary?.recommendation ??
-    "Hold current production thresholds until forward return samples are sufficient.";
+  const sampleCount =
+    thresholdSummary?.samples ?? readiness?.availableForwardReturnRows ?? 0;
+  const minSamples =
+    thresholdSummary?.minRecommendedSamples ??
+    readiness?.minRecommendedSamples ??
+    30;
+  const recommendation = thresholdSummary?.bestCandidate
+    ? "Review Candidate"
+    : "Hold Current Rules";
   const promotionStatus = thresholdSummary?.promotionAllowed
     ? "Ready"
     : "Locked / Not Ready";
-  const promotionEndpoint =
-    thresholdSummary?.promotionEndpoint ?? "/api/debug/rule-promotion";
+  const candidatePills = [
+    "Conservative",
+    "Balanced",
+    "Aggressive",
+    "DQ Strict",
+    "Flow Strict",
+  ];
 
   return (
     <section className="mt-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
@@ -607,173 +613,100 @@ function WinRateSection({
       </div>
 
       {expanded ? (
-        hasSamples && overall ? (
-          <div className="mt-1.5 grid gap-2 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.35fr)_minmax(0,0.9fr)]">
-            <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
-              <p className="mb-1 font-semibold text-slate-800">
-                Overall Performance
+        <div className="mt-1.5 grid gap-2 lg:grid-cols-2">
+          <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+            <div className="flex flex-col gap-1 border-b border-slate-200 pb-1.5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="font-semibold text-slate-900">
+                Win Rate & Signal Quality
               </p>
-              <div className="grid grid-cols-2 gap-1.5">
-                <DiagnosticMetric
-                  label="1D"
-                  value={formatWinRateCell(overall.forward1D)}
-                />
-                <DiagnosticMetric
-                  label="3D"
-                  value={formatWinRateCell(overall.forward3D)}
-                />
-                <DiagnosticMetric
-                  label="5D"
-                  value={formatWinRateCell(overall.forward5D)}
-                />
-                <DiagnosticMetric
-                  label="10D"
-                  value={formatWinRateCell(overall.forward10D)}
-                />
-                <DiagnosticMetric
-                  label="20D"
-                  value={formatWinRateCell(overall.forward20D)}
-                />
-              </div>
-              <p className="mt-1.5 border-t border-slate-200 pt-1.5 text-slate-600">
-                Calibration: {readinessStatus} · Samples{" "}
-                {readiness?.availableForwardReturnRows ?? 0} · Min{" "}
-                {readiness?.minRecommendedSamples ?? 30}
-              </p>
-              {readiness?.notReadyReason ? (
-                <p className="mt-0.5 text-slate-500">
-                  {readiness.notReadyReason}
-                </p>
-              ) : null}
-            </article>
-
-            <article className="overflow-hidden rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
-              <p className="mb-1 font-semibold text-slate-800">By Signal</p>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-left">
-                  <thead className="text-[9px] uppercase text-slate-500">
-                    <tr>
-                      <th className="px-2 py-1">Signal</th>
-                      <th className="px-2 py-1">1D</th>
-                      <th className="px-2 py-1">3D</th>
-                      <th className="px-2 py-1">5D / Avg</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.summaries.bySignal.slice(0, 6).map((summary) => (
-                      <WinRateSummaryRow
-                        key={summary.groupName}
-                        summary={summary}
-                        showAverage5D
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </article>
-
-            <article className="overflow-hidden rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
-              <p className="mb-1 font-semibold text-slate-800">By Mode</p>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[360px] text-left">
-                  <thead className="text-[9px] uppercase text-slate-500">
-                    <tr>
-                      <th className="px-2 py-1">Mode</th>
-                      <th className="px-2 py-1">1D</th>
-                      <th className="px-2 py-1">3D</th>
-                      <th className="px-2 py-1">5D</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.summaries.byMode.map((summary) => (
-                      <WinRateSummaryRow
-                        key={summary.groupName}
-                        summary={summary}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </article>
-            <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px] lg:col-span-3">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <p className="font-semibold text-slate-800">
-                  Threshold Simulation
-                </p>
-                <p className="font-medium text-slate-500">
-                  Status: {thresholdStatus} · Samples{" "}
-                  {thresholdSummary?.samples ?? 0} /{" "}
-                  {thresholdSummary?.minRecommendedSamples ?? 30}
-                </p>
-              </div>
-              <div className="mt-1 grid gap-1.5 sm:grid-cols-3">
-                <DiagnosticMetric label="Ready Windows" value={thresholdReadyWindows} />
-                <DiagnosticMetric
-                  label="Best Candidate"
-                  value={thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"}
-                />
-                <DiagnosticMetric
-                  label="Endpoint"
-                  value={thresholdSummary?.endpoint ?? "/api/debug/threshold-simulation?limit=500"}
-                />
-              </div>
-              <div className="mt-1.5 border-t border-slate-200 pt-1.5">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="font-semibold text-slate-800">
-                    Rule Promotion
-                  </p>
-                  <p className="font-medium text-slate-500">
-                    Status: {promotionStatus}
-                  </p>
-                </div>
-                <div className="mt-1 grid gap-1.5 sm:grid-cols-5">
-                  <DiagnosticMetric
-                    label="Production"
-                    value="V1.7.6_ENTRY_POSITION_ACTION_RULES"
-                  />
-                  <DiagnosticMetric label="Approval Required" value="Yes" />
-                  <DiagnosticMetric label="Auto Activation" value="Disabled" />
-                  <DiagnosticMetric label="Candidate Promotion" value="Not Ready" />
-                  <DiagnosticMetric label="Endpoint" value={promotionEndpoint} />
-                </div>
-              </div>
-              <p className="mt-1.5 border-t border-slate-200 pt-1.5 text-slate-600">
-                Recommendation: {thresholdRecommendation}
-              </p>
-            </article>
-          </div>
-        ) : (
-          <div className="mt-1.5 grid gap-2 md:grid-cols-2">
-            <p className="rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600">
-              Calibration: {readinessStatus} · Samples{" "}
-              {readiness?.availableForwardReturnRows ?? 0} · Min recommended{" "}
-              {readiness?.minRecommendedSamples ?? 30}.{" "}
-              {readiness?.notReadyReason ??
-                "Forward return samples are not available yet. Win-rate report will populate after future trading days are captured."}
-            </p>
-            <div className="rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600">
-              <p className="font-semibold text-slate-800">
-                Threshold Simulation
-              </p>
-              <p>
-                Status: {thresholdStatus} · Samples{" "}
-                {thresholdSummary?.samples ?? 0} /{" "}
-                {thresholdSummary?.minRecommendedSamples ?? 30} · Ready Windows:{" "}
-                {thresholdReadyWindows}
-              </p>
-              <p className="mt-0.5">
-                Best Candidate:{" "}
-                {thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"}
-              </p>
-              <p className="mt-0.5">Recommendation: {thresholdRecommendation}</p>
-              <p className="mt-1 border-t border-slate-200 pt-1">
-                Rule Promotion: {promotionStatus} · Production:
-                V1.7.6_ENTRY_POSITION_ACTION_RULES · Approval Required: Yes ·
-                Auto Activation: Disabled · Candidate Promotion: Not Ready
+              <p className="font-medium text-slate-600">
+                Samples {sampleCount} / {minSamples} · Status: {readinessStatus}
               </p>
             </div>
-          </div>
-        )
+            <p className="mt-1 text-slate-500">
+              Forward return samples are insufficient for reliable calibration.
+            </p>
+
+            <div className="mt-2 border-t border-slate-200 pt-1.5">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <p className="font-semibold text-slate-900">
+                  Threshold Simulation
+                </p>
+                <p className="font-medium text-slate-600">
+                  {thresholdStatus}
+                </p>
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {candidatePills.map((label) => (
+                  <ControlPill
+                    key={label}
+                    label={label}
+                    active={label === "Balanced"}
+                  />
+                ))}
+              </div>
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
+                <ControlStat label="Candidates" value={5} />
+                <ControlStat
+                  label="Best"
+                  value={thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"}
+                />
+                <ControlStat label="Recommendation" value={recommendation} />
+              </div>
+              <p className="mt-0.5 text-slate-500">
+                Need at least {minSamples} forward return samples.
+              </p>
+            </div>
+          </article>
+
+          <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+            <div className="grid gap-2 md:grid-cols-2">
+              <div>
+                <p className="font-semibold text-slate-900">A/B Comparison</p>
+                <p className="mt-1 text-slate-600">A: Current · B: Balanced</p>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  <ControlPill label="Compare A/B" disabled />
+                </div>
+                <p className="mt-1 text-slate-500">
+                  Not Ready · Waiting for Forward Returns
+                </p>
+              </div>
+
+              <div>
+                <p className="font-semibold text-slate-900">Rule Promotion</p>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
+                  <span>{promotionStatus}</span>
+                  <span>Approval Required</span>
+                  <span>Auto Off</span>
+                  <span>Promotable 0</span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  <ControlPill label="Approve New Threshold" disabled />
+                  <ControlPill label="Reject Candidate" disabled />
+                  <ControlPill label="Keep Current Rules" active />
+                </div>
+                <p className="mt-1 text-slate-500">
+                  Approve disabled: need at least {minSamples} forward return
+                  samples.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-2 border-t border-slate-200 pt-1.5">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <p className="font-semibold text-slate-900">
+                  Rolling Recommendation
+                </p>
+                <p className="font-medium text-slate-600">
+                  No Change · Auto Activation Disabled
+                </p>
+              </div>
+              <p className="mt-0.5 text-slate-500">
+                Production remains V1.7.6_ENTRY_POSITION_ACTION_RULES.
+              </p>
+            </div>
+          </article>
+        </div>
       ) : null}
     </section>
   );
@@ -1260,7 +1193,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.1
+                AlphaScout Capital Flow System V1.8.1.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

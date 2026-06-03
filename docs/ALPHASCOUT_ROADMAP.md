@@ -33,6 +33,7 @@
 - V1.7.9.2 Fixed Watchlist Update
 - V1.8.0 Candidate Threshold Simulation Report
 - V1.8.1 Approved Rule Promotion Workflow
+- V1.8.1.1 Threshold Control Panel UI Refinement
 
 ## Next Recommended Steps
 
@@ -97,6 +98,7 @@ Updated roadmap:
 - V1.7.9.2 Fixed Watchlist Update
 - V1.8.0 Candidate Threshold Simulation Report
 - V1.8.1 Approved Rule Promotion Workflow
+- V1.8.1.1 Threshold Control Panel UI Refinement
 - V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
 
@@ -140,3 +142,11 @@ Future roadmap:
 
 - V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
+
+## Threshold Control Panel UI Refinement
+
+V1.8.1.1 refines the expanded Win Rate / Threshold Simulation / Rule Promotion dashboard area into a compact threshold control panel. It adds pill-style display controls for candidate rule selection, A/B comparison, and approval workflow actions.
+
+The panel shows Conservative, Balanced, Aggressive, DQ Strict, and Flow Strict candidate pills, a display-only Compare A/B pill, and promotion pills for Approve New Threshold, Reject Candidate, and Keep Current Rules. Approve New Threshold remains disabled until Risk Gate conditions are satisfied, including at least 30 forward return samples.
+
+This is a UI-only change. It does not change production thresholds, candidate rule definitions, Entry / Position action rules, threshold simulation calculations, rule promotion backend logic, refresh logic, universe scan logic, provider logic, Supabase schema, or environment variables.
