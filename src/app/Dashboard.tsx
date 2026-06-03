@@ -720,8 +720,20 @@ function WinRateSection({
                   No Change · Auto Activation Disabled
                 </p>
               </div>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
+                <ControlStat label="Samples" value={abSamplesLabel} />
+                <ControlStat label="Confidence" value="Low" />
+                <ControlStat label="Status" value="Not Ready" />
+                <ControlStat label="Recommended Action" value="No Change" />
+                <ControlStat label="Approval Required" value="Yes" />
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                <ControlPill label="Review Candidate" disabled />
+                <ControlPill label="Promote to Approval" disabled />
+                <ControlPill label="Keep Current Rules" active />
+              </div>
               <p className="mt-0.5 text-slate-500">
-                Production remains V1.7.6_ENTRY_POSITION_ACTION_RULES.
+                Disabled: need at least {minSamples} forward return samples.
               </p>
             </div>
           </article>
@@ -1212,7 +1224,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.2
+                AlphaScout Capital Flow System V1.8.3
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

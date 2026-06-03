@@ -35,10 +35,10 @@
 - V1.8.1 Approved Rule Promotion Workflow
 - V1.8.1.1 Threshold Control Panel UI Refinement
 - V1.8.2 Old vs New Threshold A/B Comparison
+- V1.8.3 Rolling-window Auto Recommendation without automatic production activation
 
 ## Next Recommended Steps
 
-- V1.8.3 Rolling-window Auto Recommendation without automatic production activation
 - V1.8.4 Historical Win Rate Trend Chart
 
 ## Later
@@ -142,8 +142,7 @@ Forward return samples are currently insufficient, so candidate promotion is not
 
 Future roadmap:
 
-- V1.8.2 Old vs New Threshold A/B Comparison
-- V1.8.3 Rolling-window Auto Recommendation without automatic production activation
+- V1.8.4 Historical Win Rate Trend Chart
 
 ## Threshold Control Panel UI Refinement
 
@@ -163,5 +162,16 @@ V1.8.2 does not switch production rules, auto-promote a candidate, change Entry 
 
 Future roadmap:
 
-- V1.8.3 Rolling-window Auto Recommendation without automatic production activation
+- V1.8.4 Historical Win Rate Trend Chart
+
+## Rolling-window Auto Recommendation Without Automatic Production Activation
+
+V1.8.3 adds `/api/debug/rolling-recommendation?limit=500`, a recommendation-only framework that evaluates recent signal performance across `last20Signals`, `last50Signals`, `last100Signals`, and `last250Signals`.
+
+The system may recommend future candidate rule review when enough forward return samples exist and the candidate is supported by threshold simulation, A/B comparison, and rule promotion checks. It never auto-activates production thresholds, never auto-promotes candidates, and never executes trades.
+
+Any future production rule change still requires sufficient forward return samples, threshold simulation, A/B comparison, rule promotion workflow, explicit approval, and Risk Gate review. V1.8.4 will add a Historical Win Rate Trend Chart for visualizing rolling win-rate over time.
+
+Future roadmap:
+
 - V1.8.4 Historical Win Rate Trend Chart

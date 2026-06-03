@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   MIN_RECOMMENDED_THRESHOLD_SAMPLES,
+  ROLLING_RECOMMENDATION_ENDPOINT,
   RULE_AB_ENDPOINT,
   buildThresholdSimulationReport,
   candidateRuleSets,
@@ -118,6 +119,7 @@ export async function buildRulePromotionReport(): Promise<RulePromotionReport> {
   const abComparisonReady =
     simulation.availableForwardReturnRows >= MIN_RECOMMENDED_THRESHOLD_SAMPLES &&
     simulation.readyWindows.length > 0;
+  const rollingRecommendationReady = abComparisonReady;
   const candidatePromotions = candidateRuleSets.map((ruleSet) => ({
     id: ruleSet.id,
     name: ruleSet.name,
@@ -143,6 +145,10 @@ export async function buildRulePromotionReport(): Promise<RulePromotionReport> {
     abComparisonRequired: true,
     abComparisonEndpoint: RULE_AB_ENDPOINT,
     abComparisonReady,
+    rollingRecommendationAvailable: true,
+    rollingRecommendationEndpoint: ROLLING_RECOMMENDATION_ENDPOINT,
+    rollingRecommendationRequired: true,
+    rollingRecommendationReady,
     recommendation: hasPromotableCandidate
       ? "A candidate may be reviewed through the approval workflow, but production remains unchanged until explicit Risk Gate approval."
       : PROMOTION_RECOMMENDATION_NOT_READY,

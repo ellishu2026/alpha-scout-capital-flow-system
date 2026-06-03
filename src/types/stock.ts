@@ -534,6 +534,8 @@ export type ThresholdSimulationReport = {
   abComparisonAvailable: boolean;
   abComparisonEndpoint: string;
   defaultABCandidateRuleSet: string;
+  rollingRecommendationAvailable: boolean;
+  rollingRecommendationEndpoint: string;
   safetyWarnings: string[];
   error?: string;
 };
@@ -554,6 +556,8 @@ export type ThresholdSimulationSummary = {
   abComparisonAvailable: boolean;
   abComparisonEndpoint: string;
   defaultABCandidateRuleSet: string;
+  rollingRecommendationAvailable: boolean;
+  rollingRecommendationEndpoint: string;
 };
 
 export type RuleABComparison = {
@@ -617,6 +621,85 @@ export type RuleABReport = {
     general: string;
   };
   recommendation: string;
+  rollingRecommendationAvailable: boolean;
+  rollingRecommendationEndpoint: string;
+  safetyWarnings: string[];
+  error?: string;
+};
+
+export type RollingRecommendedAction =
+  | "NO_CHANGE"
+  | "REVIEW_CANDIDATE_RULE"
+  | "PROMOTE_TO_APPROVAL_REVIEW";
+
+export type RollingConfidenceLevel = "Low" | "Medium" | "High";
+
+export type RollingRecommendationSummary = {
+  status: "Not Ready" | "Ready";
+  recommendedAction: RollingRecommendedAction;
+  selectedCandidateRuleSet: ThresholdSimulationRuleSet | null;
+  confidenceLevel: RollingConfidenceLevel;
+  reason: string;
+  autoActivationAllowed: false;
+  explicitApprovalRequired: true;
+};
+
+export type RollingRecommendationWindow = {
+  windowName: "last20Signals" | "last50Signals" | "last100Signals" | "last250Signals";
+  signalLimit: number;
+  signalCount: number;
+  availableForwardReturnRows: number;
+  minRecommendedSamples: number;
+  isReady: boolean;
+  readyWindows: ForwardWindowKey[];
+  bestCandidateRuleSet: ThresholdSimulationRuleSet | null;
+  productionBaseline: ThresholdSimulationRuleSet;
+  recommendation: string;
+  recommendedAction: RollingRecommendedAction;
+  notReadyReason: string | null;
+};
+
+export type RollingCandidateRecommendation = {
+  ruleSetId: string;
+  ruleSetName: string;
+  rollingWindow: RollingRecommendationWindow["windowName"];
+  sampleCount: number;
+  availableForwardReturnRows: number;
+  readiness: "Not Ready" | "Ready";
+  estimatedWinRateImprovement: number | null;
+  estimatedAvgReturnImprovement: number | null;
+  downsideRiskChange: number | null;
+  confidenceLevel: RollingConfidenceLevel;
+  recommendedAction: RollingRecommendedAction;
+  reason: string;
+  autoActivationAllowed: false;
+};
+
+export type RollingRecommendationReport = {
+  ok: boolean;
+  generatedAt: string;
+  totalRowsScanned: number;
+  availableForwardReturnRows: number;
+  minRecommendedSamples: number;
+  currentProductionRuleSet: ThresholdSimulationRuleSet;
+  rollingRecommendation: RollingRecommendationSummary;
+  windows: RollingRecommendationWindow[];
+  candidateRecommendations: RollingCandidateRecommendation[];
+  promotionGate: {
+    autoActivationAllowed: false;
+    explicitApprovalRequired: true;
+    requiresRulePromotionWorkflow: true;
+    requiresABComparison: true;
+    requiresThresholdSimulation: true;
+    requiresMinimumSamples: true;
+    requiresRiskReview: true;
+    canAutoActivate: false;
+  };
+  relatedEndpoints: {
+    thresholdSimulationEndpoint: string;
+    ruleABEndpoint: string;
+    rulePromotionEndpoint: string;
+  };
   safetyWarnings: string[];
   error?: string;
 };
@@ -669,6 +752,10 @@ export type RulePromotionReport = {
   abComparisonRequired: true;
   abComparisonEndpoint: string;
   abComparisonReady: boolean;
+  rollingRecommendationAvailable: true;
+  rollingRecommendationEndpoint: string;
+  rollingRecommendationRequired: true;
+  rollingRecommendationReady: boolean;
   recommendation: string;
   safetyWarnings: string[];
   error?: string;

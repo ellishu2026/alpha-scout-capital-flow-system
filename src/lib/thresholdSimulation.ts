@@ -29,6 +29,8 @@ const FORWARD_WINDOWS = [
 export const MIN_RECOMMENDED_THRESHOLD_SAMPLES = 30;
 export const RULE_PROMOTION_ENDPOINT = "/api/debug/rule-promotion";
 export const RULE_AB_ENDPOINT = "/api/debug/rule-ab";
+export const ROLLING_RECOMMENDATION_ENDPOINT =
+  "/api/debug/rolling-recommendation";
 export const DEFAULT_AB_CANDIDATE_RULE_SET =
   "V1.8.0_BALANCED_BUY_CANDIDATE";
 const HOLD_RECOMMENDATION =
@@ -568,6 +570,8 @@ function emptyReport({
     abComparisonAvailable: true,
     abComparisonEndpoint: RULE_AB_ENDPOINT,
     defaultABCandidateRuleSet: DEFAULT_AB_CANDIDATE_RULE_SET,
+    rollingRecommendationAvailable: true,
+    rollingRecommendationEndpoint: ROLLING_RECOMMENDATION_ENDPOINT,
     safetyWarnings: [
       "Simulation only: production thresholds are not changed.",
       "Automatic activation is disabled for all rule sets.",
@@ -596,6 +600,8 @@ export function buildThresholdSimulationSummary(
     abComparisonAvailable: report.abComparisonAvailable,
     abComparisonEndpoint: report.abComparisonEndpoint,
     defaultABCandidateRuleSet: report.defaultABCandidateRuleSet,
+    rollingRecommendationAvailable: report.rollingRecommendationAvailable,
+    rollingRecommendationEndpoint: report.rollingRecommendationEndpoint,
   };
 }
 
@@ -725,6 +731,8 @@ export async function buildThresholdSimulationReport({
     abComparisonAvailable: true,
     abComparisonEndpoint: RULE_AB_ENDPOINT,
     defaultABCandidateRuleSet: DEFAULT_AB_CANDIDATE_RULE_SET,
+    rollingRecommendationAvailable: true,
+    rollingRecommendationEndpoint: ROLLING_RECOMMENDATION_ENDPOINT,
     safetyWarnings: [
       "Simulation only: production thresholds are not changed.",
       "Automatic activation is disabled for all rule sets.",

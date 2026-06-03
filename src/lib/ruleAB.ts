@@ -3,6 +3,7 @@ import "server-only";
 import {
   DEFAULT_AB_CANDIDATE_RULE_SET,
   MIN_RECOMMENDED_THRESHOLD_SAMPLES,
+  ROLLING_RECOMMENDATION_ENDPOINT,
   buildThresholdSimulationReport,
   candidateRuleSets,
   productionRuleSet,
@@ -249,6 +250,8 @@ export async function buildRuleABReport({
     recommendation: isReadyForABComparison
       ? "A/B comparison is ready for review; production thresholds remain unchanged."
       : recommendationNotReady,
+    rollingRecommendationAvailable: true,
+    rollingRecommendationEndpoint: ROLLING_RECOMMENDATION_ENDPOINT,
     safetyWarnings,
     error: simulation.error,
   };
