@@ -10,6 +10,7 @@ import {
   DEFAULT_AB_CANDIDATE_RULE_SET,
   FORWARD_WINDOWS,
   MIN_RECOMMENDED_THRESHOLD_SAMPLES,
+  TRADE_WIN_RATE_LEADERBOARD_ENDPOINT,
   WIN_RATE_TREND_ENDPOINT,
   calculateWindowStats,
   candidateRuleSets,
@@ -453,6 +454,8 @@ function buildReport({
         latestProduction?.avgReturnPct ?? null,
       ),
     },
+    tradeWinRateLeaderboardAvailable: true,
+    tradeWinRateLeaderboardEndpoint: TRADE_WIN_RATE_LEADERBOARD_ENDPOINT,
     recommendation: isReady
       ? "Win-rate trend is ready for research review; production thresholds remain unchanged."
       : "Collect more forward return samples before win-rate trend conclusions.",

@@ -32,6 +32,8 @@ export const RULE_AB_ENDPOINT = "/api/debug/rule-ab";
 export const ROLLING_RECOMMENDATION_ENDPOINT =
   "/api/debug/rolling-recommendation";
 export const WIN_RATE_TREND_ENDPOINT = "/api/debug/win-rate-trend";
+export const TRADE_WIN_RATE_LEADERBOARD_ENDPOINT =
+  "/api/debug/trade-win-rate-leaderboard";
 export const DEFAULT_AB_CANDIDATE_RULE_SET =
   "V1.8.0_BALANCED_BUY_CANDIDATE";
 const HOLD_RECOMMENDATION =

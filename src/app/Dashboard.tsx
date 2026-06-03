@@ -589,17 +589,32 @@ function WinRateSection({
     "Aggressive",
     "DQ Strict",
     "Flow Strict",
+    "Balanced + DQ A",
+    "Balanced + Flow Momentum",
+    "Conservative + Low Drawdown",
+    "Aggressive + High Coverage",
+    "Current Production",
   ];
-  const rulePills = ["Current", ...candidatePills];
-  const forwardWindowPills = ["1D", "3D", "5D", "10D", "20D"];
-  const rollingWindowPills = ["Rolling 20", "Rolling 50", "Rolling 100"];
   const abSamplesLabel = `${sampleCount} / ${minSamples}`;
+  const leaderboardRows = [
+    "Current Production V1.7.6",
+    "Conservative · Comp>=88 · Flow>=90",
+    "Balanced · Comp>=84 · Flow>=87",
+    "Aggressive · Comp>=80 · Flow>=75",
+    "DQ Strict · Grade A only",
+    "Flow Strict · 3D/5D/9D confirm",
+    "Balanced + DQ A",
+    "Balanced + Flow Momentum",
+    "Conservative + Low Drawdown",
+    "Aggressive + High Coverage",
+  ];
+  const forwardColumns = ["1D", "3D", "5D", "10D", "20D", "4W", "6W", "9W", "12W"];
 
   return (
     <section className="mt-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-semibold text-slate-950">
-          Win Rate & Signal Quality
+          Win Rate / Rule Optimization Center
         </h2>
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
           <span className="font-medium text-slate-500">
@@ -617,89 +632,67 @@ function WinRateSection({
       </div>
 
       {expanded ? (
-        <div className="mt-1.5 grid gap-2 lg:grid-cols-2">
+        <div className="mt-1.5 space-y-2">
           <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
             <div className="flex flex-col gap-1 border-b border-slate-200 pb-1.5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="font-semibold text-slate-900">
-                Win Rate & Signal Quality
-              </p>
+              <div>
+                <p className="font-semibold text-slate-900">Rule Control Center</p>
+                <p className="text-slate-500">Rule selection, A/B review, promotion gate, and rolling recommendation.</p>
+              </div>
               <p className="font-medium text-slate-600">
                 Samples {sampleCount} / {minSamples} · Status: {readinessStatus}
               </p>
             </div>
-            <p className="mt-1 text-slate-500">
-              Forward return samples are insufficient for reliable calibration.
-            </p>
 
-            <div className="mt-2 border-t border-slate-200 pt-1.5">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <p className="font-semibold text-slate-900">
-                  Threshold Simulation
-                </p>
-                <p className="font-medium text-slate-600">
-                  {thresholdStatus}
-                </p>
+            <div className="mt-2 grid gap-2 lg:grid-cols-5">
+              <div className="rounded border border-slate-200 bg-white p-2">
+                <p className="font-semibold text-slate-900">Production Rule</p>
+                <div className="mt-1 space-y-0.5 text-slate-600">
+                  <p>Current: V1.7.6 Production</p>
+                  <p>Status: Active · Locked</p>
+                  <p>Auto Activation: Disabled</p>
+                  <p>Risk Gate Required</p>
+                </div>
               </div>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {candidatePills.map((label) => (
-                  <ControlPill
-                    key={label}
-                    label={label}
-                    active={label === "Balanced"}
-                  />
-                ))}
-              </div>
-              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-                <ControlStat label="Candidates" value={5} />
-                <ControlStat
-                  label="Best"
-                  value={thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"}
-                />
-                <ControlStat label="Recommendation" value={recommendation} />
-              </div>
-              <p className="mt-0.5 text-slate-500">
-                Need at least {minSamples} forward return samples.
-              </p>
-            </div>
-          </article>
 
-          <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
-            <div className="grid gap-2 md:grid-cols-2">
-              <div>
-                <p className="font-semibold text-slate-900">A/B Comparison</p>
-                <p className="mt-1 text-slate-600">A: Current · B: Balanced</p>
+              <div className="rounded border border-slate-200 bg-white p-2 lg:col-span-2">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="font-semibold text-slate-900">Candidate Threshold Selection</p>
+                  <p className="font-medium text-slate-600">{thresholdStatus}</p>
+                </div>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {candidatePills.map((label) => (
                     <ControlPill
-                      key={`ab-${label}`}
+                      key={label}
                       label={label}
                       active={label === "Balanced"}
                     />
                   ))}
                 </div>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
+                  <ControlStat label="Best" value={thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"} />
+                  <ControlStat label="Recommendation" value={recommendation} />
+                </div>
+              </div>
+
+              <div className="rounded border border-slate-200 bg-white p-2">
+                <p className="font-semibold text-slate-900">A/B Comparison</p>
+                <p className="mt-1 text-slate-600">A: Current Production · B: Balanced</p>
                 <div className="mt-1 flex flex-wrap gap-1">
                   <ControlPill label="Compare A/B" disabled />
                 </div>
-                <p className="mt-1 text-slate-500">
-                  Not Ready · Waiting for Forward Returns
-                </p>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-                  <ControlStat label="A Win Rate" value="N/A" />
-                  <ControlStat label="B Win Rate" value="N/A" />
-                  <ControlStat label="Delta" value="N/A" />
-                  <ControlStat label="A Avg Return" value="N/A" />
-                  <ControlStat label="B Avg Return" value="N/A" />
-                  <ControlStat label="Delta Avg" value="N/A" />
+                  <ControlStat label="Status" value="Not Ready" />
                   <ControlStat label="Samples" value={abSamplesLabel} />
                 </div>
               </div>
 
-              <div>
-                <p className="font-semibold text-slate-900">Rule Promotion</p>
+              <div className="rounded border border-slate-200 bg-white p-2">
+                <p className="font-semibold text-slate-900">Rule Promotion Gate</p>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
                   <span>{promotionStatus}</span>
                   <span>Approval Required</span>
-                  <span>Auto Off</span>
+                  <span>Auto Activation Disabled</span>
                   <span>Promotable 0</span>
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
@@ -707,89 +700,78 @@ function WinRateSection({
                   <ControlPill label="Reject Candidate" disabled />
                   <ControlPill label="Keep Current Rules" active />
                 </div>
-                <p className="mt-1 text-slate-500">
-                  Approve disabled: need at least {minSamples} forward return
-                  samples.
-                </p>
+                <p className="mt-1 text-slate-500">Reason: Need at least {minSamples} forward return samples.</p>
               </div>
             </div>
 
-            <div className="mt-2 border-t border-slate-200 pt-1.5">
+            <div className="mt-2 rounded border border-slate-200 bg-white p-2">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <p className="font-semibold text-slate-900">
-                  Rolling Recommendation
-                </p>
-                <p className="font-medium text-slate-600">
-                  No Change · Auto Activation Disabled
-                </p>
-              </div>
-              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-                <ControlStat label="Samples" value={abSamplesLabel} />
-                <ControlStat label="Confidence" value="Low" />
-                <ControlStat label="Status" value="Not Ready" />
-                <ControlStat label="Recommended Action" value="No Change" />
-                <ControlStat label="Approval Required" value="Yes" />
+                <p className="font-semibold text-slate-900">Rolling Recommendation</p>
+                <p className="font-medium text-slate-600">No Change · Auto Activation Disabled · Confidence: Low</p>
               </div>
               <div className="mt-1 flex flex-wrap gap-1">
                 <ControlPill label="Review Candidate" disabled />
                 <ControlPill label="Promote to Approval" disabled />
                 <ControlPill label="Keep Current Rules" active />
               </div>
-              <p className="mt-0.5 text-slate-500">
-                Disabled: need at least {minSamples} forward return samples.
-              </p>
+            </div>
+          </article>
+
+          <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-slate-900">Trade Win Rate Leaderboard</p>
+                <p className="text-slate-500">Ranked by Composite Trade Rate Score</p>
+              </div>
+              <p className="font-medium text-slate-600">Need 30 forward return samples</p>
             </div>
 
-            <div className="mt-2 border-t border-slate-200 pt-1.5">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <p className="font-semibold text-slate-900">
-                  Historical Win Rate Trend
-                </p>
-                <p className="font-medium text-slate-600">
-                  Current vs Balanced · 5D · Rolling 20
-                </p>
-              </div>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {rulePills.map((label) => (
-                  <ControlPill
-                    key={`trend-rule-${label}`}
-                    label={label}
-                    active={label === "Current" || label === "Balanced"}
-                  />
-                ))}
-              </div>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {forwardWindowPills.map((label) => (
-                  <ControlPill
-                    key={`trend-forward-${label}`}
-                    label={label}
-                    active={label === "5D"}
-                  />
-                ))}
-                {rollingWindowPills.map((label) => (
-                  <ControlPill
-                    key={`trend-rolling-${label}`}
-                    label={label}
-                    active={label === "Rolling 20"}
-                  />
-                ))}
-              </div>
-              <div className="mt-1.5 flex min-h-24 flex-col justify-center rounded border border-dashed border-slate-300 bg-white px-2 py-2 text-center">
-                <p className="font-semibold text-slate-700">
-                  Not Ready: waiting for forward return samples.
-                </p>
-                <p className="mt-0.5 text-slate-500">
-                  Samples {abSamplesLabel}
-                </p>
-              </div>
-              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-                <ControlStat label="Current 5D Win Rate" value="N/A" />
-                <ControlStat label="Candidate 5D Win Rate" value="N/A" />
-                <ControlStat label="Delta" value="N/A" />
-                <ControlStat label="Avg Return Delta" value="N/A" />
-                <ControlStat label="Status" value="Not Ready" />
-              </div>
+            <div className="mt-1.5 overflow-x-auto rounded border border-slate-200 bg-white">
+              <table className="w-full min-w-[1120px] text-left">
+                <thead className="bg-slate-50 text-[9px] uppercase text-slate-500">
+                  <tr>
+                    <th className="sticky left-0 z-10 border-r border-slate-200 bg-slate-50 px-2 py-1">Rank</th>
+                    <th className="sticky left-12 z-10 border-r border-slate-200 bg-slate-50 px-2 py-1">Model + Threshold Combo</th>
+                    {forwardColumns.map((label) => (
+                      <th key={label} className="px-2 py-1">{label}</th>
+                    ))}
+                    <th className="px-2 py-1">Composite Score</th>
+                    <th className="px-2 py-1">Samples</th>
+                    <th className="px-2 py-1">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboardRows.map((name, index) => (
+                    <tr key={name} className="border-t border-slate-100">
+                      <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-2 py-1.5 font-bold text-slate-900">
+                        #{index + 1}
+                      </td>
+                      <td className="sticky left-12 z-10 min-w-64 border-r border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-900">
+                        {name}
+                      </td>
+                      {forwardColumns.map((label) => (
+                        <td key={`${name}-${label}`} className="px-2 py-1.5 text-slate-500">N/A</td>
+                      ))}
+                      <td className="px-2 py-1.5 font-semibold text-slate-500">N/A</td>
+                      <td className="px-2 py-1.5 text-slate-600">0 / {minSamples}</td>
+                      <td className="px-2 py-1.5">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${
+                          index === 0
+                            ? "bg-slate-100 text-slate-700 ring-slate-200"
+                            : "bg-amber-50 text-amber-800 ring-amber-200"
+                        }`}>
+                          {index === 0 ? "Active" : "Not Ready"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+
+            <p className="mt-1.5 text-slate-500">
+              Trade Win Rate Definition: Buy and Hold win on positive forward return; Avoid, Reduce, Sell Candidate, and Exit win on non-positive forward return. Valid sample means the forward return field is not null.
+            </p>
           </article>
         </div>
       ) : null}
@@ -1278,7 +1260,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.4
+                AlphaScout Capital Flow System V1.8.5
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

@@ -4,6 +4,7 @@ import {
   DEFAULT_AB_CANDIDATE_RULE_SET,
   MIN_RECOMMENDED_THRESHOLD_SAMPLES,
   ROLLING_RECOMMENDATION_ENDPOINT,
+  TRADE_WIN_RATE_LEADERBOARD_ENDPOINT,
   WIN_RATE_TREND_ENDPOINT,
   buildThresholdSimulationReport,
   candidateRuleSets,
@@ -255,6 +256,8 @@ export async function buildRuleABReport({
     rollingRecommendationEndpoint: ROLLING_RECOMMENDATION_ENDPOINT,
     winRateTrendAvailable: true,
     winRateTrendEndpoint: WIN_RATE_TREND_ENDPOINT,
+    tradeWinRateLeaderboardAvailable: true,
+    tradeWinRateLeaderboardEndpoint: TRADE_WIN_RATE_LEADERBOARD_ENDPOINT,
     safetyWarnings,
     error: simulation.error,
   };

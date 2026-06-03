@@ -538,6 +538,8 @@ export type ThresholdSimulationReport = {
   rollingRecommendationEndpoint: string;
   winRateTrendAvailable: boolean;
   winRateTrendEndpoint: string;
+  tradeWinRateLeaderboardAvailable?: boolean;
+  tradeWinRateLeaderboardEndpoint?: string;
   safetyWarnings: string[];
   error?: string;
 };
@@ -629,6 +631,8 @@ export type RuleABReport = {
   rollingRecommendationEndpoint: string;
   winRateTrendAvailable: boolean;
   winRateTrendEndpoint: string;
+  tradeWinRateLeaderboardAvailable: boolean;
+  tradeWinRateLeaderboardEndpoint: string;
   safetyWarnings: string[];
   error?: string;
 };
@@ -708,6 +712,8 @@ export type RollingRecommendationReport = {
   };
   winRateTrendAvailable: boolean;
   winRateTrendEndpoint: string;
+  tradeWinRateLeaderboardAvailable: boolean;
+  tradeWinRateLeaderboardEndpoint: string;
   safetyWarnings: string[];
   error?: string;
 };
@@ -804,6 +810,59 @@ export type WinRateTrendReport = {
     };
   };
   summary: WinRateTrendSummary;
+  tradeWinRateLeaderboardAvailable: boolean;
+  tradeWinRateLeaderboardEndpoint: string;
+  recommendation: string;
+  safetyWarnings: string[];
+  error?: string;
+};
+
+export type TradeWinRateWindowKey =
+  | ForwardWindowKey
+  | "forward4W"
+  | "forward6W"
+  | "forward9W"
+  | "forward12W";
+
+export type TradeWinRateWindowMetric = {
+  label: string;
+  key: TradeWinRateWindowKey;
+  field: string | null;
+  available: boolean;
+};
+
+export type TradeWinRateLeaderboardRow = {
+  rank: number;
+  ruleSetId: string;
+  displayName: string;
+  thresholdSummary: string;
+  isProduction: boolean;
+  autoActivationAllowed: false;
+  status: "Active" | "Not Ready" | "Simulated" | "Candidate";
+  samples: number;
+  minRecommendedSamples: number;
+  winRates: Record<TradeWinRateWindowKey, number | null>;
+  avgReturns: Partial<Record<TradeWinRateWindowKey, number | null>>;
+  compositeTradeRateScore: number | null;
+  scoreCoveragePct: number;
+  notReadyReason: string | null;
+};
+
+export type TradeWinRateLeaderboardReport = {
+  ok: boolean;
+  generatedAt: string;
+  totalRowsScanned: number;
+  availableForwardReturnRows: number;
+  minRecommendedSamples: number;
+  leaderboardReadiness: {
+    status: "Ready" | "Not Ready";
+    isReady: boolean;
+    notReadyReason: string | null;
+  };
+  forwardWindows: TradeWinRateWindowMetric[];
+  scoreWeights: Record<TradeWinRateWindowKey, number>;
+  winRateDefinitions: WinRateDefinitions;
+  rows: TradeWinRateLeaderboardRow[];
   recommendation: string;
   safetyWarnings: string[];
   error?: string;

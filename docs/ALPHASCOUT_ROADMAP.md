@@ -37,6 +37,7 @@
 - V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
 - V1.8.4 Historical Win Rate Trend Chart
+- V1.8.5 Trade Win Rate Leaderboard
 
 ## Next Recommended Steps
 
@@ -104,6 +105,7 @@ Updated roadmap:
 - V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
 - V1.8.4 Historical Win Rate Trend Chart
+- V1.8.5 Trade Win Rate Leaderboard
 
 ## Universe Metadata Cleanup
 
@@ -178,3 +180,15 @@ The default comparison is Current Production vs Balanced Candidate on `forward5D
 The dashboard adds a compact Historical Win Rate Trend section inside the Win Rate / Threshold Control Panel with rule, forward-window, and rolling-window pills. When forward-return samples are insufficient, the chart shows a Not Ready empty state and reports samples against the 30-sample minimum.
 
 This release is visualization only. It does not change production thresholds, activate candidate rules, auto-promote candidates, alter Entry / Position action logic, or execute trades. Production threshold changes still require sufficient samples, threshold simulation, A/B comparison, rolling recommendation, rule promotion workflow, explicit approval, and Risk Gate review.
+
+## Trade Win Rate Leaderboard
+
+V1.8.5 restructures the expanded Win Rate panel into two clear sections: Rule Control Center and Trade Win Rate Leaderboard. Rule Control Center keeps production rule status, candidate threshold selection, A/B comparison, promotion gate, and rolling recommendation controls in a compact pill-style layout.
+
+V1.8.5 adds `/api/debug/trade-win-rate-leaderboard?limit=500`, a reporting-only leaderboard with at least 10 model and threshold combinations. Rows include Current Production V1.7.6, Conservative Buy Candidate, Balanced Buy Candidate, Aggressive Buy Candidate, Data Quality Strict, Flow Momentum Strict, Balanced + Data Quality A, Balanced + Flow Momentum, Conservative + Low Drawdown, and Aggressive + High Coverage.
+
+The leaderboard displays win-rate columns for 1D, 3D, 5D, 10D, 20D, 4W, 6W, 9W, and 12W and ranks rows by Composite Trade Rate Score when enough samples exist. Extended 4W, 6W, 9W, and 12W windows show N/A until forward-return fields are available.
+
+Trade win-rate definitions are documented in the endpoint and dashboard: Buy Candidate and Hold win on positive forward return, while Avoid, Reduce, Sell Candidate, and Exit win on non-positive forward return. Valid samples require a populated forward-return field, and Win Rate is winCount divided by validSampleCount.
+
+This release does not change production thresholds, Entry / Position production action logic, provider behavior, universe scan logic, signal snapshot persistence, forward-return calculation, Supabase schema, or environment variables.
