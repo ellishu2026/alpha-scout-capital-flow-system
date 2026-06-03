@@ -131,14 +131,14 @@ function sumLastIfAvailable(values: number[], count: number) {
 }
 
 function windowFlows(values: number[]) {
-  const requestedWindows = ["1D", "3D", "5D", "10D", "20D", "4W", "6W", "9W", "12W"];
+  const requestedWindows = ["1D", "3D", "5D", "10D", "20D", "5W", "6W", "9W", "12W"];
   const unavailableWindows = [
     values.length < 1 ? "1D" : null,
     values.length < 3 ? "3D" : null,
     values.length < 5 ? "5D" : null,
     values.length < 10 ? "10D" : null,
     values.length < 20 ? "20D" : null,
-    values.length < 20 ? "4W" : null,
+    values.length < 25 ? "5W" : null,
     values.length < 30 ? "6W" : null,
     values.length < 45 ? "9W" : null,
     values.length < 60 ? "12W" : null,
@@ -573,8 +573,8 @@ export function zeroCapitalFlows(
     capitalFlow12W: null,
     flowWindowCoverage: {
       availableDailyFlowCount: 0,
-      requestedWindows: ["1D", "3D", "5D", "10D", "20D", "4W", "6W", "9W", "12W"],
-      unavailableWindows: ["1D", "3D", "5D", "10D", "20D", "4W", "6W", "9W", "12W"],
+      requestedWindows: ["1D", "3D", "5D", "10D", "20D", "5W", "6W", "9W", "12W"],
+      unavailableWindows: ["1D", "3D", "5D", "10D", "20D", "5W", "6W", "9W", "12W"],
     },
     flowWindowDataSource: dataSource,
     flowWindowUpdatedAt: null,

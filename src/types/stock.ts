@@ -848,7 +848,7 @@ export type WinRateTrendReport = {
 
 export type TradeWinRateWindowKey =
   | ForwardWindowKey
-  | "forward4W"
+  | "forward5W"
   | "forward6W"
   | "forward9W"
   | "forward12W";

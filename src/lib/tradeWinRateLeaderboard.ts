@@ -39,7 +39,7 @@ type TradeRuleCombo = {
 };
 
 const extendedForwardWindows: TradeWinRateWindowMetric[] = [
-  { label: "4W", key: "forward4W", field: null, available: false },
+  { label: "5W", key: "forward5W", field: null, available: false },
   { label: "6W", key: "forward6W", field: null, available: false },
   { label: "9W", key: "forward9W", field: null, available: false },
   { label: "12W", key: "forward12W", field: null, available: false },
@@ -60,7 +60,7 @@ const scoreWeights: Record<TradeWinRateWindowKey, number> = {
   forward5D: 20,
   forward10D: 20,
   forward20D: 20,
-  forward4W: 10,
+  forward5W: 10,
   forward6W: 7.5,
   forward9W: 5,
   forward12W: 2.5,
@@ -69,7 +69,7 @@ const scoreWeights: Record<TradeWinRateWindowKey, number> = {
 const safetyWarnings = [
   "Trade win-rate leaderboard is reporting only; production thresholds are not changed.",
   "Candidate rules are not auto-promoted or activated.",
-  "Extended 4W, 6W, 9W, and 12W windows remain N/A until forward-return fields exist.",
+  "Extended 5W, 6W, 9W, and 12W windows remain N/A until forward-return fields exist.",
   "No real trading or order execution is implemented.",
 ];
 

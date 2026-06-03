@@ -40,6 +40,7 @@
 - V1.8.5 Trade Win Rate Leaderboard
 - V1.8.5.1 Ranked Table Forward Window Columns
 - V1.8.5.2 Ranked Table Flow Field Binding Fix
+- V1.8.5.3 Replace 4W with 5W Window
 
 ## Next Recommended Steps
 
@@ -110,6 +111,7 @@ Updated roadmap:
 - V1.8.5 Trade Win Rate Leaderboard
 - V1.8.5.1 Ranked Table Forward Window Columns
 - V1.8.5.2 Ranked Table Flow Field Binding Fix
+- V1.8.5.3 Replace 4W with 5W Window
 
 ## Universe Metadata Cleanup
 
@@ -191,7 +193,7 @@ V1.8.5 restructures the expanded Win Rate panel into two clear sections: Rule Co
 
 V1.8.5 adds `/api/debug/trade-win-rate-leaderboard?limit=500`, a reporting-only leaderboard with at least 10 model and threshold combinations. Rows include Current Production V1.7.6, Conservative Buy Candidate, Balanced Buy Candidate, Aggressive Buy Candidate, Data Quality Strict, Flow Momentum Strict, Balanced + Data Quality A, Balanced + Flow Momentum, Conservative + Low Drawdown, and Aggressive + High Coverage.
 
-The leaderboard displays win-rate columns for 1D, 3D, 5D, 10D, 20D, 4W, 6W, 9W, and 12W and ranks rows by Composite Trade Rate Score when enough samples exist. Extended 4W, 6W, 9W, and 12W windows show N/A until forward-return fields are available.
+The leaderboard displays win-rate columns for 1D, 3D, 5D, 10D, 20D, 5W, 6W, 9W, and 12W and ranks rows by Composite Trade Rate Score when enough samples exist. Extended 5W, 6W, 9W, and 12W windows show N/A until forward-return fields are available.
 
 Trade win-rate definitions are documented in the endpoint and dashboard: Buy Candidate and Hold win on positive forward return, while Avoid, Reduce, Sell Candidate, and Exit win on non-positive forward return. Valid samples require a populated forward-return field, and Win Rate is winCount divided by validSampleCount.
 
@@ -216,3 +218,13 @@ V1.8.5.2 fixes the frontend field mapping for the Ranked Candidates table flow-w
 The table binding supports camelCase fields, snake_case fields, and `rawItem` / `raw_item` fallback payloads. Zero remains a valid displayed value, while null, undefined, and NaN still render as `N/A`.
 
 This is a UI binding fix only. It does not change provider behavior, archive-first behavior, universe scan logic, scoring, Entry / Position action rules, production thresholds, Fixed Watchlist membership, Supabase schema, environment variables, or provider quota usage.
+
+## Replace 4W with 5W Window
+
+V1.8.5.3 replaces the visible 4W window with 5W in both the Ranked Candidates table and Trade Win Rate Leaderboard. The change avoids overlap between 4W and 20 trading days / 20D.
+
+The visible window set is now 1D, 3D, 5D, 10D, 20D, 5W, 6W, 9W, and 12W. The ranked table maps 5W to the existing `capitalFlow5W` field, while `capitalFlow4W` remains available for backward compatibility and is not removed.
+
+Trade Win Rate Leaderboard score weights now use 5W at 10% instead of 4W. If 5W forward-return data is unavailable, the leaderboard continues to show N/A rather than fake data.
+
+Provider quota protection remains unchanged. Extended display-window calculations remain limited to the current Top 11 ranked candidates plus Fixed Watchlist 11 unique tickers. This release does not change production thresholds, Entry / Position action rules, scoring, provider behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, or environment variables.

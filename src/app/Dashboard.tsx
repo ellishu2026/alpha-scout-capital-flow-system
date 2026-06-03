@@ -42,7 +42,7 @@ const tableHeaders = [
   "5D",
   "10D",
   "20D",
-  "4W",
+  "5W",
   "6W",
   "9W",
   "12W",
@@ -364,7 +364,7 @@ const flowWindowFieldMap = {
   capitalFlow5D: "capital_flow_5d",
   capitalFlow10D: "capital_flow_10d",
   capitalFlow20D: "capital_flow_20d",
-  capitalFlow4W: "capital_flow_4w",
+  capitalFlow5W: "capital_flow_5w",
   capitalFlow6W: "capital_flow_6w",
   capitalFlow9W: "capital_flow_9w",
   capitalFlow12W: "capital_flow_12w",
@@ -413,7 +413,7 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
   const flow5D = getFlowWindowValue(candidate, "capitalFlow5D");
   const flow10D = getFlowWindowValue(candidate, "capitalFlow10D");
   const flow20D = getFlowWindowValue(candidate, "capitalFlow20D");
-  const flow4W = getFlowWindowValue(candidate, "capitalFlow4W");
+  const flow5W = getFlowWindowValue(candidate, "capitalFlow5W");
   const flow6W = getFlowWindowValue(candidate, "capitalFlow6W");
   const flow9W = getFlowWindowValue(candidate, "capitalFlow9W");
   const flow12W = getFlowWindowValue(candidate, "capitalFlow12W");
@@ -487,10 +487,10 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
         {formatLargeCurrency(flow20D)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(flow4W)}`}
-        title="Capital flow window value: 4W"
+        className={`${numericCell} ${toneForValue(flow5W)}`}
+        title="Capital flow window value: 5W"
       >
-        {formatLargeCurrency(flow4W)}
+        {formatLargeCurrency(flow5W)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow6W)}`}
@@ -692,7 +692,7 @@ function WinRateSection({
     "Conservative + Low Drawdown",
     "Aggressive + High Coverage",
   ];
-  const forwardColumns = ["1D", "3D", "5D", "10D", "20D", "4W", "6W", "9W", "12W"];
+  const forwardColumns = ["1D", "3D", "5D", "10D", "20D", "5W", "6W", "9W", "12W"];
 
   return (
     <section className="mt-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
@@ -1344,7 +1344,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.5.2
+                AlphaScout Capital Flow System V1.8.5.3
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
