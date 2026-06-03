@@ -590,6 +590,7 @@ function WinRateSection({
     "DQ Strict",
     "Flow Strict",
   ];
+  const abSamplesLabel = `${sampleCount} / ${minSamples}`;
 
   return (
     <section className="mt-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
@@ -665,11 +666,29 @@ function WinRateSection({
                 <p className="font-semibold text-slate-900">A/B Comparison</p>
                 <p className="mt-1 text-slate-600">A: Current · B: Balanced</p>
                 <div className="mt-1 flex flex-wrap gap-1">
+                  {candidatePills.map((label) => (
+                    <ControlPill
+                      key={`ab-${label}`}
+                      label={label}
+                      active={label === "Balanced"}
+                    />
+                  ))}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
                   <ControlPill label="Compare A/B" disabled />
                 </div>
                 <p className="mt-1 text-slate-500">
                   Not Ready · Waiting for Forward Returns
                 </p>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
+                  <ControlStat label="A Win Rate" value="N/A" />
+                  <ControlStat label="B Win Rate" value="N/A" />
+                  <ControlStat label="Delta" value="N/A" />
+                  <ControlStat label="A Avg Return" value="N/A" />
+                  <ControlStat label="B Avg Return" value="N/A" />
+                  <ControlStat label="Delta Avg" value="N/A" />
+                  <ControlStat label="Samples" value={abSamplesLabel} />
+                </div>
               </div>
 
               <div>
@@ -1193,7 +1212,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.1.1
+                AlphaScout Capital Flow System V1.8.2
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

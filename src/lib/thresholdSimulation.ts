@@ -28,6 +28,9 @@ const FORWARD_WINDOWS = [
 
 export const MIN_RECOMMENDED_THRESHOLD_SAMPLES = 30;
 export const RULE_PROMOTION_ENDPOINT = "/api/debug/rule-promotion";
+export const RULE_AB_ENDPOINT = "/api/debug/rule-ab";
+export const DEFAULT_AB_CANDIDATE_RULE_SET =
+  "V1.8.0_BALANCED_BUY_CANDIDATE";
 const HOLD_RECOMMENDATION =
   "Hold current production thresholds until forward return samples are sufficient.";
 
@@ -562,6 +565,9 @@ function emptyReport({
     promotionWorkflowAvailable: true,
     promotionEndpoint: RULE_PROMOTION_ENDPOINT,
     promotionAllowed: false,
+    abComparisonAvailable: true,
+    abComparisonEndpoint: RULE_AB_ENDPOINT,
+    defaultABCandidateRuleSet: DEFAULT_AB_CANDIDATE_RULE_SET,
     safetyWarnings: [
       "Simulation only: production thresholds are not changed.",
       "Automatic activation is disabled for all rule sets.",
@@ -587,6 +593,9 @@ export function buildThresholdSimulationSummary(
     promotionWorkflowAvailable: report.promotionWorkflowAvailable,
     promotionEndpoint: report.promotionEndpoint,
     promotionAllowed: report.promotionAllowed,
+    abComparisonAvailable: report.abComparisonAvailable,
+    abComparisonEndpoint: report.abComparisonEndpoint,
+    defaultABCandidateRuleSet: report.defaultABCandidateRuleSet,
   };
 }
 
@@ -713,6 +722,9 @@ export async function buildThresholdSimulationReport({
     promotionWorkflowAvailable: true,
     promotionEndpoint: RULE_PROMOTION_ENDPOINT,
     promotionAllowed: false,
+    abComparisonAvailable: true,
+    abComparisonEndpoint: RULE_AB_ENDPOINT,
+    defaultABCandidateRuleSet: DEFAULT_AB_CANDIDATE_RULE_SET,
     safetyWarnings: [
       "Simulation only: production thresholds are not changed.",
       "Automatic activation is disabled for all rule sets.",

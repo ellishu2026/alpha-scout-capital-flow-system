@@ -531,6 +531,9 @@ export type ThresholdSimulationReport = {
   promotionWorkflowAvailable: boolean;
   promotionEndpoint: string;
   promotionAllowed: false;
+  abComparisonAvailable: boolean;
+  abComparisonEndpoint: string;
+  defaultABCandidateRuleSet: string;
   safetyWarnings: string[];
   error?: string;
 };
@@ -548,6 +551,74 @@ export type ThresholdSimulationSummary = {
   promotionWorkflowAvailable: boolean;
   promotionEndpoint: string;
   promotionAllowed: false;
+  abComparisonAvailable: boolean;
+  abComparisonEndpoint: string;
+  defaultABCandidateRuleSet: string;
+};
+
+export type RuleABComparison = {
+  candidateRuleSetId: string;
+  candidateRuleSetName: string;
+  window: ForwardWindowKey;
+  productionSampleCount: number;
+  candidateSampleCount: number;
+  productionWinCount: number;
+  candidateWinCount: number;
+  productionLossCount: number;
+  candidateLossCount: number;
+  productionWinRatePct: number | null;
+  candidateWinRatePct: number | null;
+  winRateDeltaPct: number | null;
+  productionAvgReturnPct: number | null;
+  candidateAvgReturnPct: number | null;
+  avgReturnDeltaPct: number | null;
+  productionMedianReturnPct: number | null;
+  candidateMedianReturnPct: number | null;
+  medianReturnDeltaPct: number | null;
+  productionWorstReturnPct: number | null;
+  candidateWorstReturnPct: number | null;
+  worstReturnDeltaPct: number | null;
+  productionBestReturnPct: number | null;
+  candidateBestReturnPct: number | null;
+  productionCoverage: number;
+  candidateCoverage: number;
+  coverageDeltaPct: number | null;
+  isCandidateBetter: boolean;
+  reason: string;
+};
+
+export type RuleABReport = {
+  ok: boolean;
+  generatedAt: string;
+  totalRowsScanned: number;
+  availableForwardReturnRows: number;
+  insufficientForwardReturnRows: number;
+  minRecommendedSamples: number;
+  isReadyForABComparison: boolean;
+  readyWindows: ForwardWindowKey[];
+  notReadyReason: string | null;
+  productionRuleSet: ThresholdSimulationRuleSet;
+  candidateRuleSets: ThresholdSimulationRuleSet[];
+  selectedCandidateRuleSet: ThresholdSimulationRuleSet;
+  abComparisons: RuleABComparison[];
+  winRateDefinitions: {
+    validSample: string;
+    entryAction: {
+      buyCandidate: string;
+      watch: string;
+      avoid: string;
+    };
+    positionAction: {
+      hold: string;
+      reduce: string;
+      sellCandidate: string;
+      exit: string;
+    };
+    general: string;
+  };
+  recommendation: string;
+  safetyWarnings: string[];
+  error?: string;
 };
 
 export type RulePromotionStatus =
@@ -595,6 +666,9 @@ export type RulePromotionReport = {
     requiresWorstReturnNotWorse: true;
     requiresRiskReview: true;
   };
+  abComparisonRequired: true;
+  abComparisonEndpoint: string;
+  abComparisonReady: boolean;
   recommendation: string;
   safetyWarnings: string[];
   error?: string;

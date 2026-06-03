@@ -34,11 +34,12 @@
 - V1.8.0 Candidate Threshold Simulation Report
 - V1.8.1 Approved Rule Promotion Workflow
 - V1.8.1.1 Threshold Control Panel UI Refinement
+- V1.8.2 Old vs New Threshold A/B Comparison
 
 ## Next Recommended Steps
 
-- V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
+- V1.8.4 Historical Win Rate Trend Chart
 
 ## Later
 
@@ -101,6 +102,7 @@ Updated roadmap:
 - V1.8.1.1 Threshold Control Panel UI Refinement
 - V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
+- V1.8.4 Historical Win Rate Trend Chart
 
 ## Universe Metadata Cleanup
 
@@ -150,3 +152,16 @@ V1.8.1.1 refines the expanded Win Rate / Threshold Simulation / Rule Promotion d
 The panel shows Conservative, Balanced, Aggressive, DQ Strict, and Flow Strict candidate pills, a display-only Compare A/B pill, and promotion pills for Approve New Threshold, Reject Candidate, and Keep Current Rules. Approve New Threshold remains disabled until Risk Gate conditions are satisfied, including at least 30 forward return samples.
 
 This is a UI-only change. It does not change production thresholds, candidate rule definitions, Entry / Position action rules, threshold simulation calculations, rule promotion backend logic, refresh logic, universe scan logic, provider logic, Supabase schema, or environment variables.
+
+## Old vs New Threshold A/B Comparison
+
+V1.8.2 adds `/api/debug/rule-ab?limit=500`, a reporting-only A/B comparison framework for threshold rule evaluation. Side A is the current production rule set, `V1.7.6_ENTRY_POSITION_ACTION_RULES`; Side B is a selected V1.8.0 candidate rule set, defaulting to Balanced Buy Candidate.
+
+The report compares win rate, average return, median return, worst return, best return, sample count, and coverage across 1D, 3D, 5D, 10D, and 20D forward-return windows. It also documents valid-sample and win-rate definitions for Entry and Position action interpretation.
+
+V1.8.2 does not switch production rules, auto-promote a candidate, change Entry / Position production action logic, or implement trading. Conclusions are blocked until enough forward return samples are available; the default minimum remains 30 samples.
+
+Future roadmap:
+
+- V1.8.3 Rolling-window Auto Recommendation without automatic production activation
+- V1.8.4 Historical Win Rate Trend Chart
