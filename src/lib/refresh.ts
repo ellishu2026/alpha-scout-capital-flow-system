@@ -30,6 +30,7 @@ import { upsertSignalSnapshots } from "@/lib/signalSnapshots";
 import { isSupabaseConfigured } from "@/lib/supabaseAdmin";
 import type {
   CoverageSourceBucket,
+  FlowWindowCoverageSummary,
   ProviderCoverageSummary,
   RefreshResult,
   SnapshotResponse,
@@ -347,6 +348,60 @@ function attachProviderCoverageSummary(
   };
 }
 
+function buildFlowWindowCoverageSummary({
+  marketItems,
+  fixedItems,
+}: {
+  marketItems: StockCandidate[];
+  fixedItems: StockCandidate[];
+}): FlowWindowCoverageSummary {
+  const topRankedTickers = marketItems.map((candidate) => candidate.ticker);
+  const fixedWatchlistTickers = fixedItems.map((candidate) => candidate.ticker);
+  const displayWindowTickerSet = new Set([
+    ...topRankedTickers,
+    ...fixedWatchlistTickers,
+  ]);
+  const displayItemsByTicker = new Map<string, StockCandidate>();
+
+  for (const candidate of [...marketItems, ...fixedItems]) {
+    displayItemsByTicker.set(candidate.ticker, candidate);
+  }
+
+  const displayItems = Array.from(displayItemsByTicker.values()).filter(
+    (candidate) => displayWindowTickerSet.has(candidate.ticker),
+  );
+  const longWindowUnavailableTickers = displayItems
+    .filter(
+      (candidate) =>
+        candidate.capitalFlow6W == null ||
+        candidate.capitalFlow9W == null ||
+        candidate.capitalFlow12W == null,
+    )
+    .map((candidate) => candidate.ticker);
+
+  return {
+    displayWindowTickerCount: displayWindowTickerSet.size,
+    topRankedTickerCount: topRankedTickers.length,
+    fixedWatchlistTickerCount: fixedWatchlistTickers.length,
+    uniqueTickerCount: displayWindowTickerSet.size,
+    extendedWindowCalculatedCount:
+      displayItems.length - longWindowUnavailableTickers.length,
+    extendedWindowUnavailableCount: longWindowUnavailableTickers.length,
+    providerCallsUsedForDisplayWindows: 0,
+    archiveHitCount: displayItems.filter(
+      (candidate) => candidate.archiveStatus === "ARCHIVE_HIT",
+    ).length,
+    liveProviderCallCount: displayItems.filter(
+      (candidate) =>
+        candidate.providerUsed === "ALPHA_VANTAGE" ||
+        candidate.providerUsed === "TWELVE_DATA" ||
+        candidate.providerUsed === "EODHD" ||
+        candidate.providerUsed === "POLYGON",
+    ).length,
+    longWindowUnavailableTickers,
+  };
+}
+
 async function buildFreshFixedSnapshotForRefresh(guard?: RefreshTimeoutGuard) {
   if (process.env.YAHOO_FINANCE_ENABLED !== "true") {
     return undefined;
@@ -489,6 +544,10 @@ export async function refreshDailySnapshot({
     fixedSnapshot: fixedSnapshotWithActions,
     marketTop15Items: marketTop15ItemsWithActions,
   });
+  const flowWindowCoverageSummary = buildFlowWindowCoverageSummary({
+    marketItems: marketSnapshotWithActions.items,
+    fixedItems: fixedSnapshotWithActions?.items ?? [],
+  });
   const actionSignalSummary = buildActionSignalSummary(
     marketSnapshotWithActions.items,
   );
@@ -509,6 +568,7 @@ export async function refreshDailySnapshot({
     entryActionSummary: actionSignalSummary,
     positionActionSummary,
     universeCoverageSummary: marketCoverageSnapshot.universeCoverageSummary,
+    flowWindowCoverageSummary,
   };
   const marketSaveResult =
     currentMode === "MARKET_SCAN"
@@ -541,6 +601,7 @@ export async function refreshDailySnapshot({
               positionActionSummary: buildPositionActionSummary(
                 (fixedSnapshotWithActions ?? fixedSnapshot).items,
               ),
+              flowWindowCoverageSummary,
             },
             providerCoverageSummary,
           ),
@@ -639,6 +700,7 @@ export async function refreshDailySnapshot({
     persistenceErrorDetails: snapshot.persistenceErrorDetails,
     providerCoverageSummary,
     universeCoverageSummary: marketCoverageSnapshot.universeCoverageSummary,
+    flowWindowCoverageSummary,
     actionSignalSummary,
     entryActionSummary: actionSignalSummary,
     positionActionSummary,

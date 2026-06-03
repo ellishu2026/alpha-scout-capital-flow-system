@@ -38,6 +38,7 @@
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
 - V1.8.4 Historical Win Rate Trend Chart
 - V1.8.5 Trade Win Rate Leaderboard
+- V1.8.5.1 Ranked Table Forward Window Columns
 
 ## Next Recommended Steps
 
@@ -106,6 +107,7 @@ Updated roadmap:
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
 - V1.8.4 Historical Win Rate Trend Chart
 - V1.8.5 Trade Win Rate Leaderboard
+- V1.8.5.1 Ranked Table Forward Window Columns
 
 ## Universe Metadata Cleanup
 
@@ -192,3 +194,15 @@ The leaderboard displays win-rate columns for 1D, 3D, 5D, 10D, 20D, 4W, 6W, 9W, 
 Trade win-rate definitions are documented in the endpoint and dashboard: Buy Candidate and Hold win on positive forward return, while Avoid, Reduce, Sell Candidate, and Exit win on non-positive forward return. Valid samples require a populated forward-return field, and Win Rate is winCount divided by validSampleCount.
 
 This release does not change production thresholds, Entry / Position production action logic, provider behavior, universe scan logic, signal snapshot persistence, forward-return calculation, Supabase schema, or environment variables.
+
+## Ranked Table Forward Window Columns
+
+V1.8.5.1 changes the main Ranked Candidates table capital-flow window columns from `Flow 3D`, `Flow 5D`, `Flow 9D`, `Flow 3W`, and `Flow 5W` to `1D`, `3D`, `5D`, `10D`, `20D`, `4W`, `6W`, `9W`, and `12W`.
+
+These are capital-flow window values, not win-rate values. `1D` is the latest daily flow, `3D`, `5D`, `10D`, and `20D` are summed daily-flow windows, `4W` maps to approximately 20 trading days, `6W` to 30 trading days, `9W` to 45 trading days, and `12W` to 60 trading days.
+
+Long windows show `N/A` when there is insufficient daily flow history. No fake long-window values are generated.
+
+Display-window diagnostics are scoped to the current Top 11 ranked candidates plus the Fixed Watchlist 11, about 22 unique tickers. The release does not run a broad universe extended-window provider fetch, does not increase deep scoring coverage, and preserves provider quota protection and archive-first behavior.
+
+V1.8.5.1 does not change production thresholds, Entry / Position action rules, provider ladder behavior, universe scan logic, Fixed Watchlist membership, signal snapshot persistence, forward-return calculation, Supabase schema, or environment variables.

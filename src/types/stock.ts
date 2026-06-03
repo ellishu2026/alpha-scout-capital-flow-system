@@ -160,6 +160,22 @@ export type StockCandidate = {
   capitalFlow9D: number;
   capitalFlow3W: number;
   capitalFlow5W: number;
+  capitalFlow1D?: number | null;
+  capitalFlow10D?: number | null;
+  capitalFlow20D?: number | null;
+  capitalFlow4W?: number | null;
+  capitalFlow6W?: number | null;
+  capitalFlow9W?: number | null;
+  capitalFlow12W?: number | null;
+  flowWindowCoverage?: {
+    availableDailyFlowCount: number;
+    requestedWindows: string[];
+    unavailableWindows: string[];
+  };
+  flowWindowDataSource?: CapitalFlowDataSource;
+  flowWindowUpdatedAt?: string | null;
+  flowWindowProviderUsed?: ProviderUsed;
+  flowWindowExtendedHistoryAvailable?: boolean;
   legacyCapitalFlow3D?: number;
   legacyCapitalFlow5D?: number;
   legacyCapitalFlow9D?: number;
@@ -410,6 +426,19 @@ export type PositionActionSummary = {
   sellCandidateTickers: string[];
   exitTickers: string[];
   insufficientDataTickers: string[];
+};
+
+export type FlowWindowCoverageSummary = {
+  displayWindowTickerCount: number;
+  topRankedTickerCount: number;
+  fixedWatchlistTickerCount: number;
+  uniqueTickerCount: number;
+  extendedWindowCalculatedCount: number;
+  extendedWindowUnavailableCount: number;
+  providerCallsUsedForDisplayWindows: number;
+  archiveHitCount: number;
+  liveProviderCallCount: number;
+  longWindowUnavailableTickers: string[];
 };
 
 export type ForwardReturnUpdateStatus =
@@ -1029,6 +1058,7 @@ export type SnapshotResponse = {
   signalSnapshotError?: string | null;
   signalSnapshotLatestDate?: string | null;
   signalSnapshotCoverageSummary?: SignalSnapshotCoverageSummary;
+  flowWindowCoverageSummary?: FlowWindowCoverageSummary;
   actionSignalSummary?: ActionSignalSummary;
   entryActionSummary?: ActionSignalSummary;
   positionActionSummary?: PositionActionSummary;
@@ -1083,6 +1113,7 @@ export type RefreshResult = {
   signalSnapshotError?: string | null;
   signalSnapshotLatestDate?: string | null;
   signalSnapshotCoverageSummary?: SignalSnapshotCoverageSummary;
+  flowWindowCoverageSummary?: FlowWindowCoverageSummary;
   timeoutGuardTriggered?: boolean;
   elapsedMs?: number;
   refreshWorkItemCount?: number;

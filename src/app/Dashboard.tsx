@@ -37,11 +37,15 @@ const tableHeaders = [
   "Price",
   "FCF",
   "FCF QoQ %",
-  "Flow 3D",
-  "Flow 5D",
-  "Flow 9D",
-  "Flow 3W",
-  "Flow 5W",
+  "1D",
+  "3D",
+  "5D",
+  "10D",
+  "20D",
+  "4W",
+  "6W",
+  "9W",
+  "12W",
   "Composite",
   "Margin Δ",
   "FCF Δ",
@@ -402,29 +406,58 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
         {financialsUnavailable ? "N/A" : formatPercent(candidate.fcfQoqChange)}
       </td>
       <td
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow1D)}`}
+        title="Capital flow window value: 1D"
+      >
+        {formatLargeCurrency(candidate.capitalFlow1D)}
+      </td>
+      <td
         className={`${numericCell} ${toneForValue(candidate.capitalFlow3D)}`}
+        title="Capital flow window value: 3D"
       >
         {formatLargeCurrency(candidate.capitalFlow3D)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(candidate.capitalFlow5D)}`}
+        title="Capital flow window value: 5D"
       >
         {formatLargeCurrency(candidate.capitalFlow5D)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow9D)}`}
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow10D)}`}
+        title="Capital flow window value: 10D"
       >
-        {formatLargeCurrency(candidate.capitalFlow9D)}
+        {formatLargeCurrency(candidate.capitalFlow10D)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow3W)}`}
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow20D)}`}
+        title="Capital flow window value: 20D"
       >
-        {formatLargeCurrency(candidate.capitalFlow3W)}
+        {formatLargeCurrency(candidate.capitalFlow20D)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow5W)}`}
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow4W)}`}
+        title="Capital flow window value: 4W"
       >
-        {formatLargeCurrency(candidate.capitalFlow5W)}
+        {formatLargeCurrency(candidate.capitalFlow4W)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow6W)}`}
+        title="Capital flow window value: 6W"
+      >
+        {formatLargeCurrency(candidate.capitalFlow6W)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow9W)}`}
+        title="Capital flow window value: 9W"
+      >
+        {formatLargeCurrency(candidate.capitalFlow9W)}
+      </td>
+      <td
+        className={`${numericCell} ${toneForValue(candidate.capitalFlow12W)}`}
+        title="Capital flow window value: 12W"
+      >
+        {formatLargeCurrency(candidate.capitalFlow12W)}
       </td>
       <td className="px-1.5 py-1.5 text-left">
         <span
@@ -1260,7 +1293,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.5
+                AlphaScout Capital Flow System V1.8.5.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -1390,7 +1423,7 @@ export function Dashboard({
 
         <div className="mt-1.5 overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
           <div className="max-h-[calc(100vh-205px)] overflow-auto">
-            <table className="w-full min-w-[1480px] border-collapse text-left">
+            <table className="w-full min-w-[1680px] border-collapse text-left">
               <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
                   {tableHeaders.map((header) => {

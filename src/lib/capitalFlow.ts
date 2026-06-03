@@ -53,6 +53,18 @@ export type CapitalFlows = Pick<
   | "capitalFlow9D"
   | "capitalFlow3W"
   | "capitalFlow5W"
+  | "capitalFlow1D"
+  | "capitalFlow10D"
+  | "capitalFlow20D"
+  | "capitalFlow4W"
+  | "capitalFlow6W"
+  | "capitalFlow9W"
+  | "capitalFlow12W"
+  | "flowWindowCoverage"
+  | "flowWindowDataSource"
+  | "flowWindowUpdatedAt"
+  | "flowWindowProviderUsed"
+  | "flowWindowExtendedHistoryAvailable"
   | "legacyCapitalFlow3D"
   | "legacyCapitalFlow5D"
   | "legacyCapitalFlow9D"
@@ -114,13 +126,43 @@ function sumLast(values: number[], count: number) {
   return values.slice(-count).reduce((sum, value) => sum + value, 0);
 }
 
+function sumLastIfAvailable(values: number[], count: number) {
+  return values.length >= count ? sumLast(values, count) : null;
+}
+
 function windowFlows(values: number[]) {
+  const requestedWindows = ["1D", "3D", "5D", "10D", "20D", "4W", "6W", "9W", "12W"];
+  const unavailableWindows = [
+    values.length < 1 ? "1D" : null,
+    values.length < 3 ? "3D" : null,
+    values.length < 5 ? "5D" : null,
+    values.length < 10 ? "10D" : null,
+    values.length < 20 ? "20D" : null,
+    values.length < 20 ? "4W" : null,
+    values.length < 30 ? "6W" : null,
+    values.length < 45 ? "9W" : null,
+    values.length < 60 ? "12W" : null,
+  ].filter((window): window is string => window != null);
+
   return {
+    capitalFlow1D: sumLastIfAvailable(values, 1),
     capitalFlow3D: sumLast(values, 3),
     capitalFlow5D: sumLast(values, 5),
     capitalFlow9D: sumLast(values, 9),
+    capitalFlow10D: sumLastIfAvailable(values, 10),
+    capitalFlow20D: sumLastIfAvailable(values, 20),
+    capitalFlow4W: sumLastIfAvailable(values, 20),
+    capitalFlow6W: sumLastIfAvailable(values, 30),
+    capitalFlow9W: sumLastIfAvailable(values, 45),
+    capitalFlow12W: sumLastIfAvailable(values, 60),
     capitalFlow3W: sumLast(values, 15),
     capitalFlow5W: sumLast(values, 25),
+    flowWindowCoverage: {
+      availableDailyFlowCount: values.length,
+      requestedWindows,
+      unavailableWindows,
+    },
+    flowWindowExtendedHistoryAvailable: values.length >= 60,
   };
 }
 
@@ -433,6 +475,9 @@ export function calculateCapitalFlowsFromCandles({
     capitalFlowDataSource: dataSource,
     capitalFlowQuality: quality,
     providerUsed: dataSource,
+    flowWindowDataSource: dataSource,
+    flowWindowUpdatedAt: latestFlow?.date ?? null,
+    flowWindowProviderUsed: dataSource,
     providerPriorityTried: [dataSource],
     providerErrors: [],
     providerEndpointType:
@@ -519,6 +564,22 @@ export function zeroCapitalFlows(
     capitalFlow9D: 0,
     capitalFlow3W: 0,
     capitalFlow5W: 0,
+    capitalFlow1D: null,
+    capitalFlow10D: null,
+    capitalFlow20D: null,
+    capitalFlow4W: null,
+    capitalFlow6W: null,
+    capitalFlow9W: null,
+    capitalFlow12W: null,
+    flowWindowCoverage: {
+      availableDailyFlowCount: 0,
+      requestedWindows: ["1D", "3D", "5D", "10D", "20D", "4W", "6W", "9W", "12W"],
+      unavailableWindows: ["1D", "3D", "5D", "10D", "20D", "4W", "6W", "9W", "12W"],
+    },
+    flowWindowDataSource: dataSource,
+    flowWindowUpdatedAt: null,
+    flowWindowProviderUsed: dataSource,
+    flowWindowExtendedHistoryAvailable: false,
     legacyCapitalFlow3D: 0,
     legacyCapitalFlow5D: 0,
     legacyCapitalFlow9D: 0,
