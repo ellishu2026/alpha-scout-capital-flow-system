@@ -26,7 +26,8 @@ const FORWARD_WINDOWS = [
   { key: "forward20D", field: "forward_20d_return_pct" },
 ] as const;
 
-const MIN_RECOMMENDED_SAMPLES = 30;
+export const MIN_RECOMMENDED_THRESHOLD_SAMPLES = 30;
+export const RULE_PROMOTION_ENDPOINT = "/api/debug/rule-promotion";
 const HOLD_RECOMMENDATION =
   "Hold current production thresholds until forward return samples are sufficient.";
 
@@ -57,7 +58,7 @@ type SimulatedActions = {
 
 type RuleEvaluator = (row: SignalPerformanceRow) => SimulatedActions;
 
-const productionRuleSet: ThresholdSimulationRuleSet = {
+export const productionRuleSet: ThresholdSimulationRuleSet = {
   id: "V1.7.6_ENTRY_POSITION_ACTION_RULES",
   name: "Current Production Entry / Position Action Rules",
   description: "Current production Entry / Position action rules.",
@@ -70,7 +71,7 @@ const productionRuleSet: ThresholdSimulationRuleSet = {
   autoActivationAllowed: false,
 };
 
-const candidateRuleSets: ThresholdSimulationRuleSet[] = [
+export const candidateRuleSets: ThresholdSimulationRuleSet[] = [
   {
     id: "V1.8.0_CONSERVATIVE_BUY_CANDIDATE",
     name: "Conservative Buy Candidate",
@@ -548,7 +549,7 @@ function emptyReport({
     availableForwardReturnRows,
     insufficientForwardReturnRows:
       totalRowsScanned - availableForwardReturnRows,
-    minRecommendedSamples: MIN_RECOMMENDED_SAMPLES,
+    minRecommendedSamples: MIN_RECOMMENDED_THRESHOLD_SAMPLES,
     isReadyForThresholdSimulation: false,
     readyWindows: [],
     notReadyReason:
@@ -558,6 +559,9 @@ function emptyReport({
     simulationResults: [],
     bestCandidate: null,
     recommendation: HOLD_RECOMMENDATION,
+    promotionWorkflowAvailable: true,
+    promotionEndpoint: RULE_PROMOTION_ENDPOINT,
+    promotionAllowed: false,
     safetyWarnings: [
       "Simulation only: production thresholds are not changed.",
       "Automatic activation is disabled for all rule sets.",
@@ -580,6 +584,9 @@ export function buildThresholdSimulationSummary(
     bestCandidate: report.bestCandidate,
     recommendation: report.recommendation,
     notReadyReason: report.notReadyReason,
+    promotionWorkflowAvailable: report.promotionWorkflowAvailable,
+    promotionEndpoint: report.promotionEndpoint,
+    promotionAllowed: report.promotionAllowed,
   };
 }
 
@@ -636,7 +643,7 @@ export async function buildThresholdSimulationReport({
       (row) => numberOrNull(row[window.field]) != null,
     ).length;
 
-    return sampleCount >= MIN_RECOMMENDED_SAMPLES ? window.key : null;
+    return sampleCount >= MIN_RECOMMENDED_THRESHOLD_SAMPLES ? window.key : null;
   }).filter((key): key is ForwardWindowKey => key != null);
   const isReadyForThresholdSimulation = readyWindows.length > 0;
   const productionResults = new Map<ForwardWindowKey, ThresholdSimulationResult>();
@@ -648,7 +655,7 @@ export async function buildThresholdSimulationReport({
       rows,
       window,
       evaluator: productionActions,
-      minRecommendedSamples: MIN_RECOMMENDED_SAMPLES,
+      minRecommendedSamples: MIN_RECOMMENDED_THRESHOLD_SAMPLES,
     });
 
     productionResults.set(window.key, productionResult);
@@ -662,7 +669,7 @@ export async function buildThresholdSimulationReport({
           window,
           evaluator: makeCandidateEvaluator(ruleSet.id),
           productionResult,
-          minRecommendedSamples: MIN_RECOMMENDED_SAMPLES,
+          minRecommendedSamples: MIN_RECOMMENDED_THRESHOLD_SAMPLES,
         }),
       );
     });
@@ -690,7 +697,7 @@ export async function buildThresholdSimulationReport({
     availableForwardReturnRows,
     insufficientForwardReturnRows:
       totalRowsScanned - availableForwardReturnRows,
-    minRecommendedSamples: MIN_RECOMMENDED_SAMPLES,
+    minRecommendedSamples: MIN_RECOMMENDED_THRESHOLD_SAMPLES,
     isReadyForThresholdSimulation,
     readyWindows,
     notReadyReason: isReadyForThresholdSimulation
@@ -703,6 +710,9 @@ export async function buildThresholdSimulationReport({
     recommendation: bestCandidate
       ? `Candidate ${bestCandidate.ruleSetName} is eligible for human review; production thresholds remain unchanged until explicit approval.`
       : HOLD_RECOMMENDATION,
+    promotionWorkflowAvailable: true,
+    promotionEndpoint: RULE_PROMOTION_ENDPOINT,
+    promotionAllowed: false,
     safetyWarnings: [
       "Simulation only: production thresholds are not changed.",
       "Automatic activation is disabled for all rule sets.",

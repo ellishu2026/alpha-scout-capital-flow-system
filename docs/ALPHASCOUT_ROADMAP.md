@@ -32,10 +32,10 @@
 - V1.7.9.1 Universe Metadata Cleanup
 - V1.7.9.2 Fixed Watchlist Update
 - V1.8.0 Candidate Threshold Simulation Report
+- V1.8.1 Approved Rule Promotion Workflow
 
 ## Next Recommended Steps
 
-- V1.8.1 Approved Rule Promotion Workflow
 - V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
 
@@ -125,3 +125,18 @@ The report gates readiness with a default minimum of 30 forward-return samples. 
 V1.8.0 does not change provider ladder logic, archive-first behavior, universe scan logic, Fixed Watchlist membership, Chaikin flow calculation, composite proxy calculation, normalized flow score, data quality scoring, current Entry / Position production rules, signal snapshot persistence, forward return calculation, action history, environment variables, or Supabase schema.
 
 Future production threshold changes require a later explicit approval workflow / Risk Gate. The next roadmap items are V1.8.1 Approved Rule Promotion Workflow, V1.8.2 Old vs New Threshold A/B Comparison, and V1.8.3 Rolling-window Auto Recommendation without automatic production activation.
+
+## Approved Rule Promotion Workflow
+
+V1.8.1 adds `/api/debug/rule-promotion`, a read-only approval workflow foundation for future threshold rule changes. It defines the safe sequence `DRAFT -> SIMULATED -> RECOMMENDED -> APPROVED -> ACTIVE_PRODUCTION` and exposes an approval gate requiring explicit approval, risk review, sufficient samples, win-rate improvement, average-return improvement, and no material worst-return deterioration.
+
+No candidate rule can become production automatically. `autoActivationAllowed` remains false for the current production rule and all candidate rule sets, and `autoPromotionAllowed` is false at the approval gate.
+
+The current production rule remains `V1.7.6_ENTRY_POSITION_ACTION_RULES`. V1.8.1 does not change Entry / Position production rules, provider behavior, universe scan behavior, Fixed Watchlist membership, signal persistence, forward-return calculation, action history, environment variables, or Supabase schema.
+
+Forward return samples are currently insufficient, so candidate promotion is not ready. Candidate rules remain blocked until the threshold simulation sample gate is satisfied and a later explicit Risk Gate approval workflow is completed.
+
+Future roadmap:
+
+- V1.8.2 Old vs New Threshold A/B Comparison
+- V1.8.3 Rolling-window Auto Recommendation without automatic production activation

@@ -579,6 +579,11 @@ function WinRateSection({
   const thresholdRecommendation =
     thresholdSummary?.recommendation ??
     "Hold current production thresholds until forward return samples are sufficient.";
+  const promotionStatus = thresholdSummary?.promotionAllowed
+    ? "Ready"
+    : "Locked / Not Ready";
+  const promotionEndpoint =
+    thresholdSummary?.promotionEndpoint ?? "/api/debug/rule-promotion";
 
   return (
     <section className="mt-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
@@ -712,6 +717,26 @@ function WinRateSection({
                   value={thresholdSummary?.endpoint ?? "/api/debug/threshold-simulation?limit=500"}
                 />
               </div>
+              <div className="mt-1.5 border-t border-slate-200 pt-1.5">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="font-semibold text-slate-800">
+                    Rule Promotion
+                  </p>
+                  <p className="font-medium text-slate-500">
+                    Status: {promotionStatus}
+                  </p>
+                </div>
+                <div className="mt-1 grid gap-1.5 sm:grid-cols-5">
+                  <DiagnosticMetric
+                    label="Production"
+                    value="V1.7.6_ENTRY_POSITION_ACTION_RULES"
+                  />
+                  <DiagnosticMetric label="Approval Required" value="Yes" />
+                  <DiagnosticMetric label="Auto Activation" value="Disabled" />
+                  <DiagnosticMetric label="Candidate Promotion" value="Not Ready" />
+                  <DiagnosticMetric label="Endpoint" value={promotionEndpoint} />
+                </div>
+              </div>
               <p className="mt-1.5 border-t border-slate-200 pt-1.5 text-slate-600">
                 Recommendation: {thresholdRecommendation}
               </p>
@@ -741,6 +766,11 @@ function WinRateSection({
                 {thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"}
               </p>
               <p className="mt-0.5">Recommendation: {thresholdRecommendation}</p>
+              <p className="mt-1 border-t border-slate-200 pt-1">
+                Rule Promotion: {promotionStatus} · Production:
+                V1.7.6_ENTRY_POSITION_ACTION_RULES · Approval Required: Yes ·
+                Auto Activation: Disabled · Candidate Promotion: Not Ready
+              </p>
             </div>
           </div>
         )
@@ -1230,7 +1260,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.0
+                AlphaScout Capital Flow System V1.8.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

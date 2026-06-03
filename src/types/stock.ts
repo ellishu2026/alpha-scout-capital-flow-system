@@ -528,6 +528,9 @@ export type ThresholdSimulationReport = {
   simulationResults: ThresholdSimulationResult[];
   bestCandidate: ThresholdSimulationResult | null;
   recommendation: string;
+  promotionWorkflowAvailable: boolean;
+  promotionEndpoint: string;
+  promotionAllowed: false;
   safetyWarnings: string[];
   error?: string;
 };
@@ -542,6 +545,59 @@ export type ThresholdSimulationSummary = {
   bestCandidate: ThresholdSimulationResult | null;
   recommendation: string;
   notReadyReason: string | null;
+  promotionWorkflowAvailable: boolean;
+  promotionEndpoint: string;
+  promotionAllowed: false;
+};
+
+export type RulePromotionStatus =
+  | "DRAFT"
+  | "SIMULATED"
+  | "RECOMMENDED"
+  | "APPROVED"
+  | "REJECTED"
+  | "ACTIVE_PRODUCTION"
+  | "SIMULATED_NOT_READY";
+
+export type RulePromotionCandidate = {
+  id: string;
+  name: string;
+  description: string;
+  simulationStatus: RulePromotionStatus;
+  approvalStatus: RulePromotionStatus;
+  autoActivationAllowed: false;
+  canBePromoted: boolean;
+  promotionBlockedReason: string | null;
+};
+
+export type RulePromotionReport = {
+  ok: boolean;
+  generatedAt: string;
+  currentProductionRuleSet: {
+    id: string;
+    name: string;
+    status: "ACTIVE_PRODUCTION";
+    autoActivationAllowed: false;
+    activatedAt: string | null;
+  };
+  candidateRuleSets: RulePromotionCandidate[];
+  promotionWorkflow: {
+    statuses: RulePromotionStatus[];
+    sequence: string;
+    description: string;
+  };
+  approvalGate: {
+    explicitApprovalRequired: true;
+    autoPromotionAllowed: false;
+    minimumSampleRequired: number;
+    requiresWinRateImprovement: true;
+    requiresAverageReturnImprovement: true;
+    requiresWorstReturnNotWorse: true;
+    requiresRiskReview: true;
+  };
+  recommendation: string;
+  safetyWarnings: string[];
+  error?: string;
 };
 
 export type WinRateReport = {
