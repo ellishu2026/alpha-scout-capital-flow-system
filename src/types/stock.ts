@@ -536,6 +536,8 @@ export type ThresholdSimulationReport = {
   defaultABCandidateRuleSet: string;
   rollingRecommendationAvailable: boolean;
   rollingRecommendationEndpoint: string;
+  winRateTrendAvailable: boolean;
+  winRateTrendEndpoint: string;
   safetyWarnings: string[];
   error?: string;
 };
@@ -558,6 +560,8 @@ export type ThresholdSimulationSummary = {
   defaultABCandidateRuleSet: string;
   rollingRecommendationAvailable: boolean;
   rollingRecommendationEndpoint: string;
+  winRateTrendAvailable: boolean;
+  winRateTrendEndpoint: string;
 };
 
 export type RuleABComparison = {
@@ -623,6 +627,8 @@ export type RuleABReport = {
   recommendation: string;
   rollingRecommendationAvailable: boolean;
   rollingRecommendationEndpoint: string;
+  winRateTrendAvailable: boolean;
+  winRateTrendEndpoint: string;
   safetyWarnings: string[];
   error?: string;
 };
@@ -700,6 +706,105 @@ export type RollingRecommendationReport = {
     ruleABEndpoint: string;
     rulePromotionEndpoint: string;
   };
+  winRateTrendAvailable: boolean;
+  winRateTrendEndpoint: string;
+  safetyWarnings: string[];
+  error?: string;
+};
+
+export type WinRateDefinitions = RuleABReport["winRateDefinitions"];
+
+export type WinRateTrendForwardWindow = ForwardWindowKey;
+
+export type WinRateTrendActionType = "entry" | "position";
+
+export type WinRateTrendAction =
+  | "Buy Candidate"
+  | "Watch"
+  | "Avoid"
+  | "Hold"
+  | "Reduce"
+  | "Sell Candidate"
+  | "Exit";
+
+export type WinRateTrendPoint = ForwardWindowStats & {
+  date: string;
+  signalDate: string;
+  rollingWindow: number;
+  ruleSetId: string;
+  ruleSetName: string;
+  forwardWindow: WinRateTrendForwardWindow;
+  actionType: WinRateTrendActionType;
+  action: WinRateTrendAction;
+};
+
+export type WinRateTrendSeries = {
+  ruleSetId: string;
+  ruleSetName: string;
+  seriesType: "production" | "candidate";
+  points: WinRateTrendPoint[];
+  notReadyReason: string | null;
+};
+
+export type WinRateABTrendDeltaPoint = {
+  date: string;
+  signalDate: string;
+  productionWinRatePct: number | null;
+  candidateWinRatePct: number | null;
+  winRateDeltaPct: number | null;
+  productionAvgReturnPct: number | null;
+  candidateAvgReturnPct: number | null;
+  avgReturnDeltaPct: number | null;
+  sampleCount: number;
+};
+
+export type WinRateTrendReadiness = {
+  status: "Not Ready" | "Ready";
+  isReady: boolean;
+  availableForwardReturnRows: number;
+  minRecommendedSamples: number;
+  readyWindows: ForwardWindowKey[];
+  notReadyReason: string | null;
+};
+
+export type WinRateTrendSummary = {
+  status: "Not Ready" | "Ready";
+  samples: number;
+  minRecommendedSamples: number;
+  currentWinRatePct: number | null;
+  candidateWinRatePct: number | null;
+  winRateDeltaPct: number | null;
+  currentAvgReturnPct: number | null;
+  candidateAvgReturnPct: number | null;
+  avgReturnDeltaPct: number | null;
+};
+
+export type WinRateTrendReport = {
+  ok: boolean;
+  generatedAt: string;
+  totalRowsScanned: number;
+  availableForwardReturnRows: number;
+  minRecommendedSamples: number;
+  selectedForwardWindow: ForwardWindowKey;
+  selectedRollingWindow: number;
+  selectedActionType: WinRateTrendActionType;
+  selectedAction: WinRateTrendAction;
+  productionRuleSet: ThresholdSimulationRuleSet;
+  selectedCandidateRuleSet: ThresholdSimulationRuleSet;
+  availableCandidates: ThresholdSimulationRuleSet[];
+  winRateDefinitions: WinRateDefinitions;
+  trendReadiness: WinRateTrendReadiness;
+  trendSeries: WinRateTrendSeries[];
+  abTrendSeries: {
+    productionSeries: WinRateTrendSeries;
+    candidateSeries: WinRateTrendSeries;
+    deltaSeries: {
+      points: WinRateABTrendDeltaPoint[];
+      notReadyReason: string | null;
+    };
+  };
+  summary: WinRateTrendSummary;
+  recommendation: string;
   safetyWarnings: string[];
   error?: string;
 };

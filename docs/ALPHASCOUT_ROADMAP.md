@@ -36,10 +36,11 @@
 - V1.8.1.1 Threshold Control Panel UI Refinement
 - V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
+- V1.8.4 Historical Win Rate Trend Chart
 
 ## Next Recommended Steps
 
-- V1.8.4 Historical Win Rate Trend Chart
+- Continue collecting forward return samples before threshold calibration review.
 
 ## Later
 
@@ -160,18 +161,20 @@ The report compares win rate, average return, median return, worst return, best 
 
 V1.8.2 does not switch production rules, auto-promote a candidate, change Entry / Position production action logic, or implement trading. Conclusions are blocked until enough forward return samples are available; the default minimum remains 30 samples.
 
-Future roadmap:
-
-- V1.8.4 Historical Win Rate Trend Chart
-
 ## Rolling-window Auto Recommendation Without Automatic Production Activation
 
 V1.8.3 adds `/api/debug/rolling-recommendation?limit=500`, a recommendation-only framework that evaluates recent signal performance across `last20Signals`, `last50Signals`, `last100Signals`, and `last250Signals`.
 
 The system may recommend future candidate rule review when enough forward return samples exist and the candidate is supported by threshold simulation, A/B comparison, and rule promotion checks. It never auto-activates production thresholds, never auto-promotes candidates, and never executes trades.
 
-Any future production rule change still requires sufficient forward return samples, threshold simulation, A/B comparison, rule promotion workflow, explicit approval, and Risk Gate review. V1.8.4 will add a Historical Win Rate Trend Chart for visualizing rolling win-rate over time.
+Any future production rule change still requires sufficient forward return samples, threshold simulation, A/B comparison, rule promotion workflow, explicit approval, and Risk Gate review. V1.8.4 adds a Historical Win Rate Trend Chart for visualizing rolling win-rate over time.
 
-Future roadmap:
+## Historical Win Rate Trend Chart
 
-- V1.8.4 Historical Win Rate Trend Chart
+V1.8.4 adds `/api/debug/win-rate-trend?limit=500`, a reporting-only endpoint for historical win-rate trend analysis. It visualizes current production rule performance and selected candidate rule performance over time using stored signal snapshots and populated forward-return fields.
+
+The default comparison is Current Production vs Balanced Candidate on `forward5D` with a Rolling 20 window for Entry Buy Candidate signals. The endpoint supports forward windows 1D, 3D, 5D, 10D, and 20D, rolling windows 20, 50, and 100, and candidate selection across Conservative, Balanced, Aggressive, Data Quality Strict, and Flow Momentum Strict.
+
+The dashboard adds a compact Historical Win Rate Trend section inside the Win Rate / Threshold Control Panel with rule, forward-window, and rolling-window pills. When forward-return samples are insufficient, the chart shows a Not Ready empty state and reports samples against the 30-sample minimum.
+
+This release is visualization only. It does not change production thresholds, activate candidate rules, auto-promote candidates, alter Entry / Position action logic, or execute trades. Production threshold changes still require sufficient samples, threshold simulation, A/B comparison, rolling recommendation, rule promotion workflow, explicit approval, and Risk Gate review.

@@ -4,6 +4,7 @@ import {
   DEFAULT_AB_CANDIDATE_RULE_SET,
   MIN_RECOMMENDED_THRESHOLD_SAMPLES,
   ROLLING_RECOMMENDATION_ENDPOINT,
+  WIN_RATE_TREND_ENDPOINT,
   buildThresholdSimulationReport,
   candidateRuleSets,
   productionRuleSet,
@@ -252,6 +253,8 @@ export async function buildRuleABReport({
       : recommendationNotReady,
     rollingRecommendationAvailable: true,
     rollingRecommendationEndpoint: ROLLING_RECOMMENDATION_ENDPOINT,
+    winRateTrendAvailable: true,
+    winRateTrendEndpoint: WIN_RATE_TREND_ENDPOINT,
     safetyWarnings,
     error: simulation.error,
   };

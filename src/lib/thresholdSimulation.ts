@@ -18,7 +18,7 @@ import type {
   ThresholdSimulationSummary,
 } from "@/types/stock";
 
-const FORWARD_WINDOWS = [
+export const FORWARD_WINDOWS = [
   { key: "forward1D", field: "forward_1d_return_pct" },
   { key: "forward3D", field: "forward_3d_return_pct" },
   { key: "forward5D", field: "forward_5d_return_pct" },
@@ -31,6 +31,7 @@ export const RULE_PROMOTION_ENDPOINT = "/api/debug/rule-promotion";
 export const RULE_AB_ENDPOINT = "/api/debug/rule-ab";
 export const ROLLING_RECOMMENDATION_ENDPOINT =
   "/api/debug/rolling-recommendation";
+export const WIN_RATE_TREND_ENDPOINT = "/api/debug/win-rate-trend";
 export const DEFAULT_AB_CANDIDATE_RULE_SET =
   "V1.8.0_BALANCED_BUY_CANDIDATE";
 const HOLD_RECOMMENDATION =
@@ -38,7 +39,7 @@ const HOLD_RECOMMENDATION =
 
 type ForwardWindowKey = (typeof FORWARD_WINDOWS)[number]["key"];
 
-type SignalPerformanceRow = {
+export type SignalPerformanceRow = {
   signal_date: string;
   mode: string | null;
   source_bucket: string | null;
@@ -145,17 +146,17 @@ function parseLimit(limit: number | undefined) {
     : 500;
 }
 
-function numberOrNull(value: unknown) {
+export function numberOrNull(value: unknown) {
   const parsed = typeof value === "string" ? Number(value) : value;
 
   return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : null;
 }
 
-function roundPct(value: number) {
+export function roundPct(value: number) {
   return Math.round(value * 100) / 100;
 }
 
-function median(values: number[]) {
+export function median(values: number[]) {
   if (values.length === 0) return null;
 
   const sorted = [...values].sort((a, b) => a - b);
@@ -179,7 +180,7 @@ function emptyWindowStats(): ForwardWindowStats {
   };
 }
 
-function calculateWindowStats(values: number[]): ForwardWindowStats {
+export function calculateWindowStats(values: number[]): ForwardWindowStats {
   if (values.length === 0) return emptyWindowStats();
 
   const winCount = values.filter((value) => value > 0).length;
@@ -197,7 +198,7 @@ function calculateWindowStats(values: number[]): ForwardWindowStats {
   };
 }
 
-function hasAnyForwardReturn(row: SignalPerformanceRow) {
+export function hasAnyForwardReturn(row: SignalPerformanceRow) {
   return FORWARD_WINDOWS.some(
     (window) => numberOrNull(row[window.field]) != null,
   );
@@ -265,7 +266,7 @@ function providerIsProxy(row: SignalPerformanceRow) {
   );
 }
 
-function productionActions(row: SignalPerformanceRow): SimulatedActions {
+export function productionActions(row: SignalPerformanceRow): SimulatedActions {
   const item = rawItem(row);
 
   return {
@@ -308,7 +309,7 @@ function simulatedPosition(row: SignalPerformanceRow, entry: ActionSignal) {
   return "Reduce";
 }
 
-function makeCandidateEvaluator(ruleSetId: string): RuleEvaluator {
+export function makeCandidateEvaluator(ruleSetId: string): RuleEvaluator {
   return (row) => {
     const composite = compositeScore(row);
     const cfs = capitalFlowScore(row);
@@ -572,6 +573,8 @@ function emptyReport({
     defaultABCandidateRuleSet: DEFAULT_AB_CANDIDATE_RULE_SET,
     rollingRecommendationAvailable: true,
     rollingRecommendationEndpoint: ROLLING_RECOMMENDATION_ENDPOINT,
+    winRateTrendAvailable: true,
+    winRateTrendEndpoint: WIN_RATE_TREND_ENDPOINT,
     safetyWarnings: [
       "Simulation only: production thresholds are not changed.",
       "Automatic activation is disabled for all rule sets.",
@@ -602,6 +605,8 @@ export function buildThresholdSimulationSummary(
     defaultABCandidateRuleSet: report.defaultABCandidateRuleSet,
     rollingRecommendationAvailable: report.rollingRecommendationAvailable,
     rollingRecommendationEndpoint: report.rollingRecommendationEndpoint,
+    winRateTrendAvailable: report.winRateTrendAvailable,
+    winRateTrendEndpoint: report.winRateTrendEndpoint,
   };
 }
 
@@ -733,6 +738,8 @@ export async function buildThresholdSimulationReport({
     defaultABCandidateRuleSet: DEFAULT_AB_CANDIDATE_RULE_SET,
     rollingRecommendationAvailable: true,
     rollingRecommendationEndpoint: ROLLING_RECOMMENDATION_ENDPOINT,
+    winRateTrendAvailable: true,
+    winRateTrendEndpoint: WIN_RATE_TREND_ENDPOINT,
     safetyWarnings: [
       "Simulation only: production thresholds are not changed.",
       "Automatic activation is disabled for all rule sets.",

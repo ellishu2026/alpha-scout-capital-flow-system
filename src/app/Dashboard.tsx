@@ -590,6 +590,9 @@ function WinRateSection({
     "DQ Strict",
     "Flow Strict",
   ];
+  const rulePills = ["Current", ...candidatePills];
+  const forwardWindowPills = ["1D", "3D", "5D", "10D", "20D"];
+  const rollingWindowPills = ["Rolling 20", "Rolling 50", "Rolling 100"];
   const abSamplesLabel = `${sampleCount} / ${minSamples}`;
 
   return (
@@ -735,6 +738,57 @@ function WinRateSection({
               <p className="mt-0.5 text-slate-500">
                 Disabled: need at least {minSamples} forward return samples.
               </p>
+            </div>
+
+            <div className="mt-2 border-t border-slate-200 pt-1.5">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <p className="font-semibold text-slate-900">
+                  Historical Win Rate Trend
+                </p>
+                <p className="font-medium text-slate-600">
+                  Current vs Balanced · 5D · Rolling 20
+                </p>
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {rulePills.map((label) => (
+                  <ControlPill
+                    key={`trend-rule-${label}`}
+                    label={label}
+                    active={label === "Current" || label === "Balanced"}
+                  />
+                ))}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {forwardWindowPills.map((label) => (
+                  <ControlPill
+                    key={`trend-forward-${label}`}
+                    label={label}
+                    active={label === "5D"}
+                  />
+                ))}
+                {rollingWindowPills.map((label) => (
+                  <ControlPill
+                    key={`trend-rolling-${label}`}
+                    label={label}
+                    active={label === "Rolling 20"}
+                  />
+                ))}
+              </div>
+              <div className="mt-1.5 flex min-h-24 flex-col justify-center rounded border border-dashed border-slate-300 bg-white px-2 py-2 text-center">
+                <p className="font-semibold text-slate-700">
+                  Not Ready: waiting for forward return samples.
+                </p>
+                <p className="mt-0.5 text-slate-500">
+                  Samples {abSamplesLabel}
+                </p>
+              </div>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
+                <ControlStat label="Current 5D Win Rate" value="N/A" />
+                <ControlStat label="Candidate 5D Win Rate" value="N/A" />
+                <ControlStat label="Delta" value="N/A" />
+                <ControlStat label="Avg Return Delta" value="N/A" />
+                <ControlStat label="Status" value="Not Ready" />
+              </div>
             </div>
           </article>
         </div>
@@ -1224,7 +1278,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.3
+                AlphaScout Capital Flow System V1.8.4
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

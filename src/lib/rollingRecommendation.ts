@@ -5,6 +5,7 @@ import {
   ROLLING_RECOMMENDATION_ENDPOINT,
   RULE_AB_ENDPOINT,
   RULE_PROMOTION_ENDPOINT,
+  WIN_RATE_TREND_ENDPOINT,
   buildThresholdSimulationReport,
   candidateRuleSets,
   productionRuleSet,
@@ -238,6 +239,8 @@ export async function buildRollingRecommendationReport({
     candidateRecommendations,
     promotionGate: promotionGate(),
     relatedEndpoints: relatedEndpoints(),
+    winRateTrendAvailable: true,
+    winRateTrendEndpoint: WIN_RATE_TREND_ENDPOINT,
     safetyWarnings,
     error: overallReport.error,
   };
