@@ -31,10 +31,10 @@
 - V1.7.9 Full Universe Scan Coverage
 - V1.7.9.1 Universe Metadata Cleanup
 - V1.7.9.2 Fixed Watchlist Update
+- V1.8.0 Candidate Threshold Simulation Report
 
 ## Next Recommended Steps
 
-- V1.8.0 Candidate Threshold Simulation Report
 - V1.8.1 Approved Rule Promotion Workflow
 - V1.8.2 Old vs New Threshold A/B Comparison
 - V1.8.3 Rolling-window Auto Recommendation without automatic production activation
@@ -113,3 +113,15 @@ Ranked refresh items and their persisted `raw_item` payload now carry universe b
 V1.7.9.2 updates the Fixed Watchlist 11 by removing `DXYZ` and adding `ORCL` in the same list position. The rest of the fixed watchlist order is unchanged.
 
 This release does not change universe scan logic, scoring, provider ladder behavior, Entry / Position action rules, or production thresholds.
+
+## Candidate Threshold Simulation Report
+
+V1.8.0 adds `/api/debug/threshold-simulation?limit=500`, a safe candidate-threshold simulation report for stored signal snapshots and populated forward-return fields. It compares the current production Entry / Position action rules against multiple simulation-only candidate rule sets across 1D, 3D, 5D, 10D, and 20D forward-return windows.
+
+The production baseline is read-only metadata: `V1.7.6_ENTRY_POSITION_ACTION_RULES`, `ACTIVE_PRODUCTION`, and `autoActivationAllowed: false`. Candidate rule sets also have `autoActivationAllowed: false`; they can be simulated and reported, but cannot auto-change production trading thresholds.
+
+The report gates readiness with a default minimum of 30 forward-return samples. When samples are insufficient, it still returns `ok: true`, lists candidate rule sets, marks threshold simulation as Not Ready, sets `bestCandidate` to null, and recommends holding current production thresholds.
+
+V1.8.0 does not change provider ladder logic, archive-first behavior, universe scan logic, Fixed Watchlist membership, Chaikin flow calculation, composite proxy calculation, normalized flow score, data quality scoring, current Entry / Position production rules, signal snapshot persistence, forward return calculation, action history, environment variables, or Supabase schema.
+
+Future production threshold changes require a later explicit approval workflow / Risk Gate. The next roadmap items are V1.8.1 Approved Rule Promotion Workflow, V1.8.2 Old vs New Threshold A/B Comparison, and V1.8.3 Rolling-window Auto Recommendation without automatic production activation.

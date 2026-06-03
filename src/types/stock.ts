@@ -429,6 +429,13 @@ export type ForwardWindowStats = {
   worstReturnPct: number | null;
 };
 
+export type ForwardWindowKey =
+  | "forward1D"
+  | "forward3D"
+  | "forward5D"
+  | "forward10D"
+  | "forward20D";
+
 export type WinRateGroupSummary = {
   groupName: string;
   totalSignals: number;
@@ -452,9 +459,7 @@ export type CalibrationReadiness = {
   insufficientForwardReturnRows: number;
   minRecommendedSamples: number;
   isReadyForRuleCalibration: boolean;
-  readyWindows: Array<
-    "forward1D" | "forward3D" | "forward5D" | "forward10D" | "forward20D"
-  >;
+  readyWindows: ForwardWindowKey[];
   notReadyReason: string | null;
 };
 
@@ -469,6 +474,76 @@ export type CalibrationSimulation = {
   notReadyReason: string | null;
 };
 
+export type ThresholdSimulationRuleSet = {
+  id: string;
+  name: string;
+  description: string;
+  entryRuleSummary: string;
+  positionRuleSummary: string;
+  status?: "ACTIVE_PRODUCTION";
+  isProduction: boolean;
+  autoActivationAllowed: false;
+};
+
+export type ThresholdSimulationComparison = {
+  winRateDeltaPct: number | null;
+  avgReturnDeltaPct: number | null;
+  medianReturnDeltaPct: number | null;
+  worstReturnDeltaPct: number | null;
+  sampleCountDelta: number;
+  coverageDeltaPct: number;
+  isBetterThanProduction: boolean;
+  reason: string;
+};
+
+export type ThresholdSimulationResult = ForwardWindowStats & {
+  ruleSetId: string;
+  ruleSetName: string;
+  window: ForwardWindowKey;
+  maxDrawdownProxy: number | null;
+  signalCount: number;
+  buyCandidateCount: number;
+  watchCount: number;
+  avoidCount: number;
+  holdCount: number;
+  reduceCount: number;
+  sellCandidateCount: number;
+  exitCount: number;
+  coveragePct: number;
+  comparisonToProduction: ThresholdSimulationComparison;
+};
+
+export type ThresholdSimulationReport = {
+  ok: boolean;
+  generatedAt: string;
+  totalRowsScanned: number;
+  availableForwardReturnRows: number;
+  insufficientForwardReturnRows: number;
+  minRecommendedSamples: number;
+  isReadyForThresholdSimulation: boolean;
+  readyWindows: ForwardWindowKey[];
+  notReadyReason: string | null;
+  productionRuleSet: ThresholdSimulationRuleSet;
+  candidateRuleSets: ThresholdSimulationRuleSet[];
+  simulationResults: ThresholdSimulationResult[];
+  bestCandidate: ThresholdSimulationResult | null;
+  recommendation: string;
+  safetyWarnings: string[];
+  error?: string;
+};
+
+export type ThresholdSimulationSummary = {
+  available: boolean;
+  endpoint: string;
+  status: "Ready" | "Not Ready";
+  samples: number;
+  minRecommendedSamples: number;
+  readyWindows: ForwardWindowKey[];
+  bestCandidate: ThresholdSimulationResult | null;
+  recommendation: string;
+  notReadyReason: string | null;
+};
+
 export type WinRateReport = {
   ok: boolean;
   filters: Record<string, string | number | undefined>;
@@ -478,6 +553,7 @@ export type WinRateReport = {
   insufficientForwardReturnRows: number;
   calibrationReadiness: CalibrationReadiness;
   calibrationSimulation: CalibrationSimulation;
+  thresholdSimulationSummary?: ThresholdSimulationSummary;
   summaries: {
     overall: WinRateGroupSummary;
     bySignal: WinRateGroupSummary[];

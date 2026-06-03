@@ -2,6 +2,10 @@ import "server-only";
 
 import { signalSnapshotTableName } from "@/lib/signalSnapshots";
 import {
+  buildThresholdSimulationReport,
+  buildThresholdSimulationSummary,
+} from "@/lib/thresholdSimulation";
+import {
   getSupabaseAdminClient,
   getSupabaseConfigStatus,
   isSupabaseConfigured,
@@ -499,6 +503,9 @@ export async function buildWinRateReport({
     insufficientForwardReturnRows,
     overall,
   });
+  const thresholdSimulationReport = await buildThresholdSimulationReport({
+    limit: parsedLimit,
+  });
 
   return {
     ok: true,
@@ -509,6 +516,9 @@ export async function buildWinRateReport({
     insufficientForwardReturnRows,
     calibrationReadiness,
     calibrationSimulation: buildCalibrationSimulation(calibrationReadiness),
+    thresholdSimulationSummary: buildThresholdSimulationSummary(
+      thresholdSimulationReport,
+    ),
     summaries: {
       overall,
       bySignal: groupedSummaries({

@@ -570,6 +570,15 @@ function WinRateSection({
   const readinessStatus = readiness?.isReadyForRuleCalibration
     ? "Ready"
     : "Not Ready";
+  const thresholdSummary = report?.thresholdSimulationSummary;
+  const thresholdStatus = thresholdSummary?.status ?? "Not Ready";
+  const thresholdReadyWindows =
+    thresholdSummary?.readyWindows.length && thresholdSummary.readyWindows.length > 0
+      ? thresholdSummary.readyWindows.join(", ")
+      : "none";
+  const thresholdRecommendation =
+    thresholdSummary?.recommendation ??
+    "Hold current production thresholds until forward return samples are sufficient.";
 
   return (
     <section className="mt-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
@@ -681,15 +690,59 @@ function WinRateSection({
                 </table>
               </div>
             </article>
+            <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px] lg:col-span-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <p className="font-semibold text-slate-800">
+                  Threshold Simulation
+                </p>
+                <p className="font-medium text-slate-500">
+                  Status: {thresholdStatus} · Samples{" "}
+                  {thresholdSummary?.samples ?? 0} /{" "}
+                  {thresholdSummary?.minRecommendedSamples ?? 30}
+                </p>
+              </div>
+              <div className="mt-1 grid gap-1.5 sm:grid-cols-3">
+                <DiagnosticMetric label="Ready Windows" value={thresholdReadyWindows} />
+                <DiagnosticMetric
+                  label="Best Candidate"
+                  value={thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"}
+                />
+                <DiagnosticMetric
+                  label="Endpoint"
+                  value={thresholdSummary?.endpoint ?? "/api/debug/threshold-simulation?limit=500"}
+                />
+              </div>
+              <p className="mt-1.5 border-t border-slate-200 pt-1.5 text-slate-600">
+                Recommendation: {thresholdRecommendation}
+              </p>
+            </article>
           </div>
         ) : (
-          <p className="mt-1.5 rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600">
-            Calibration: {readinessStatus} · Samples{" "}
-            {readiness?.availableForwardReturnRows ?? 0} · Min recommended{" "}
-            {readiness?.minRecommendedSamples ?? 30}.{" "}
-            {readiness?.notReadyReason ??
-              "Forward return samples are not available yet. Win-rate report will populate after future trading days are captured."}
-          </p>
+          <div className="mt-1.5 grid gap-2 md:grid-cols-2">
+            <p className="rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600">
+              Calibration: {readinessStatus} · Samples{" "}
+              {readiness?.availableForwardReturnRows ?? 0} · Min recommended{" "}
+              {readiness?.minRecommendedSamples ?? 30}.{" "}
+              {readiness?.notReadyReason ??
+                "Forward return samples are not available yet. Win-rate report will populate after future trading days are captured."}
+            </p>
+            <div className="rounded border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600">
+              <p className="font-semibold text-slate-800">
+                Threshold Simulation
+              </p>
+              <p>
+                Status: {thresholdStatus} · Samples{" "}
+                {thresholdSummary?.samples ?? 0} /{" "}
+                {thresholdSummary?.minRecommendedSamples ?? 30} · Ready Windows:{" "}
+                {thresholdReadyWindows}
+              </p>
+              <p className="mt-0.5">
+                Best Candidate:{" "}
+                {thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"}
+              </p>
+              <p className="mt-0.5">Recommendation: {thresholdRecommendation}</p>
+            </div>
+          </div>
         )
       ) : null}
     </section>
@@ -1177,7 +1230,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.7.9.2
+                AlphaScout Capital Flow System V1.8.0
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
