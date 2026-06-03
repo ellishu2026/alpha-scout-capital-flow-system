@@ -351,6 +351,48 @@ function sourceLabel(candidate: StockCandidate) {
   return `${providerShortLabel(candidate.providerUsed)} / ${financialDataLabel(candidate)}`;
 }
 
+type RawFlowWindowItem = Partial<StockCandidate> & Partial<Record<string, unknown>>;
+
+type FlowWindowCandidate = StockCandidate & {
+  rawItem?: RawFlowWindowItem;
+  raw_item?: RawFlowWindowItem;
+} & Partial<Record<string, unknown>>;
+
+const flowWindowFieldMap = {
+  capitalFlow1D: "capital_flow_1d",
+  capitalFlow3D: "capital_flow_3d",
+  capitalFlow5D: "capital_flow_5d",
+  capitalFlow10D: "capital_flow_10d",
+  capitalFlow20D: "capital_flow_20d",
+  capitalFlow4W: "capital_flow_4w",
+  capitalFlow6W: "capital_flow_6w",
+  capitalFlow9W: "capital_flow_9w",
+  capitalFlow12W: "capital_flow_12w",
+} as const;
+
+function numberOrNull(value: unknown) {
+  const parsed = typeof value === "string" ? Number(value) : value;
+
+  return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : null;
+}
+
+function getFlowWindowValue(
+  candidate: StockCandidate,
+  key: keyof typeof flowWindowFieldMap,
+) {
+  const item = candidate as FlowWindowCandidate;
+  const snakeKey = flowWindowFieldMap[key];
+
+  return (
+    numberOrNull(item[key]) ??
+    numberOrNull(item[snakeKey]) ??
+    numberOrNull(item.rawItem?.[key]) ??
+    numberOrNull(item.rawItem?.[snakeKey]) ??
+    numberOrNull(item.raw_item?.[key]) ??
+    numberOrNull(item.raw_item?.[snakeKey])
+  );
+}
+
 function getPersistenceLabel(snapshot: SnapshotResponse) {
   if (snapshot.persistenceStatus === "SAVED") {
     return "Saved";
@@ -366,6 +408,15 @@ function getPersistenceLabel(snapshot: SnapshotResponse) {
 function TableRow({ candidate }: { candidate: StockCandidate }) {
   const numericCell = "px-1.5 py-1.5 text-left text-[10px] tabular-nums";
   const financialsUnavailable = hasUnavailableFinancials(candidate);
+  const flow1D = getFlowWindowValue(candidate, "capitalFlow1D");
+  const flow3D = getFlowWindowValue(candidate, "capitalFlow3D");
+  const flow5D = getFlowWindowValue(candidate, "capitalFlow5D");
+  const flow10D = getFlowWindowValue(candidate, "capitalFlow10D");
+  const flow20D = getFlowWindowValue(candidate, "capitalFlow20D");
+  const flow4W = getFlowWindowValue(candidate, "capitalFlow4W");
+  const flow6W = getFlowWindowValue(candidate, "capitalFlow6W");
+  const flow9W = getFlowWindowValue(candidate, "capitalFlow9W");
+  const flow12W = getFlowWindowValue(candidate, "capitalFlow12W");
 
   return (
     <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50/80">
@@ -406,58 +457,58 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
         {financialsUnavailable ? "N/A" : formatPercent(candidate.fcfQoqChange)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow1D)}`}
+        className={`${numericCell} ${toneForValue(flow1D)}`}
         title="Capital flow window value: 1D"
       >
-        {formatLargeCurrency(candidate.capitalFlow1D)}
+        {formatLargeCurrency(flow1D)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow3D)}`}
+        className={`${numericCell} ${toneForValue(flow3D)}`}
         title="Capital flow window value: 3D"
       >
-        {formatLargeCurrency(candidate.capitalFlow3D)}
+        {formatLargeCurrency(flow3D)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow5D)}`}
+        className={`${numericCell} ${toneForValue(flow5D)}`}
         title="Capital flow window value: 5D"
       >
-        {formatLargeCurrency(candidate.capitalFlow5D)}
+        {formatLargeCurrency(flow5D)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow10D)}`}
+        className={`${numericCell} ${toneForValue(flow10D)}`}
         title="Capital flow window value: 10D"
       >
-        {formatLargeCurrency(candidate.capitalFlow10D)}
+        {formatLargeCurrency(flow10D)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow20D)}`}
+        className={`${numericCell} ${toneForValue(flow20D)}`}
         title="Capital flow window value: 20D"
       >
-        {formatLargeCurrency(candidate.capitalFlow20D)}
+        {formatLargeCurrency(flow20D)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow4W)}`}
+        className={`${numericCell} ${toneForValue(flow4W)}`}
         title="Capital flow window value: 4W"
       >
-        {formatLargeCurrency(candidate.capitalFlow4W)}
+        {formatLargeCurrency(flow4W)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow6W)}`}
+        className={`${numericCell} ${toneForValue(flow6W)}`}
         title="Capital flow window value: 6W"
       >
-        {formatLargeCurrency(candidate.capitalFlow6W)}
+        {formatLargeCurrency(flow6W)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow9W)}`}
+        className={`${numericCell} ${toneForValue(flow9W)}`}
         title="Capital flow window value: 9W"
       >
-        {formatLargeCurrency(candidate.capitalFlow9W)}
+        {formatLargeCurrency(flow9W)}
       </td>
       <td
-        className={`${numericCell} ${toneForValue(candidate.capitalFlow12W)}`}
+        className={`${numericCell} ${toneForValue(flow12W)}`}
         title="Capital flow window value: 12W"
       >
-        {formatLargeCurrency(candidate.capitalFlow12W)}
+        {formatLargeCurrency(flow12W)}
       </td>
       <td className="px-1.5 py-1.5 text-left">
         <span
@@ -1293,7 +1344,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.5.1
+                AlphaScout Capital Flow System V1.8.5.2
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

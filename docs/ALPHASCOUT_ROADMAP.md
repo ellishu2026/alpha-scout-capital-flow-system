@@ -39,6 +39,7 @@
 - V1.8.4 Historical Win Rate Trend Chart
 - V1.8.5 Trade Win Rate Leaderboard
 - V1.8.5.1 Ranked Table Forward Window Columns
+- V1.8.5.2 Ranked Table Flow Field Binding Fix
 
 ## Next Recommended Steps
 
@@ -108,6 +109,7 @@ Updated roadmap:
 - V1.8.4 Historical Win Rate Trend Chart
 - V1.8.5 Trade Win Rate Leaderboard
 - V1.8.5.1 Ranked Table Forward Window Columns
+- V1.8.5.2 Ranked Table Flow Field Binding Fix
 
 ## Universe Metadata Cleanup
 
@@ -206,3 +208,11 @@ Long windows show `N/A` when there is insufficient daily flow history. No fake l
 Display-window diagnostics are scoped to the current Top 11 ranked candidates plus the Fixed Watchlist 11, about 22 unique tickers. The release does not run a broad universe extended-window provider fetch, does not increase deep scoring coverage, and preserves provider quota protection and archive-first behavior.
 
 V1.8.5.1 does not change production thresholds, Entry / Position action rules, provider ladder behavior, universe scan logic, Fixed Watchlist membership, signal snapshot persistence, forward-return calculation, Supabase schema, or environment variables.
+
+## Ranked Table Flow Field Binding Fix
+
+V1.8.5.2 fixes the frontend field mapping for the Ranked Candidates table flow-window columns. Backend refresh responses already included `capitalFlow1D`, `capitalFlow10D`, `capitalFlow20D`, `capitalFlow4W`, `capitalFlow6W`, `capitalFlow9W`, and `capitalFlow12W`; the table now reads those values correctly.
+
+The table binding supports camelCase fields, snake_case fields, and `rawItem` / `raw_item` fallback payloads. Zero remains a valid displayed value, while null, undefined, and NaN still render as `N/A`.
+
+This is a UI binding fix only. It does not change provider behavior, archive-first behavior, universe scan logic, scoring, Entry / Position action rules, production thresholds, Fixed Watchlist membership, Supabase schema, environment variables, or provider quota usage.
