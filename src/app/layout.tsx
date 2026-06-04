@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AlphaScout Capital Flow System V1.8.9",
+  title: "AlphaScout Capital Flow System V1.9.0",
   description: "Capital-flow-driven US stock selection dashboard",
 };
 

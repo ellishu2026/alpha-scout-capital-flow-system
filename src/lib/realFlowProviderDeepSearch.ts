@@ -589,6 +589,8 @@ export async function buildRealFlowProviderDeepSearchReport(
       "No live provider calls are made by this endpoint.",
       "Full-universe real-flow search is disabled; scope is capped at Top 11 plus Fixed Watchlist, max 26 unique tickers.",
     ],
+    flowDataQualityAvailable: true,
+    flowDataQualityEndpoint: "/api/debug/flow-data-quality?limit=26",
     productionFlowChanged: false,
   };
 }

@@ -809,5 +809,7 @@ export async function buildEnhancedFlowCalibrationReport(
     ],
     realFlowProviderDeepSearchAvailable: true,
     realFlowProviderDeepSearchEndpoint: "/api/debug/real-flow-provider-deep-search?limit=26",
+    flowDataQualityAvailable: true,
+    flowDataQualityEndpoint: "/api/debug/flow-data-quality?limit=26",
   };
 }

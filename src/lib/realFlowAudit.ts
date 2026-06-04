@@ -521,6 +521,8 @@ export async function buildRealFlowAuditReport(options: BuildRealFlowAuditOption
     enhancedAlgorithmVersion: "V1.8.8.1_ENHANCED_FLOW_PROXY_OHLCV_SOURCE_FIX",
     realFlowProviderDeepSearchAvailable: true,
     realFlowProviderDeepSearchEndpoint: "/api/debug/real-flow-provider-deep-search?limit=26",
+    flowDataQualityAvailable: true,
+    flowDataQualityEndpoint: "/api/debug/flow-data-quality?limit=26",
     productionFlowChanged: false,
   };
 }

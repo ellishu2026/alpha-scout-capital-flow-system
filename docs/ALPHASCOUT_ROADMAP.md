@@ -46,6 +46,7 @@
 - V1.8.8 Enhanced Flow Proxy Calibration
 - V1.8.8.1 Enhanced Flow Calibration OHLCV Source Fix
 - V1.8.9 Real Buy/Sell Flow Provider Deep Search
+- V1.9.0 Flow Data Quality Upgrade
 
 ## Next Recommended Steps
 
@@ -122,6 +123,7 @@ Updated roadmap:
 - V1.8.8 Enhanced Flow Proxy Calibration
 - V1.8.8.1 Enhanced Flow Calibration OHLCV Source Fix
 - V1.8.9 Real Buy/Sell Flow Provider Deep Search
+- V1.9.0 Flow Data Quality Upgrade
 
 ## Universe Metadata Cleanup
 
@@ -290,3 +292,13 @@ The discovery matrix includes current providers plus IEX, Nasdaq TotalView/NOII,
 Scope remains strictly limited to the current Top 11 ranked candidates plus Fixed Watchlist 11, max 26 unique tickers. V1.8.9 performs no live provider calls by default and makes no production flow, scoring, Entry / Position action, threshold, provider ladder, universe scan, Fixed Watchlist, Supabase schema, environment variable, or trading changes.
 
 The findings guide V1.9.0 Flow Data Quality Upgrade.
+
+## Flow Data Quality Upgrade
+
+V1.9.0 formalizes flow data quality tiers from A through H/U. The highest-quality target remains `realNetFlow = sameDayBuyAmount - sameDaySellAmount`, but the current system still does not have true buy/sell/net flow access.
+
+The tier model distinguishes real buy/sell net flow, trade direction/order flow, order imbalance, depth/quote pressure, provider money-flow indicators, enhanced OHLCV proxy, legacy OHLCV proxy, fallback proxy, and unknown/unavailable data. Ranked refresh rows and the new `/api/debug/flow-data-quality?limit=26` endpoint expose tier, label, confidence, real-flow availability, enhanced proxy availability, current production source, and recommended upgrade source metadata.
+
+V1.8.8.1 enhanced proxy remains a research/calibration layer. Production flow values, scoring, Entry / Position action rules, and thresholds are unchanged; `productionFlowChanged` remains false.
+
+Scope remains limited to the current Top 11 ranked candidates plus Fixed Watchlist 11, max 26 unique tickers. V1.9.0 performs no live provider calls, no full-universe flow quality calculation, no provider promotion, and no production trading-rule changes.

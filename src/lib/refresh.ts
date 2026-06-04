@@ -5,6 +5,7 @@ import {
   buildActionSignalSummary,
   buildPositionActionSummary,
 } from "@/lib/actionSignals";
+import { applyFlowDataQualityMetadataToItems } from "@/lib/flowDataQualityTiers";
 import {
   COVERAGE_MARKET_SCAN_LIMIT,
   buildFixedWatchlistSnapshot,
@@ -684,14 +685,24 @@ export async function refreshDailySnapshot({
     snapshot.status === "LIVE_MARKET" ||
     snapshot.status === "PARTIAL_LIVE" ||
     snapshot.status === "PARTIAL_LIVE_TIMEOUT_GUARDED";
+  const outputSnapshot: SnapshotResponse = {
+    ...snapshot,
+    items: applyFlowDataQualityMetadataToItems(snapshot.items),
+    fixedSnapshot: snapshot.fixedSnapshot
+      ? {
+          ...snapshot.fixedSnapshot,
+          items: applyFlowDataQualityMetadataToItems(snapshot.fixedSnapshot.items),
+        }
+      : undefined,
+  };
 
   return {
     ok: true,
     refreshedAt: new Date().toISOString(),
-    dataMode: snapshot.dataMode,
-    refreshMode: snapshot.refreshMode,
-    status: snapshot.status,
-    count: snapshot.count,
+    dataMode: outputSnapshot.dataMode,
+    refreshMode: outputSnapshot.refreshMode,
+    status: outputSnapshot.status,
+    count: outputSnapshot.count,
     persistenceStatus,
     previousSnapshotFound: Boolean(previousMarketSnapshot),
     droppedSymbols: snapshot.droppedSymbols,
@@ -713,6 +724,6 @@ export async function refreshDailySnapshot({
           : `V1.6.7.2 refresh completed in ${snapshot.mode ?? snapshot.status} mode.`
         : "V1.4 yahoo-finance2 refresh failed; returned mock snapshot fallback."
       : "V1.0 mock snapshot refresh completed. Live yahoo-finance2 ingestion is not enabled.",
-    snapshot,
+    snapshot: outputSnapshot,
   };
 }

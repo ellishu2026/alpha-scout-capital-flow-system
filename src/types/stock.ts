@@ -289,6 +289,31 @@ export type StockCandidate = {
   flowDataQualityGrade?: FlowDataQualityGrade;
   flowDataQualityReasons?: string[];
   flowDataQualityInputs?: FlowDataQualityInputs;
+  flowDataTier?:
+    | "REAL_BUY_SELL_NET_FLOW"
+    | "TRADE_DIRECTION_OR_ORDER_FLOW"
+    | "ORDER_IMBALANCE"
+    | "DEPTH_OR_QUOTE_PRESSURE"
+    | "PROVIDER_MONEY_FLOW_INDICATOR"
+    | "ENHANCED_OHLCV_PROXY"
+    | "LEGACY_OHLCV_PROXY"
+    | "YFINANCE_OR_FALLBACK_PROXY"
+    | "UNKNOWN_OR_UNAVAILABLE";
+  flowDataTierLabel?: string;
+  flowDataConfidence?: "High" | "Medium" | "Low" | "Unknown";
+  realFlowAvailable?: boolean;
+  realBuyAmount?: number | null;
+  realSellAmount?: number | null;
+  realNetFlow?: number | null;
+  enhancedProxyAvailable?: boolean;
+  enhancedProxyAlgorithmVersion?: string | null;
+  enhancedProxyFlow1D_V188?: number | null;
+  enhancedProxyDirection_V188?: string | null;
+  currentProductionFlowSource?: string;
+  currentProductionFlowSourceClass?: string;
+  recommendedFlowUpgradeSource?: string;
+  recommendedFlowUpgradeReason?: string;
+  productionFlowChanged?: boolean;
   entryActionSignal?: ActionSignal;
   entryActionConfidence?: ActionConfidence;
   positionActionSignal?: PositionActionSignal;
