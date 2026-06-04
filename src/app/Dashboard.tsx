@@ -49,7 +49,7 @@ const tableHeaders = [
   "Composite",
   "Margin Δ",
   "FCF Δ",
-  "Flow Δ",
+  "Est.Flow Δ",
   "Entry Act.",
   "Position Act.",
   "Conf.",
@@ -57,6 +57,17 @@ const tableHeaders = [
   "Data Q",
   "Source",
 ];
+const estimatedFlowWindowHeaders = new Set([
+  "1D",
+  "3D",
+  "5D",
+  "10D",
+  "20D",
+  "5W",
+  "6W",
+  "9W",
+  "12W",
+]);
 
 const stickyHeaderClass =
   "sticky top-0 z-30 whitespace-nowrap border-b border-slate-200 bg-slate-50 px-1.5 py-1.5 text-left text-[9px] font-bold uppercase text-slate-500";
@@ -68,6 +79,8 @@ const changeStickyCellClass =
   "sticky left-12 z-10 w-10 min-w-10 border-r border-slate-200 bg-white px-1.5 py-1.5 shadow-[2px_0_3px_rgba(15,23,42,0.05)]";
 const tickerStickyCellClass =
   "sticky left-[5.5rem] z-10 w-20 min-w-20 border-r border-slate-200 bg-white px-1.5 py-1.5 text-[11px] font-bold text-slate-950 shadow-[2px_0_3px_rgba(15,23,42,0.05)]";
+const estimatedFlowTooltip =
+  "Estimated flow based on Enhanced OHLCV Proxy, not real buy/sell net flow.";
 
 const MID_CAP_MIN = 50_000_000_000;
 const MID_CAP_MAX = 300_000_000_000;
@@ -460,55 +473,55 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow1D)}`}
-        title="Capital flow window value: 1D"
+        title={`${estimatedFlowTooltip} Window: 1D`}
       >
         {formatLargeCurrency(flow1D)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow3D)}`}
-        title="Capital flow window value: 3D"
+        title={`${estimatedFlowTooltip} Window: 3D`}
       >
         {formatLargeCurrency(flow3D)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow5D)}`}
-        title="Capital flow window value: 5D"
+        title={`${estimatedFlowTooltip} Window: 5D`}
       >
         {formatLargeCurrency(flow5D)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow10D)}`}
-        title="Capital flow window value: 10D"
+        title={`${estimatedFlowTooltip} Window: 10D`}
       >
         {formatLargeCurrency(flow10D)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow20D)}`}
-        title="Capital flow window value: 20D"
+        title={`${estimatedFlowTooltip} Window: 20D`}
       >
         {formatLargeCurrency(flow20D)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow5W)}`}
-        title="Capital flow window value: 5W"
+        title={`${estimatedFlowTooltip} Window: 5W`}
       >
         {formatLargeCurrency(flow5W)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow6W)}`}
-        title="Capital flow window value: 6W"
+        title={`${estimatedFlowTooltip} Window: 6W`}
       >
         {formatLargeCurrency(flow6W)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow9W)}`}
-        title="Capital flow window value: 9W"
+        title={`${estimatedFlowTooltip} Window: 9W`}
       >
         {formatLargeCurrency(flow9W)}
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow12W)}`}
-        title="Capital flow window value: 12W"
+        title={`${estimatedFlowTooltip} Window: 12W`}
       >
         {formatLargeCurrency(flow12W)}
       </td>
@@ -1346,7 +1359,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.9.0
+                AlphaScout Capital Flow System V1.9.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -1377,7 +1390,7 @@ export function Dashboard({
               <span>
                 <span className="font-semibold text-slate-950">Scoring:</span>{" "}
                 <span className="font-normal text-slate-600">
-                  Margin 30% · FCF 40% · Capital Flow 30%
+                  Margin 30% · FCF 40% · Est.Flow 30%
                 </span>
               </span>
             </div>
@@ -1490,7 +1503,15 @@ export function Dashboard({
                           : normalHeaderClass;
 
                     return (
-                      <th key={header} className={stickyClass}>
+                      <th
+                        key={header}
+                        className={stickyClass}
+                        title={
+                          estimatedFlowWindowHeaders.has(header)
+                            ? estimatedFlowTooltip
+                            : undefined
+                        }
+                      >
                         {header}
                       </th>
                     );

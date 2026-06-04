@@ -47,6 +47,7 @@
 - V1.8.8.1 Enhanced Flow Calibration OHLCV Source Fix
 - V1.8.9 Real Buy/Sell Flow Provider Deep Search
 - V1.9.0 Flow Data Quality Upgrade
+- V1.9.1 Flow Proxy Sanity Refresh / Est.Flow Only
 
 ## Next Recommended Steps
 
@@ -302,3 +303,11 @@ The tier model distinguishes real buy/sell net flow, trade direction/order flow,
 V1.8.8.1 enhanced proxy remains a research/calibration layer. Production flow values, scoring, Entry / Position action rules, and thresholds are unchanged; `productionFlowChanged` remains false.
 
 Scope remains limited to the current Top 11 ranked candidates plus Fixed Watchlist 11, max 26 unique tickers. V1.9.0 performs no live provider calls, no full-universe flow quality calculation, no provider promotion, and no production trading-rule changes.
+
+## Flow Proxy Sanity Refresh / Est.Flow Only
+
+V1.9.1 refreshes displayed estimated flow values for the scoped dashboard ticker set using the Enhanced OHLCV Composite Proxy. The visible table wording changes from Flow to Est.Flow to make clear that these values are estimated from OHLCV proxy logic, not real buy amount minus sell amount.
+
+The V1.9.1 display proxy uses 45% Chaikin Flow, 25% Price Change Weighted Flow, 20% MFI-like Flow, and 10% OBV Directional Flow, with high/low, invalid-volume, insufficient-history, and extreme-value caps. If scoped archive data is insufficient, the display reports insufficient proxy data rather than producing misleading values.
+
+Scope remains capped at the current Top 11 ranked candidates plus Fixed Watchlist 11, max 26 unique tickers. V1.9.1 performs no live provider calls, no full-universe proxy refresh, no scoring changes, no Entry / Position rule changes, no threshold changes, and no production flow promotion. `productionFlowChanged` remains false.

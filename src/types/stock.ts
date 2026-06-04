@@ -309,6 +309,13 @@ export type StockCandidate = {
   enhancedProxyAlgorithmVersion?: string | null;
   enhancedProxyFlow1D_V188?: number | null;
   enhancedProxyDirection_V188?: string | null;
+  proxyMethod?: string | null;
+  estimatedFlowProxyAvailable?: boolean;
+  estimatedFlowProxyStatus?: string;
+  estimatedFlowProxyUnavailableReason?: string | null;
+  estimatedFlowProxyRowsUsed?: number;
+  estimatedFlowProxySource?: string | null;
+  estimatedFlowProxyUpdatedAt?: string | null;
   currentProductionFlowSource?: string;
   currentProductionFlowSourceClass?: string;
   recommendedFlowUpgradeSource?: string;
@@ -1084,6 +1091,16 @@ export type SnapshotResponse = {
   signalSnapshotLatestDate?: string | null;
   signalSnapshotCoverageSummary?: SignalSnapshotCoverageSummary;
   flowWindowCoverageSummary?: FlowWindowCoverageSummary;
+  estimatedFlowProxyDisplaySummary?: {
+    version: string;
+    proxyMethod: string;
+    scopedTickerCount: number;
+    maxScopedTickers: number;
+    availableCount: number;
+    insufficientCount: number;
+    liveProviderCallCount: number;
+    productionFlowChanged: boolean;
+  };
   actionSignalSummary?: ActionSignalSummary;
   entryActionSummary?: ActionSignalSummary;
   positionActionSummary?: PositionActionSummary;
@@ -1139,6 +1156,7 @@ export type RefreshResult = {
   signalSnapshotLatestDate?: string | null;
   signalSnapshotCoverageSummary?: SignalSnapshotCoverageSummary;
   flowWindowCoverageSummary?: FlowWindowCoverageSummary;
+  estimatedFlowProxyDisplaySummary?: SnapshotResponse["estimatedFlowProxyDisplaySummary"];
   timeoutGuardTriggered?: boolean;
   elapsedMs?: number;
   refreshWorkItemCount?: number;

@@ -5,6 +5,7 @@ import {
   buildActionSignalSummary,
   buildPositionActionSummary,
 } from "@/lib/actionSignals";
+import { applyEstimatedFlowProxyDisplayToSnapshot } from "@/lib/estimatedFlowProxyDisplay";
 import { applyFlowDataQualityMetadataToItems } from "@/lib/flowDataQualityTiers";
 import {
   COVERAGE_MARKET_SCAN_LIMIT,
@@ -491,13 +492,20 @@ export async function buildLatestSnapshotWithFixed(): Promise<SnapshotResponse> 
   ]);
 
   if (!fixedSnapshot) {
-    return snapshot;
+    return applyEstimatedFlowProxyDisplayToSnapshot({
+      ...snapshot,
+      items: applyFlowDataQualityMetadataToItems(snapshot.items),
+    });
   }
 
-  return {
+  return applyEstimatedFlowProxyDisplayToSnapshot({
     ...snapshot,
-    fixedSnapshot,
-  };
+    items: applyFlowDataQualityMetadataToItems(snapshot.items),
+    fixedSnapshot: {
+      ...fixedSnapshot,
+      items: applyFlowDataQualityMetadataToItems(fixedSnapshot.items),
+    },
+  });
 }
 
 export async function refreshDailySnapshot({
@@ -685,7 +693,7 @@ export async function refreshDailySnapshot({
     snapshot.status === "LIVE_MARKET" ||
     snapshot.status === "PARTIAL_LIVE" ||
     snapshot.status === "PARTIAL_LIVE_TIMEOUT_GUARDED";
-  const outputSnapshot: SnapshotResponse = {
+  const outputSnapshotWithQuality: SnapshotResponse = {
     ...snapshot,
     items: applyFlowDataQualityMetadataToItems(snapshot.items),
     fixedSnapshot: snapshot.fixedSnapshot
@@ -695,6 +703,8 @@ export async function refreshDailySnapshot({
         }
       : undefined,
   };
+  const outputSnapshot =
+    await applyEstimatedFlowProxyDisplayToSnapshot(outputSnapshotWithQuality);
 
   return {
     ok: true,
@@ -717,6 +727,8 @@ export async function refreshDailySnapshot({
     positionActionSummary,
     ...signalSnapshotFields,
     ...timeoutSummary,
+    estimatedFlowProxyDisplaySummary:
+      outputSnapshot.estimatedFlowProxyDisplaySummary,
     message: liveMode
       ? usedLiveSnapshot
         ? timeoutSummary.timeoutGuardTriggered
