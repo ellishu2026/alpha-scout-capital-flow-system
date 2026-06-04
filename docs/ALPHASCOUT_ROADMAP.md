@@ -42,6 +42,7 @@
 - V1.8.5.2 Ranked Table Flow Field Binding Fix
 - V1.8.5.3 Replace 4W with 5W Window
 - V1.8.6 Sticky Header & Sticky Columns
+- V1.8.7 Real Buy/Sell Flow Source Audit & Proxy Calibration
 
 ## Next Recommended Steps
 
@@ -114,6 +115,7 @@ Updated roadmap:
 - V1.8.5.2 Ranked Table Flow Field Binding Fix
 - V1.8.5.3 Replace 4W with 5W Window
 - V1.8.6 Sticky Header & Sticky Columns
+- V1.8.7 Real Buy/Sell Flow Source Audit & Proxy Calibration
 
 ## Universe Metadata Cleanup
 
@@ -238,3 +240,13 @@ V1.8.6 improves table usability by making the Ranked Candidates table header sti
 The Trade Win Rate Leaderboard also gets a sticky header plus sticky Rank and Model + Threshold Combo columns. This keeps key identifiers visible on desktop and mobile while preserving horizontal scroll, compact row height, and one row per ticker.
 
 This is a UI-only change. It does not change production thresholds, Entry / Position action rules, scoring, provider behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, environment variables, or data fetching.
+
+## Real Buy/Sell Flow Source Audit & Proxy Calibration
+
+V1.8.7 adds `/api/debug/real-flow-audit?limit=26`, a research-only audit for whether true same-day buy amount and sell amount can be obtained for the limited display universe. The highest-quality target remains `realNetFlow = sameDayBuyAmount - sameDaySellAmount`, because data quality directly determines model quality.
+
+The audit prioritizes real buy/sell or order-flow data first, classifies configured providers by available flow-data class, and reports when only OHLCV-derived data is available. If true buy/sell flow is unavailable, the endpoint computes an enhanced proxy from persisted OHLCV flow components: Chaikin daily flow, price-change weighted dollar flow, MFI-like flow, OBV directional flow, and close-location strength dollar flow.
+
+Ticker scope is strictly capped to the current Top 11 ranked candidates plus the Fixed Watchlist 11, with a hard maximum of 26 unique tickers. The audit does not run against the full universe, does not consume live provider quota, and preserves archive-first/provider-quota protection.
+
+This version does not change production flow values, scoring, Entry / Position action rules, production thresholds, provider ladder behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, environment variables, or real trading behavior.
