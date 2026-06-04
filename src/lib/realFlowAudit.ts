@@ -516,6 +516,9 @@ export async function buildRealFlowAuditReport(options: BuildRealFlowAuditOption
       "Full-universe real-flow audit is disabled; ticker scope is capped at Top 11 plus Fixed Watchlist, max 26 unique tickers.",
       "No live provider calls are made by this audit endpoint.",
     ],
+    enhancedFlowCalibrationAvailable: true,
+    enhancedFlowCalibrationEndpoint: "/api/debug/enhanced-flow-calibration?limit=26",
+    enhancedAlgorithmVersion: "V1.8.8_ENHANCED_FLOW_PROXY",
     productionFlowChanged: false,
   };
 }

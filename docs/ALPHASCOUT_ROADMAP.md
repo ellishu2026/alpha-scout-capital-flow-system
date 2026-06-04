@@ -43,6 +43,7 @@
 - V1.8.5.3 Replace 4W with 5W Window
 - V1.8.6 Sticky Header & Sticky Columns
 - V1.8.7 Real Buy/Sell Flow Source Audit & Proxy Calibration
+- V1.8.8 Enhanced Flow Proxy Calibration
 
 ## Next Recommended Steps
 
@@ -116,6 +117,7 @@ Updated roadmap:
 - V1.8.5.3 Replace 4W with 5W Window
 - V1.8.6 Sticky Header & Sticky Columns
 - V1.8.7 Real Buy/Sell Flow Source Audit & Proxy Calibration
+- V1.8.8 Enhanced Flow Proxy Calibration
 
 ## Universe Metadata Cleanup
 
@@ -250,3 +252,15 @@ The audit prioritizes real buy/sell or order-flow data first, classifies configu
 Ticker scope is strictly capped to the current Top 11 ranked candidates plus the Fixed Watchlist 11, with a hard maximum of 26 unique tickers. The audit does not run against the full universe, does not consume live provider quota, and preserves archive-first/provider-quota protection.
 
 This version does not change production flow values, scoring, Entry / Position action rules, production thresholds, provider ladder behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, environment variables, or real trading behavior.
+
+## Enhanced Flow Proxy Calibration
+
+V1.8.8 adds `/api/debug/enhanced-flow-calibration?limit=26`, a research-only calibration endpoint for improving the simulated flow algorithm while true buy/sell/net flow remains unavailable. The true target remains `sameDayNetFlow = sameDayBuyAmount - sameDaySellAmount`.
+
+The V1.8.8 proxy reduces over-reliance on Chaikin by using a weighted OHLCV component model: Chaikin flow, price-change weighted dollar flow, MFI-like flow, OBV directional flow, close-location flow, and gap-adjusted flow. Each component is clipped against average dollar volume or latest dollar volume, and the final weighted result is capped for magnitude sanity.
+
+Rows include component breakdowns, clipped/raw values, direction confidence, component agreement, direction conflict flags, and comparisons against both legacy 1D flow and the V1.8.7 enhanced proxy.
+
+Scope remains strictly limited to the current Top 11 ranked candidates plus Fixed Watchlist 11, with a hard maximum of 26 unique tickers. The endpoint reads persisted snapshots only, performs no live provider calls, and does not calculate enhanced calibration for the full universe.
+
+Production flow, scoring, Entry / Position action rules, production thresholds, provider ladder behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, environment variables, and real trading behavior are unchanged.
