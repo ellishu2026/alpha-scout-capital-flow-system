@@ -2,8 +2,6 @@ export const FIXED_WATCHLIST_SYMBOLS = [
   "SOXL",
   "SMH",
   "NVDA",
-  "AMD",
-  "VRT",
   "MSFT",
   "GOOGL",
   "ORCL",

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { FIXED_WATCHLIST_SYMBOLS } from "@/lib/marketUniverse";
 import { getLatestSnapshot } from "@/lib/snapshotStore";
 import type { SnapshotResponse, StockCandidate } from "@/types/stock";
 
@@ -7,19 +8,7 @@ const VERSION = "V1.8.9_REAL_FLOW_PROVIDER_DEEP_SEARCH";
 const MAX_REAL_FLOW_SEARCH_TICKERS = 26;
 const TOP_RANKED_LIMIT = 11;
 
-const FIXED_WATCHLIST = [
-  "SOXL",
-  "SMH",
-  "NVDA",
-  "AMD",
-  "VRT",
-  "MSFT",
-  "GOOGL",
-  "ORCL",
-  "RKLB",
-  "LLY",
-  "IONQ",
-] as const;
+const FIXED_WATCHLIST = FIXED_WATCHLIST_SYMBOLS;
 
 type DataLevel =
   | "REAL_BUY_SELL_NET_FLOW"

@@ -11,6 +11,7 @@ import {
   recommendedFlowUpgradeReason,
   recommendedFlowUpgradeSource,
 } from "@/lib/flowDataQualityTiers";
+import { FIXED_WATCHLIST_SYMBOLS } from "@/lib/marketUniverse";
 import { getLatestSnapshot } from "@/lib/snapshotStore";
 import type { SnapshotResponse, StockCandidate } from "@/types/stock";
 
@@ -18,19 +19,7 @@ const VERSION = "V1.9.0_FLOW_DATA_QUALITY_UPGRADE";
 const MAX_FLOW_DATA_QUALITY_TICKERS = 26;
 const TOP_RANKED_LIMIT = 11;
 
-const FIXED_WATCHLIST = [
-  "SOXL",
-  "SMH",
-  "NVDA",
-  "AMD",
-  "VRT",
-  "MSFT",
-  "GOOGL",
-  "ORCL",
-  "RKLB",
-  "LLY",
-  "IONQ",
-] as const;
+const FIXED_WATCHLIST = FIXED_WATCHLIST_SYMBOLS;
 
 type BuildFlowDataQualityReportOptions = {
   limit?: number;

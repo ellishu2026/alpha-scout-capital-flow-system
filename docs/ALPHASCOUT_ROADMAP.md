@@ -48,6 +48,7 @@
 - V1.8.9 Real Buy/Sell Flow Provider Deep Search
 - V1.9.0 Flow Data Quality Upgrade
 - V1.9.1 Flow Proxy Sanity Refresh / Est.Flow Only
+- V1.9.1.1 Fixed Watchlist Refresh
 
 ## Next Recommended Steps
 
@@ -311,3 +312,9 @@ V1.9.1 refreshes displayed estimated flow values for the scoped dashboard ticker
 The V1.9.1 display proxy uses 45% Chaikin Flow, 25% Price Change Weighted Flow, 20% MFI-like Flow, and 10% OBV Directional Flow, with high/low, invalid-volume, insufficient-history, and extreme-value caps. If scoped archive data is insufficient, the display reports insufficient proxy data rather than producing misleading values.
 
 Scope remains capped at the current Top 11 ranked candidates plus Fixed Watchlist 11, max 26 unique tickers. V1.9.1 performs no live provider calls, no full-universe proxy refresh, no scoring changes, no Entry / Position rule changes, no threshold changes, and no production flow promotion. `productionFlowChanged` remains false.
+
+## Fixed Watchlist Refresh
+
+V1.9.1.1 removes `AMD` and `VRT` from the Fixed Watchlist only. The fixed watchlist order is now `SOXL`, `SMH`, `NVDA`, `MSFT`, `GOOGL`, `ORCL`, `RKLB`, `LLY`, and `IONQ`.
+
+This is a composition update only. Est.Flow logic, Enhanced OHLCV Proxy logic, Entry / Position action rules, scoring, threshold simulation, rule promotion, A/B comparison, win-rate logic, forward returns, Risk Gate behavior, provider ladder, and universe scan rules are unchanged.

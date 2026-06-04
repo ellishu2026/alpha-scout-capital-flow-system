@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { DailyFlowDetail } from "@/lib/capitalFlow";
+import { FIXED_WATCHLIST_SYMBOLS } from "@/lib/marketUniverse";
 import { getProviderBudgetSummary } from "@/lib/marketDataProviders";
 import { getLatestSnapshot } from "@/lib/snapshotStore";
 import { isSupabaseConfigured } from "@/lib/supabaseAdmin";
@@ -9,19 +10,7 @@ import type { ProviderUsed, SnapshotResponse, StockCandidate } from "@/types/sto
 const MAX_FLOW_RESEARCH_TICKERS = 26;
 const TOP_RANKED_LIMIT = 11;
 
-const FIXED_WATCHLIST = [
-  "SOXL",
-  "SMH",
-  "NVDA",
-  "AMD",
-  "VRT",
-  "MSFT",
-  "GOOGL",
-  "ORCL",
-  "RKLB",
-  "LLY",
-  "IONQ",
-] as const;
+const FIXED_WATCHLIST = FIXED_WATCHLIST_SYMBOLS;
 
 type DataClass =
   | "REAL_BUY_SELL_FLOW"

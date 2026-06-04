@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { DailyFlowDetail, OhlcvCandle } from "@/lib/capitalFlow";
+import { FIXED_WATCHLIST_SYMBOLS } from "@/lib/marketUniverse";
 import { getArchivedMarketDataForTicker } from "@/lib/marketDataProviders";
 import { getLatestSnapshot } from "@/lib/snapshotStore";
 import type { SnapshotResponse, StockCandidate } from "@/types/stock";
@@ -9,19 +10,7 @@ const MAX_FLOW_CALIBRATION_TICKERS = 26;
 const TOP_RANKED_LIMIT = 11;
 const ALGORITHM_VERSION = "V1.8.8.1_ENHANCED_FLOW_PROXY_OHLCV_SOURCE_FIX";
 
-const FIXED_WATCHLIST = [
-  "SOXL",
-  "SMH",
-  "NVDA",
-  "AMD",
-  "VRT",
-  "MSFT",
-  "GOOGL",
-  "ORCL",
-  "RKLB",
-  "LLY",
-  "IONQ",
-] as const;
+const FIXED_WATCHLIST = FIXED_WATCHLIST_SYMBOLS;
 
 const COMPONENT_WEIGHTS = {
   chaikinComponent: 0.25,
