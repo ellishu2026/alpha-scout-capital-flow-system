@@ -807,5 +807,7 @@ export async function buildEnhancedFlowCalibrationReport(
       "Full-universe enhanced proxy calibration is disabled; ticker scope is capped at Top 11 plus Fixed Watchlist, max 26 unique tickers.",
       "No live provider calls are made by this calibration endpoint.",
     ],
+    realFlowProviderDeepSearchAvailable: true,
+    realFlowProviderDeepSearchEndpoint: "/api/debug/real-flow-provider-deep-search?limit=26",
   };
 }

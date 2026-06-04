@@ -45,6 +45,7 @@
 - V1.8.7 Real Buy/Sell Flow Source Audit & Proxy Calibration
 - V1.8.8 Enhanced Flow Proxy Calibration
 - V1.8.8.1 Enhanced Flow Calibration OHLCV Source Fix
+- V1.8.9 Real Buy/Sell Flow Provider Deep Search
 
 ## Next Recommended Steps
 
@@ -120,6 +121,7 @@ Updated roadmap:
 - V1.8.7 Real Buy/Sell Flow Source Audit & Proxy Calibration
 - V1.8.8 Enhanced Flow Proxy Calibration
 - V1.8.8.1 Enhanced Flow Calibration OHLCV Source Fix
+- V1.8.9 Real Buy/Sell Flow Provider Deep Search
 
 ## Universe Metadata Cleanup
 
@@ -276,3 +278,15 @@ Rows now report whether OHLCV input is available, the OHLCV source, rows used, m
 The fix keeps production flow unchanged and remains scoped to the current Top 11 ranked candidates plus Fixed Watchlist 11, max 26 unique tickers. It performs no full-universe calculation and no live provider calls.
 
 This release does not change production thresholds, scoring, Entry / Position actions, provider ladder behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, environment variables, or real trading behavior.
+
+## Real Buy/Sell Flow Provider Deep Search
+
+V1.8.9 adds `/api/debug/real-flow-provider-deep-search?limit=26`, a provider-discovery and feasibility classification endpoint for finding whether any source can provide true or near-real buy amount, sell amount, net flow, active buy/sell, trade direction, order imbalance, large-order flow, auction imbalance, or depth-of-book pressure.
+
+The core target remains `realNetFlow = sameDayBuyAmount - sameDaySellAmount`. Current production providers still do not expose true buy/sell/net flow, so V1.8.9 classifies current and potential providers across real flow, trade/order flow, order imbalance, depth/quote pressure, and OHLCV/indicator-only levels.
+
+The discovery matrix includes current providers plus IEX, Nasdaq TotalView/NOII, NYSE imbalances, Databento, Intrinio, Tiingo, Alpaca, Tradier, Nasdaq Data Link, and Market Chameleon/MOC-style sources. It does not perform questionable scraping, broker-app bypassing, Webull scraping, or broad live data pulls.
+
+Scope remains strictly limited to the current Top 11 ranked candidates plus Fixed Watchlist 11, max 26 unique tickers. V1.8.9 performs no live provider calls by default and makes no production flow, scoring, Entry / Position action, threshold, provider ladder, universe scan, Fixed Watchlist, Supabase schema, environment variable, or trading changes.
+
+The findings guide V1.9.0 Flow Data Quality Upgrade.
