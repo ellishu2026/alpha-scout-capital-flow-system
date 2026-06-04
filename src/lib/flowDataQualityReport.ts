@@ -105,25 +105,37 @@ function buildReportRow({
     inTopRanked: calibrationRow?.inTopRanked ?? false,
     inFixedWatchlist: calibrationRow?.inFixedWatchlist ?? false,
     providerUsed: item.providerUsed ?? null,
-    currentProductionFlowSource: currentProductionFlowSource(candidate),
-    currentProductionFlowSourceClass: currentProductionFlowSourceClass(),
+    currentProductionFlowSource: item.currentProductionFlowSource ?? currentProductionFlowSource(candidate),
+    currentProductionFlowSourceClass:
+      item.currentProductionFlowSourceClass ?? currentProductionFlowSourceClass(),
     flowDataTier: item.flowDataTier,
     flowDataTierLabel: item.flowDataTierLabel,
     flowDataQualityScore: item.flowDataQualityScore ?? 0,
     flowDataConfidence: item.flowDataConfidence,
-    realFlowAvailable: false,
-    realBuyAmount: null,
-    realSellAmount: null,
-    realNetFlow: null,
+    realFlowAvailable: item.realFlowAvailable ?? false,
+    realBuyAmount: item.realBuyAmount ?? null,
+    realSellAmount: item.realSellAmount ?? null,
+    realNetFlow: item.realNetFlow ?? null,
+    moomooFlowAvailable: item.moomooFlowAvailable ?? false,
+    moomooBuyAmount: item.moomooBuyAmount ?? null,
+    moomooSellAmount: item.moomooSellAmount ?? null,
+    moomooNetFlow: item.moomooNetFlow ?? null,
+    moomooFlowDate: item.moomooFlowDate ?? null,
+    moomooFlowSource: item.moomooFlowSource ?? null,
     enhancedProxyAvailable: item.enhancedProxyAvailable ?? false,
     enhancedProxyFlow1D_V188: item.enhancedProxyFlow1D_V188 ?? null,
     enhancedProxyDirection_V188: item.enhancedProxyDirection_V188 ?? null,
     enhancedProxyConfidence: calibrationRow?.flowConfidence ?? null,
     currentProductionFlow1D: candidate.capitalFlow1D ?? null,
     productionFlowChanged: false,
-    recommendedFlowUpgradeSource: recommendedFlowUpgradeSource(),
-    recommendedFlowUpgradeReason: recommendedFlowUpgradeReason(),
-    nextProviderToTest: "Polygon trade/quote aggressor inference",
+    recommendedFlowUpgradeSource:
+      item.recommendedFlowUpgradeSource ?? recommendedFlowUpgradeSource(),
+    recommendedFlowUpgradeReason:
+      item.recommendedFlowUpgradeReason ?? recommendedFlowUpgradeReason(),
+    nextProviderToTest:
+      item.flowDataTier === "MOOMOO_DIRECT_CAPITAL_FLOW"
+        ? "Databento/Nasdaq/IEX institutional confirmation"
+        : "Polygon trade/quote aggressor inference",
   };
 }
 

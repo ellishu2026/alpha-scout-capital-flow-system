@@ -4,6 +4,7 @@ export const FLOW_DATA_QUALITY_VERSION = "V1.9.0_FLOW_DATA_QUALITY_TIERS";
 export const FLOW_DATA_QUALITY_ENDPOINT = "/api/debug/flow-data-quality?limit=26";
 
 export type FlowDataTier =
+  | "MOOMOO_DIRECT_CAPITAL_FLOW"
   | "REAL_BUY_SELL_NET_FLOW"
   | "TRADE_DIRECTION_OR_ORDER_FLOW"
   | "ORDER_IMBALANCE"
@@ -17,7 +18,7 @@ export type FlowDataTier =
 export type FlowDataConfidence = "High" | "Medium" | "Low" | "Unknown";
 
 export type FlowTierDefinition = {
-  tier: "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "U";
+  tier: "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "M" | "U";
   id: FlowDataTier;
   label: string;
   meaning: string;
@@ -26,6 +27,15 @@ export type FlowTierDefinition = {
 };
 
 export const FLOW_TIER_DEFINITIONS: FlowTierDefinition[] = [
+  {
+    tier: "M",
+    id: "MOOMOO_DIRECT_CAPITAL_FLOW",
+    label: "Moomoo Direct Capital Flow",
+    meaning:
+      "Moomoo get_capital_distribution capital-in and capital-out fields are available for direct buy/sell-style capital flow.",
+    qualityScore: 85,
+    productionReadyPotential: "Medium",
+  },
   {
     tier: "A",
     id: "REAL_BUY_SELL_NET_FLOW",
@@ -143,6 +153,15 @@ export function classifyFlowDataTier({
   candidate: StockCandidate;
   enhancedProxyAvailable?: boolean;
 }) {
+  if (
+    candidate.providerUsed === "MOOMOO_CAPITAL_DISTRIBUTION" ||
+    candidate.providerUsed === "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" ||
+    candidate.capitalFlowDataSource === "MOOMOO_CAPITAL_DISTRIBUTION" ||
+    candidate.moomooFlowAvailable === true
+  ) {
+    return getFlowTierDefinition("MOOMOO_DIRECT_CAPITAL_FLOW");
+  }
+
   if (enhancedProxyAvailable ?? hasEnhancedProxyAvailable(candidate)) {
     return getFlowTierDefinition("ENHANCED_OHLCV_PROXY");
   }
@@ -165,6 +184,7 @@ export function confidenceForTier({
   tier: FlowDataTier;
   enhancedProxyConfidence?: string | null;
 }): FlowDataConfidence {
+  if (tier === "MOOMOO_DIRECT_CAPITAL_FLOW") return "High";
   if (tier === "REAL_BUY_SELL_NET_FLOW") return "High";
   if (
     tier === "TRADE_DIRECTION_OR_ORDER_FLOW" ||
@@ -232,10 +252,22 @@ export function applyFlowDataQualityMetadataToItem(
     flowDataTierLabel: tierDefinition.label,
     flowDataQualityScore: tierDefinition.qualityScore,
     flowDataConfidence,
-    realFlowAvailable: false,
-    realBuyAmount: null,
-    realSellAmount: null,
-    realNetFlow: null,
+    realFlowAvailable:
+      tierDefinition.id === "MOOMOO_DIRECT_CAPITAL_FLOW"
+        ? true
+        : candidate.realFlowAvailable ?? false,
+    realBuyAmount:
+      tierDefinition.id === "MOOMOO_DIRECT_CAPITAL_FLOW"
+        ? candidate.realBuyAmount ?? candidate.moomooBuyAmount ?? null
+        : null,
+    realSellAmount:
+      tierDefinition.id === "MOOMOO_DIRECT_CAPITAL_FLOW"
+        ? candidate.realSellAmount ?? candidate.moomooSellAmount ?? null
+        : null,
+    realNetFlow:
+      tierDefinition.id === "MOOMOO_DIRECT_CAPITAL_FLOW"
+        ? candidate.realNetFlow ?? candidate.moomooNetFlow ?? null
+        : null,
     enhancedProxyAvailable:
       options.enhancedProxyAvailable ?? tierDefinition.id === "ENHANCED_OHLCV_PROXY",
     enhancedProxyAlgorithmVersion:
@@ -245,9 +277,18 @@ export function applyFlowDataQualityMetadataToItem(
     enhancedProxyFlow1D_V188: options.enhancedProxyFlow1D_V188,
     enhancedProxyDirection_V188: options.enhancedProxyDirection_V188,
     currentProductionFlowSource: currentProductionFlowSource(candidate),
-    currentProductionFlowSourceClass: currentProductionFlowSourceClass(),
-    recommendedFlowUpgradeSource: recommendedFlowUpgradeSource(),
-    recommendedFlowUpgradeReason: recommendedFlowUpgradeReason(),
+    currentProductionFlowSourceClass:
+      tierDefinition.id === "MOOMOO_DIRECT_CAPITAL_FLOW"
+        ? "DIRECT_CAPITAL_DISTRIBUTION"
+        : currentProductionFlowSourceClass(),
+    recommendedFlowUpgradeSource:
+      tierDefinition.id === "MOOMOO_DIRECT_CAPITAL_FLOW"
+        ? "Accumulate Moomoo Direct Capital Flow archive; validate against Databento/Nasdaq/IEX if licensed."
+        : recommendedFlowUpgradeSource(),
+    recommendedFlowUpgradeReason:
+      tierDefinition.id === "MOOMOO_DIRECT_CAPITAL_FLOW"
+        ? "Moomoo get_capital_distribution provides direct capital-in and capital-out fields for scoped tickers without trading APIs."
+        : recommendedFlowUpgradeReason(),
     productionFlowChanged: false,
   };
 }

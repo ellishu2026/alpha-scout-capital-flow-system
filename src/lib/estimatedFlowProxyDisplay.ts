@@ -3,6 +3,15 @@ import "server-only";
 import type { OhlcvCandle } from "@/lib/capitalFlow";
 import { FIXED_WATCHLIST_SYMBOLS } from "@/lib/marketUniverse";
 import { getArchivedMarketDataForTicker } from "@/lib/marketDataProviders";
+import {
+  MOOMOO_FLOW_QUALITY_SCORE,
+  MOOMOO_FLOW_TIER,
+  MOOMOO_FLOW_TIER_LABEL,
+  MOOMOO_FLOW_VERSION,
+  MOOMOO_PROVIDER,
+  fetchScopedMoomooCapitalFlows,
+  type MoomooCapitalDistribution,
+} from "@/lib/moomooCapitalFlow";
 import type { SnapshotResponse, StockCandidate } from "@/types/stock";
 
 export const ESTIMATED_FLOW_PROXY_VERSION = "V1.9.1_EST_FLOW_DISPLAY_PROXY";
@@ -40,6 +49,16 @@ type EstimatedFlowOverlay = {
   estimatedFlowProxyRowsUsed: number;
   estimatedFlowProxySource: string | null;
   estimatedFlowProxyUpdatedAt: string | null;
+  providerUsed?: StockCandidate["providerUsed"];
+  flowDataTier?: StockCandidate["flowDataTier"];
+  flowDataTierLabel?: string;
+  flowDataQualityScore?: number;
+  flowDataConfidence?: StockCandidate["flowDataConfidence"];
+  realFlowAvailable?: boolean;
+  directBuyAmount?: number | null;
+  directSellAmount?: number | null;
+  directNetFlow?: number | null;
+  moomooFlow?: MoomooCapitalDistribution | null;
 };
 
 function isFiniteNumber(value: unknown): value is number {
@@ -87,6 +106,12 @@ function sumLastIfAvailable(values: DailyEstimatedFlow[], count: number) {
   return values
     .slice(-count)
     .reduce((sum, row) => sum + row.value, 0);
+}
+
+function sumLastMoomooIfAvailable(values: MoomooCapitalDistribution[], count: number) {
+  if (values.length < count) return null;
+
+  return values.slice(-count).reduce((sum, row) => sum + row.netFlow, 0);
 }
 
 function direction(value: number | null): StockCandidate["enhancedProxyDirection_V188"] {
@@ -185,6 +210,51 @@ function buildOverlayFromCandles(
   };
 }
 
+function buildOverlayFromMoomooRows(rows: MoomooCapitalDistribution[]): EstimatedFlowOverlay {
+  const sortedRows = rows.slice().sort((a, b) => a.flowDate.localeCompare(b.flowDate));
+  const latest = sortedRows.at(-1) ?? null;
+
+  if (!latest) {
+    return insufficientOverlay("No Moomoo capital distribution rows available.");
+  }
+
+  return {
+    capitalFlow1D: sumLastMoomooIfAvailable(sortedRows, 1),
+    capitalFlow3D: sumLastMoomooIfAvailable(sortedRows, 3),
+    capitalFlow5D: sumLastMoomooIfAvailable(sortedRows, 5),
+    capitalFlow10D: sumLastMoomooIfAvailable(sortedRows, 10),
+    capitalFlow20D: sumLastMoomooIfAvailable(sortedRows, 20),
+    capitalFlow5W: sumLastMoomooIfAvailable(sortedRows, 25),
+    capitalFlow6W: sumLastMoomooIfAvailable(sortedRows, 30),
+    capitalFlow9W: sumLastMoomooIfAvailable(sortedRows, 45),
+    capitalFlow12W: sumLastMoomooIfAvailable(sortedRows, 60),
+    enhancedProxyFlow1D_V188: null,
+    enhancedProxyDirection_V188: direction(latest.netFlow),
+    estimatedFlowProxyAvailable: true,
+    estimatedFlowProxyStatus: "MOOMOO_DIRECT_FLOW_AVAILABLE",
+    estimatedFlowProxyUnavailableReason: null,
+    estimatedFlowProxyRowsUsed: sortedRows.length,
+    estimatedFlowProxySource:
+      latest.source === "ARCHIVE"
+        ? "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
+        : "MOOMOO_CAPITAL_DISTRIBUTION",
+    estimatedFlowProxyUpdatedAt: latest.flowDate,
+    providerUsed:
+      latest.source === "ARCHIVE"
+        ? "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
+        : "MOOMOO_CAPITAL_DISTRIBUTION",
+    flowDataTier: MOOMOO_FLOW_TIER,
+    flowDataTierLabel: MOOMOO_FLOW_TIER_LABEL,
+    flowDataQualityScore: MOOMOO_FLOW_QUALITY_SCORE,
+    flowDataConfidence: "High",
+    realFlowAvailable: true,
+    directBuyAmount: latest.buyAmount,
+    directSellAmount: latest.sellAmount,
+    directNetFlow: latest.netFlow,
+    moomooFlow: latest,
+  };
+}
+
 function insufficientOverlay(reason: string): EstimatedFlowOverlay {
   return {
     capitalFlow1D: null,
@@ -238,7 +308,18 @@ async function buildOverlayMap(tickers: string[]) {
     }),
   );
 
-  return new Map(entries);
+  const overlayMap = new Map(entries);
+  const moomooResult = await fetchScopedMoomooCapitalFlows(tickers);
+
+  moomooResult.history.forEach((rows, ticker) => {
+    overlayMap.set(ticker, buildOverlayFromMoomooRows(rows));
+  });
+
+  return {
+    overlayMap,
+    moomooSummary: moomooResult.guard,
+    moomooErrors: moomooResult.errors,
+  };
 }
 
 function applyOverlayToItem(candidate: StockCandidate, overlay?: EstimatedFlowOverlay) {
@@ -257,25 +338,67 @@ function applyOverlayToItem(candidate: StockCandidate, overlay?: EstimatedFlowOv
     capitalFlow6W: overlay.capitalFlow6W,
     capitalFlow9W: overlay.capitalFlow9W,
     capitalFlow12W: overlay.capitalFlow12W,
-    flowDataTier: "ENHANCED_OHLCV_PROXY" as const,
-    flowDataTierLabel: "Enhanced OHLCV Proxy",
-    flowDataQualityScore: 45,
-    flowDataConfidence: overlay.estimatedFlowProxyAvailable ? ("Medium" as const) : ("Low" as const),
-    realFlowAvailable: false,
-    realBuyAmount: null,
-    realSellAmount: null,
-    realNetFlow: null,
-    enhancedProxyAvailable: overlay.estimatedFlowProxyAvailable,
-    enhancedProxyAlgorithmVersion: ESTIMATED_FLOW_PROXY_VERSION,
+    flowDataTier: overlay.flowDataTier ?? ("ENHANCED_OHLCV_PROXY" as const),
+    flowDataTierLabel: overlay.flowDataTierLabel ?? "Enhanced OHLCV Proxy",
+    flowDataQualityScore: overlay.flowDataQualityScore ?? 45,
+    flowDataConfidence:
+      overlay.flowDataConfidence ??
+      (overlay.estimatedFlowProxyAvailable ? ("Medium" as const) : ("Low" as const)),
+    realFlowAvailable: overlay.realFlowAvailable ?? false,
+    realBuyAmount: overlay.directBuyAmount ?? null,
+    realSellAmount: overlay.directSellAmount ?? null,
+    realNetFlow: overlay.directNetFlow ?? null,
+    moomooFlowAvailable: Boolean(overlay.moomooFlow),
+    moomooBuyAmount: overlay.directBuyAmount ?? null,
+    moomooSellAmount: overlay.directSellAmount ?? null,
+    moomooNetFlow: overlay.directNetFlow ?? null,
+    moomooFlowDate: overlay.moomooFlow?.flowDate ?? null,
+    moomooFlowSource: overlay.estimatedFlowProxySource,
+    moomooFlowArchiveHit: overlay.moomooFlow?.source === "ARCHIVE",
+    moomooFlowStatus: overlay.moomooFlow ? "AVAILABLE" : null,
+    enhancedProxyAvailable:
+      overlay.flowDataTier === MOOMOO_FLOW_TIER ? true : overlay.estimatedFlowProxyAvailable,
+    enhancedProxyAlgorithmVersion:
+      overlay.flowDataTier === MOOMOO_FLOW_TIER
+        ? MOOMOO_FLOW_VERSION
+        : ESTIMATED_FLOW_PROXY_VERSION,
     enhancedProxyFlow1D_V188: overlay.enhancedProxyFlow1D_V188,
     enhancedProxyDirection_V188: overlay.enhancedProxyDirection_V188,
-    proxyMethod: ESTIMATED_FLOW_PROXY_METHOD,
+    proxyMethod:
+      overlay.flowDataTier === MOOMOO_FLOW_TIER
+        ? MOOMOO_PROVIDER
+        : ESTIMATED_FLOW_PROXY_METHOD,
     estimatedFlowProxyAvailable: overlay.estimatedFlowProxyAvailable,
     estimatedFlowProxyStatus: overlay.estimatedFlowProxyStatus,
     estimatedFlowProxyUnavailableReason: overlay.estimatedFlowProxyUnavailableReason,
     estimatedFlowProxyRowsUsed: overlay.estimatedFlowProxyRowsUsed,
     estimatedFlowProxySource: overlay.estimatedFlowProxySource,
     estimatedFlowProxyUpdatedAt: overlay.estimatedFlowProxyUpdatedAt,
+    providerUsed: overlay.providerUsed ?? candidate.providerUsed,
+    capitalFlowDataSource:
+      overlay.flowDataTier === MOOMOO_FLOW_TIER
+        ? MOOMOO_PROVIDER
+        : candidate.capitalFlowDataSource,
+    capitalFlowQuality:
+      overlay.flowDataTier === MOOMOO_FLOW_TIER
+        ? ("REAL_PROVIDER" as const)
+        : candidate.capitalFlowQuality,
+    currentProductionFlowSource:
+      overlay.flowDataTier === MOOMOO_FLOW_TIER
+        ? MOOMOO_PROVIDER
+        : candidate.currentProductionFlowSource,
+    currentProductionFlowSourceClass:
+      overlay.flowDataTier === MOOMOO_FLOW_TIER
+        ? "DIRECT_CAPITAL_DISTRIBUTION"
+        : candidate.currentProductionFlowSourceClass,
+    recommendedFlowUpgradeSource:
+      overlay.flowDataTier === MOOMOO_FLOW_TIER
+        ? "Accumulate Moomoo Direct Capital Flow archive; evaluate Databento/Nasdaq/IEX for institutional-grade confirmation."
+        : candidate.recommendedFlowUpgradeSource,
+    recommendedFlowUpgradeReason:
+      overlay.flowDataTier === MOOMOO_FLOW_TIER
+        ? "Moomoo get_capital_distribution exposes direct capital-in and capital-out fields for scoped tickers without using trading APIs."
+        : candidate.recommendedFlowUpgradeReason,
     productionFlowChanged: false,
   };
 }
@@ -285,7 +408,7 @@ export async function applyEstimatedFlowProxyDisplayToSnapshot(
 ): Promise<SnapshotResponse> {
   const fixedSnapshot = snapshot.fixedSnapshot ?? null;
   const tickers = scopedTickerSet(snapshot, fixedSnapshot);
-  const overlayMap = await buildOverlayMap(tickers);
+  const { overlayMap, moomooSummary, moomooErrors } = await buildOverlayMap(tickers);
   const apply = (item: StockCandidate) =>
     applyOverlayToItem(item, overlayMap.get(item.ticker.toUpperCase()));
 
@@ -310,6 +433,12 @@ export async function applyEstimatedFlowProxyDisplayToSnapshot(
         (overlay) => !overlay.estimatedFlowProxyAvailable,
       ).length,
       liveProviderCallCount: 0,
+      moomooCapitalDistributionAvailable: true,
+      moomooProvider: MOOMOO_PROVIDER,
+      moomooFlowTier: MOOMOO_FLOW_TIER,
+      moomooFlowTierLabel: MOOMOO_FLOW_TIER_LABEL,
+      moomooQuotaGuard: moomooSummary,
+      moomooErrors,
       productionFlowChanged: false,
     },
   };

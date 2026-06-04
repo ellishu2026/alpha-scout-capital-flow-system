@@ -50,6 +50,7 @@
 - V1.9.1 Flow Proxy Sanity Refresh / Est.Flow Only
 - V1.9.1.1 Fixed Watchlist Refresh
 - V1.9.1.2 Fixed Watchlist Page Mapping Fix
+- V1.9.2 Moomoo Direct Capital Flow Provider
 
 ## Next Recommended Steps
 
@@ -325,3 +326,11 @@ This is a composition update only. Est.Flow logic, Enhanced OHLCV Proxy logic, E
 V1.9.1.2 fixes stale Fixed List membership on the page and API by recalculating saved snapshot Fixed Watchlist membership from the current source of truth. The effective Fixed Watchlist remains `SOXL`, `SMH`, `NVDA`, `MSFT`, `GOOGL`, `ORCL`, `RKLB`, `LLY`, and `IONQ`; `AMD` and `VRT` are no longer counted or labeled as Fixed List members.
 
 This is a mapping fix only. It does not remove `AMD` or `VRT` from other organic universe pools, and it does not change Est.Flow, Enhanced OHLCV Proxy, scoring, Entry / Position actions, provider logic, or production thresholds.
+
+## Moomoo Direct Capital Flow Provider
+
+V1.9.2 adds `MOOMOO_CAPITAL_DISTRIBUTION` as an optional archive-first direct capital-flow provider for the scoped dashboard ticker set. It uses Moomoo OpenD quote/capital distribution data only, calculating buy amount from `capital_in_super`, `capital_in_big`, `capital_in_mid`, and `capital_in_small`, sell amount from `capital_out_super`, `capital_out_big`, `capital_out_mid`, and `capital_out_small`, and net flow as buy minus sell.
+
+The provider is guarded to max 20 symbols per run, 25 requests per run, 1200ms request spacing, and one retry. Backfill remains throttled to max 5 symbols and 3 days per run if historical capital distribution is supported. If Moomoo is unavailable, rows fall back to the existing Enhanced OHLCV Proxy display path.
+
+No trading API, order placement, account trading, position trading, production scoring change, Entry / Position rule change, threshold change, Risk Gate change, or universe expansion is introduced. `productionFlowChanged` remains false.

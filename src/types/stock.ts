@@ -15,6 +15,7 @@ export type SnapshotMode = "MARKET_SCAN" | "FIXED_WATCHLIST" | "MOCK";
 
 export type PersistenceStatus = "SAVED" | "DISABLED" | "FAILED";
 export type CapitalFlowDataSource =
+  | "MOOMOO_CAPITAL_DISTRIBUTION"
   | "YFINANCE_CHAIKIN"
   | "YFINANCE_COMPOSITE_PROXY"
   | "ALPHA_VANTAGE"
@@ -24,11 +25,13 @@ export type CapitalFlowDataSource =
   | "MOCK";
 export type ProviderUsed =
   | CapitalFlowDataSource
+  | "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
   | "ALPHA_VANTAGE_ARCHIVE"
   | "TWELVE_DATA_ARCHIVE"
   | "EODHD_ARCHIVE"
   | "POLYGON_ARCHIVE";
 export type ArchiveHitProvider =
+  | "MOOMOO_CAPITAL_DISTRIBUTION"
   | "POLYGON"
   | "ALPHA_VANTAGE"
   | "TWELVE_DATA"
@@ -290,6 +293,7 @@ export type StockCandidate = {
   flowDataQualityReasons?: string[];
   flowDataQualityInputs?: FlowDataQualityInputs;
   flowDataTier?:
+    | "MOOMOO_DIRECT_CAPITAL_FLOW"
     | "REAL_BUY_SELL_NET_FLOW"
     | "TRADE_DIRECTION_OR_ORDER_FLOW"
     | "ORDER_IMBALANCE"
@@ -305,6 +309,14 @@ export type StockCandidate = {
   realBuyAmount?: number | null;
   realSellAmount?: number | null;
   realNetFlow?: number | null;
+  moomooFlowAvailable?: boolean;
+  moomooBuyAmount?: number | null;
+  moomooSellAmount?: number | null;
+  moomooNetFlow?: number | null;
+  moomooFlowDate?: string | null;
+  moomooFlowSource?: string | null;
+  moomooFlowArchiveHit?: boolean;
+  moomooFlowStatus?: string | null;
   enhancedProxyAvailable?: boolean;
   enhancedProxyAlgorithmVersion?: string | null;
   enhancedProxyFlow1D_V188?: number | null;
@@ -1099,6 +1111,28 @@ export type SnapshotResponse = {
     availableCount: number;
     insufficientCount: number;
     liveProviderCallCount: number;
+    moomooCapitalDistributionAvailable?: boolean;
+    moomooProvider?: string;
+    moomooFlowTier?: string;
+    moomooFlowTierLabel?: string;
+    moomooQuotaGuard?: {
+      enabled: boolean;
+      liveEnabled: boolean;
+      maxSymbolsPerRun: number;
+      requestIntervalMs: number;
+      maxRequestsPerRun: number;
+      retryLimit: number;
+      requestedSymbolCount: number;
+      scopedSymbolCount: number;
+      archiveHitCount: number;
+      liveProviderCallCount: number;
+      skippedDueToScopeCount: number;
+      skippedDueToQuotaCount: number;
+      failedCount: number;
+      tradingApiAllowed: false;
+      fallbackToEnhancedProxy: boolean;
+    };
+    moomooErrors?: string[];
     productionFlowChanged: boolean;
   };
   actionSignalSummary?: ActionSignalSummary;

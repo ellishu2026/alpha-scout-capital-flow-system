@@ -141,6 +141,25 @@ function buildCandidateProviderMatrix() {
         "Current production provider ladder supports real OHLCV and derived indicators only; production data does not expose true buy/sell/net flow.",
     }),
     providerMatrixItem({
+      providerName: "Moomoo OpenD get_capital_distribution",
+      envVars: ["MOOMOO_CAPITAL_FLOW_ENABLED"],
+      configuredInProject: true,
+      likelyDataLevel: "REAL_BUY_SELL_NET_FLOW",
+      hasTrueBuyAmount: true,
+      hasTrueSellAmount: true,
+      hasNetFlow: true,
+      historicalAvailability:
+        "Daily capital distribution can be archived from each successful scoped refresh; historical backfill depends on API support and is throttled.",
+      intradayAvailability:
+        "Quote-only OpenD capital distribution endpoint returns capital-in and capital-out buckets when OpenD is reachable.",
+      estimatedAccessType: "API_KEY",
+      integrationDifficulty: "LOW",
+      quotaRisk: "LOW",
+      legalOrTermsRisk: "LOW",
+      notes:
+        "V1.9.2 integrates quote/capital-flow access only via Moomoo OpenQuoteContext; no trading context or order endpoint is used.",
+    }),
+    providerMatrixItem({
       providerName: "Alpha Vantage",
       envVars: ["ALPHA_VANTAGE_API_KEY"],
       configuredInProject: true,
@@ -482,6 +501,10 @@ function buildRows({
 }
 
 function summarizeProviderSearch(matrix: ReturnType<typeof buildCandidateProviderMatrix>) {
+  const moomoo = matrix.find(
+    (provider) => provider.providerName === "Moomoo OpenD get_capital_distribution",
+  );
+
   return {
     trueBuySellNetFlowProviderCount: matrix.filter(
       (provider) => provider.likelyDataLevel === "REAL_BUY_SELL_NET_FLOW",
@@ -501,9 +524,10 @@ function summarizeProviderSearch(matrix: ReturnType<typeof buildCandidateProvide
     configuredProviderCount: matrix.filter((provider) => provider.configuredInProject).length,
     envConfiguredProviderCount: matrix.filter((provider) => provider.envVarsPresent).length,
     liveProviderCallCount: matrix.reduce((sum, provider) => sum + provider.liveCallCount, 0),
-    currentProjectCanAccessTrueBuySellFlowToday: false,
-    likelyPaidOrExchangeFeedRequired: true,
+    currentProjectCanAccessTrueBuySellFlowToday: Boolean(moomoo?.envVarsPresent),
+    likelyPaidOrExchangeFeedRequired: !moomoo?.envVarsPresent,
     mostPromisingNextProviders: [
+      "Moomoo OpenD get_capital_distribution",
       "Databento",
       "Nasdaq TotalView / NOII / DataStore",
       "Polygon trade/quote aggressor inference",
@@ -564,9 +588,10 @@ export async function buildRealFlowProviderDeepSearchReport(
     candidateProviderMatrix,
     rows,
     recommendation:
-      "Current project access does not expose true buy/sell/net flow today. Keep production flow unchanged; test licensed Databento or Nasdaq/IEX imbalance/depth data next, with Polygon trade/quote matching as the lowest-friction configured-provider experiment.",
+      "V1.9.2 adds Moomoo OpenD get_capital_distribution as the lowest-friction direct capital-flow path for scoped tickers. Keep production flow and trading rules unchanged; continue evaluating Databento/Nasdaq/IEX for institutional-grade confirmation.",
     nextActions: [
-      "Confirm whether a paid source can provide true active buy/sell or net flow directly; if yes, prioritize that above all proxies.",
+      "Use Moomoo capital distribution only through quote/capital-flow access; do not use trading or order endpoints.",
+      "Archive Moomoo direct flow daily for the scoped ticker set only, capped by the V1.9.2 quota guard.",
       "Request/sample Databento US equities trades and order-book data for the scoped ticker set only.",
       "Evaluate Nasdaq TotalView/NOII or NYSE imbalance feeds for opening/closing imbalance research.",
       "If using Polygon, prototype trade/quote matching for aggressor-side inference on one to three tickers before expanding to the 26-ticker cap.",
