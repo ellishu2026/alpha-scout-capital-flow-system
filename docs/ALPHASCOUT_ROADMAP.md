@@ -41,6 +41,7 @@
 - V1.8.5.1 Ranked Table Forward Window Columns
 - V1.8.5.2 Ranked Table Flow Field Binding Fix
 - V1.8.5.3 Replace 4W with 5W Window
+- V1.8.6 Sticky Header & Sticky Columns
 
 ## Next Recommended Steps
 
@@ -112,6 +113,7 @@ Updated roadmap:
 - V1.8.5.1 Ranked Table Forward Window Columns
 - V1.8.5.2 Ranked Table Flow Field Binding Fix
 - V1.8.5.3 Replace 4W with 5W Window
+- V1.8.6 Sticky Header & Sticky Columns
 
 ## Universe Metadata Cleanup
 
@@ -228,3 +230,11 @@ The visible window set is now 1D, 3D, 5D, 10D, 20D, 5W, 6W, 9W, and 12W. The ran
 Trade Win Rate Leaderboard score weights now use 5W at 10% instead of 4W. If 5W forward-return data is unavailable, the leaderboard continues to show N/A rather than fake data.
 
 Provider quota protection remains unchanged. Extended display-window calculations remain limited to the current Top 11 ranked candidates plus Fixed Watchlist 11 unique tickers. This release does not change production thresholds, Entry / Position action rules, scoring, provider behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, or environment variables.
+
+## Sticky Header & Sticky Columns
+
+V1.8.6 improves table usability by making the Ranked Candidates table header sticky during vertical scrolling and keeping Rank, Chg, and Ticker sticky during horizontal scrolling.
+
+The Trade Win Rate Leaderboard also gets a sticky header plus sticky Rank and Model + Threshold Combo columns. This keeps key identifiers visible on desktop and mobile while preserving horizontal scroll, compact row height, and one row per ticker.
+
+This is a UI-only change. It does not change production thresholds, Entry / Position action rules, scoring, provider behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, environment variables, or data fetching.

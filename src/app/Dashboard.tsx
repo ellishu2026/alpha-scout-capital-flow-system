@@ -59,13 +59,15 @@ const tableHeaders = [
 ];
 
 const stickyHeaderClass =
-  "sticky z-20 whitespace-nowrap border-b border-slate-200 bg-slate-50 px-1.5 py-1.5 text-left text-[9px] font-bold uppercase text-slate-500";
+  "sticky top-0 z-30 whitespace-nowrap border-b border-slate-200 bg-slate-50 px-1.5 py-1.5 text-left text-[9px] font-bold uppercase text-slate-500";
 const normalHeaderClass =
-  "whitespace-nowrap border-b border-slate-200 px-1.5 py-1.5 text-left text-[9px] font-bold uppercase text-slate-500";
+  "sticky top-0 z-20 whitespace-nowrap border-b border-slate-200 bg-slate-50 px-1.5 py-1.5 text-left text-[9px] font-bold uppercase text-slate-500";
 const rankStickyCellClass =
   "sticky left-0 z-10 w-12 min-w-12 border-r border-slate-200 bg-white px-1.5 py-1.5 text-left text-[10px] font-semibold tabular-nums text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]";
+const changeStickyCellClass =
+  "sticky left-12 z-10 w-10 min-w-10 border-r border-slate-200 bg-white px-1.5 py-1.5 shadow-[2px_0_3px_rgba(15,23,42,0.05)]";
 const tickerStickyCellClass =
-  "sticky left-12 z-10 w-20 min-w-20 border-r border-slate-200 bg-white px-1.5 py-1.5 text-[11px] font-bold text-slate-950 shadow-[2px_0_3px_rgba(15,23,42,0.05)]";
+  "sticky left-[5.5rem] z-10 w-20 min-w-20 border-r border-slate-200 bg-white px-1.5 py-1.5 text-[11px] font-bold text-slate-950 shadow-[2px_0_3px_rgba(15,23,42,0.05)]";
 
 const MID_CAP_MIN = 50_000_000_000;
 const MID_CAP_MAX = 300_000_000_000;
@@ -423,7 +425,7 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
       <td className={rankStickyCellClass}>
         #{candidate.rank}
       </td>
-      <td className="px-1.5 py-1.5">
+      <td className={changeStickyCellClass}>
         <span
           className={`inline-flex min-w-8 justify-center rounded px-1 py-0.5 text-[9px] font-bold tabular-nums ring-1 ${rankChangeClass(
             candidate.changeType,
@@ -810,27 +812,27 @@ function WinRateSection({
               <p className="font-medium text-slate-600">Need 30 forward return samples</p>
             </div>
 
-            <div className="mt-1.5 overflow-x-auto rounded border border-slate-200 bg-white">
+            <div className="mt-1.5 max-h-80 overflow-auto rounded border border-slate-200 bg-white">
               <table className="w-full min-w-[1120px] text-left">
-                <thead className="bg-slate-50 text-[9px] uppercase text-slate-500">
+                <thead className="text-[9px] uppercase text-slate-500">
                   <tr>
-                    <th className="sticky left-0 z-10 border-r border-slate-200 bg-slate-50 px-2 py-1">Rank</th>
-                    <th className="sticky left-12 z-10 border-r border-slate-200 bg-slate-50 px-2 py-1">Model + Threshold Combo</th>
+                    <th className="sticky left-0 top-0 z-30 w-12 min-w-12 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Rank</th>
+                    <th className="sticky left-12 top-0 z-30 min-w-64 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Model + Threshold Combo</th>
                     {forwardColumns.map((label) => (
-                      <th key={label} className="px-2 py-1">{label}</th>
+                      <th key={label} className="sticky top-0 z-20 bg-slate-50 px-2 py-1">{label}</th>
                     ))}
-                    <th className="px-2 py-1">Composite Score</th>
-                    <th className="px-2 py-1">Samples</th>
-                    <th className="px-2 py-1">Status</th>
+                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Composite Score</th>
+                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Samples</th>
+                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {leaderboardRows.map((name, index) => (
                     <tr key={name} className="border-t border-slate-100">
-                      <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-2 py-1.5 font-bold text-slate-900">
+                      <td className="sticky left-0 z-10 w-12 min-w-12 border-r border-slate-200 bg-white px-2 py-1.5 font-bold text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">
                         #{index + 1}
                       </td>
-                      <td className="sticky left-12 z-10 min-w-64 border-r border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-900">
+                      <td className="sticky left-12 z-10 min-w-64 border-r border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">
                         {name}
                       </td>
                       {forwardColumns.map((label) => (
@@ -1344,7 +1346,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.8.5.3
+                AlphaScout Capital Flow System V1.8.6
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
@@ -1481,8 +1483,10 @@ export function Dashboard({
                     const stickyClass =
                       header === "Rank"
                         ? `${stickyHeaderClass} left-0 w-12 min-w-12 border-r shadow-[2px_0_3px_rgba(15,23,42,0.05)]`
+                        : header === "Chg"
+                          ? `${stickyHeaderClass} left-12 w-10 min-w-10 border-r shadow-[2px_0_3px_rgba(15,23,42,0.05)]`
                         : header === "Ticker"
-                          ? `${stickyHeaderClass} left-12 w-20 min-w-20 border-r shadow-[2px_0_3px_rgba(15,23,42,0.05)]`
+                          ? `${stickyHeaderClass} left-[5.5rem] w-20 min-w-20 border-r shadow-[2px_0_3px_rgba(15,23,42,0.05)]`
                           : normalHeaderClass;
 
                     return (
