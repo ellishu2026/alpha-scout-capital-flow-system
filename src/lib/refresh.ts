@@ -16,6 +16,7 @@ import {
   TOP_CANDIDATE_LIMIT,
   type RefreshTimeoutGuard,
 } from "@/lib/liveMarketData";
+import { FIXED_WATCHLIST_SYMBOLS } from "@/lib/marketUniverse";
 import {
   getPolygonLiveEnabled,
   getProviderBudgetSummary,
@@ -145,6 +146,97 @@ function annotateCoverageBuckets({
         marketTickers,
       }),
     })),
+  };
+}
+
+function movementSummaryForItems(items: StockCandidate[]) {
+  return items.reduce(
+    (summary, candidate) => {
+      if (candidate.changeType === "NEW") summary.newCount += 1;
+      if (candidate.changeType === "UP") summary.upCount += 1;
+      if (candidate.changeType === "DOWN") summary.downCount += 1;
+      if (candidate.changeType === "SAME") summary.sameCount += 1;
+
+      return summary;
+    },
+    {
+      newCount: 0,
+      upCount: 0,
+      downCount: 0,
+      sameCount: 0,
+    },
+  );
+}
+
+function withoutStaleFixedMembership(candidate: StockCandidate, fixedTickers: Set<string>) {
+  if (fixedTickers.has(candidate.ticker.toUpperCase())) {
+    return candidate;
+  }
+
+  return {
+    ...candidate,
+    sourceBucket:
+      candidate.sourceBucket === "FIXED_WATCHLIST" || candidate.sourceBucket === "BOTH"
+        ? ("MARKET_SCAN_TOP15" as const)
+        : candidate.sourceBucket,
+    universeSourceBucket:
+      candidate.universeSourceBucket === "FIXED_WATCHLIST"
+        ? ("OUTSIDE_V1_7_9_POOLS" as const)
+        : candidate.universeSourceBucket,
+    universeSourceBuckets: candidate.universeSourceBuckets?.filter(
+      (bucket) => bucket !== "FIXED_WATCHLIST",
+    ),
+  };
+}
+
+function normalizeSavedMarketSnapshotFixedMembership(snapshot: SnapshotResponse) {
+  const fixedTickers = new Set<string>(FIXED_WATCHLIST_SYMBOLS);
+
+  return {
+    ...snapshot,
+    items: snapshot.items.map((candidate) =>
+      withoutStaleFixedMembership(candidate, fixedTickers),
+    ),
+  };
+}
+
+function normalizeFixedWatchlistSnapshot(
+  snapshot: SnapshotResponse,
+  marketSnapshot?: SnapshotResponse | null,
+) {
+  const currentFixedTickers = new Set<string>(FIXED_WATCHLIST_SYMBOLS);
+  const marketTickers = new Set(
+    marketSnapshot?.items.map((candidate) => candidate.ticker.toUpperCase()) ?? [],
+  );
+  const byTicker = new Map(
+    snapshot.items.map((candidate) => [candidate.ticker.toUpperCase(), candidate]),
+  );
+  const items = FIXED_WATCHLIST_SYMBOLS
+    .map((ticker, index): StockCandidate | null => {
+      const candidate = byTicker.get(ticker);
+      if (!candidate) return null;
+
+      return {
+        ...candidate,
+        rank: index + 1,
+        sourceBucket: coverageBucketForTicker({
+          ticker,
+          fixedTickers: currentFixedTickers,
+          marketTickers,
+        }),
+        universeSourceBucket: "FIXED_WATCHLIST" as const,
+        universeSourceBuckets: ["FIXED_WATCHLIST" as const],
+      };
+    })
+    .filter((candidate): candidate is StockCandidate => candidate != null);
+
+  return {
+    ...snapshot,
+    count: items.length,
+    scannedCount: FIXED_WATCHLIST_SYMBOLS.length,
+    candidateCount: items.length,
+    items,
+    movementSummary: movementSummaryForItems(items),
   };
 }
 
@@ -422,7 +514,7 @@ export async function buildLatestSnapshot(): Promise<SnapshotResponse> {
 
     if (savedSnapshot) {
       return {
-        ...savedSnapshot,
+        ...normalizeSavedMarketSnapshotFixedMembership(savedSnapshot),
         persistenceStatus: "SAVED",
       };
     }
@@ -463,7 +555,7 @@ async function buildFixedSnapshotForLatest() {
 
     if (savedSnapshot) {
       return {
-        ...savedSnapshot,
+        ...normalizeFixedWatchlistSnapshot(savedSnapshot),
         persistenceStatus: "SAVED" as const,
       };
     }
@@ -490,20 +582,24 @@ export async function buildLatestSnapshotWithFixed(): Promise<SnapshotResponse> 
     buildLatestSnapshot(),
     buildFixedSnapshotForLatest(),
   ]);
+  const normalizedSnapshot = normalizeSavedMarketSnapshotFixedMembership(snapshot);
+  const normalizedFixedSnapshot = fixedSnapshot
+    ? normalizeFixedWatchlistSnapshot(fixedSnapshot, normalizedSnapshot)
+    : undefined;
 
-  if (!fixedSnapshot) {
+  if (!normalizedFixedSnapshot) {
     return applyEstimatedFlowProxyDisplayToSnapshot({
-      ...snapshot,
-      items: applyFlowDataQualityMetadataToItems(snapshot.items),
+      ...normalizedSnapshot,
+      items: applyFlowDataQualityMetadataToItems(normalizedSnapshot.items),
     });
   }
 
   return applyEstimatedFlowProxyDisplayToSnapshot({
-    ...snapshot,
-    items: applyFlowDataQualityMetadataToItems(snapshot.items),
+    ...normalizedSnapshot,
+    items: applyFlowDataQualityMetadataToItems(normalizedSnapshot.items),
     fixedSnapshot: {
-      ...fixedSnapshot,
-      items: applyFlowDataQualityMetadataToItems(fixedSnapshot.items),
+      ...normalizedFixedSnapshot,
+      items: applyFlowDataQualityMetadataToItems(normalizedFixedSnapshot.items),
     },
   });
 }

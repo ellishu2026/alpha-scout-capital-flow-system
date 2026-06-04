@@ -49,6 +49,7 @@
 - V1.9.0 Flow Data Quality Upgrade
 - V1.9.1 Flow Proxy Sanity Refresh / Est.Flow Only
 - V1.9.1.1 Fixed Watchlist Refresh
+- V1.9.1.2 Fixed Watchlist Page Mapping Fix
 
 ## Next Recommended Steps
 
@@ -318,3 +319,9 @@ Scope remains capped at the current Top 11 ranked candidates plus Fixed Watchlis
 V1.9.1.1 removes `AMD` and `VRT` from the Fixed Watchlist only. The fixed watchlist order is now `SOXL`, `SMH`, `NVDA`, `MSFT`, `GOOGL`, `ORCL`, `RKLB`, `LLY`, and `IONQ`.
 
 This is a composition update only. Est.Flow logic, Enhanced OHLCV Proxy logic, Entry / Position action rules, scoring, threshold simulation, rule promotion, A/B comparison, win-rate logic, forward returns, Risk Gate behavior, provider ladder, and universe scan rules are unchanged.
+
+## Fixed Watchlist Page Mapping Fix
+
+V1.9.1.2 fixes stale Fixed List membership on the page and API by recalculating saved snapshot Fixed Watchlist membership from the current source of truth. The effective Fixed Watchlist remains `SOXL`, `SMH`, `NVDA`, `MSFT`, `GOOGL`, `ORCL`, `RKLB`, `LLY`, and `IONQ`; `AMD` and `VRT` are no longer counted or labeled as Fixed List members.
+
+This is a mapping fix only. It does not remove `AMD` or `VRT` from other organic universe pools, and it does not change Est.Flow, Enhanced OHLCV Proxy, scoring, Entry / Position actions, provider logic, or production thresholds.
