@@ -44,6 +44,7 @@
 - V1.8.6 Sticky Header & Sticky Columns
 - V1.8.7 Real Buy/Sell Flow Source Audit & Proxy Calibration
 - V1.8.8 Enhanced Flow Proxy Calibration
+- V1.8.8.1 Enhanced Flow Calibration OHLCV Source Fix
 
 ## Next Recommended Steps
 
@@ -118,6 +119,7 @@ Updated roadmap:
 - V1.8.6 Sticky Header & Sticky Columns
 - V1.8.7 Real Buy/Sell Flow Source Audit & Proxy Calibration
 - V1.8.8 Enhanced Flow Proxy Calibration
+- V1.8.8.1 Enhanced Flow Calibration OHLCV Source Fix
 
 ## Universe Metadata Cleanup
 
@@ -264,3 +266,13 @@ Rows include component breakdowns, clipped/raw values, direction confidence, com
 Scope remains strictly limited to the current Top 11 ranked candidates plus Fixed Watchlist 11, with a hard maximum of 26 unique tickers. The endpoint reads persisted snapshots only, performs no live provider calls, and does not calculate enhanced calibration for the full universe.
 
 Production flow, scoring, Entry / Position action rules, production thresholds, provider ladder behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, environment variables, and real trading behavior are unchanged.
+
+## Enhanced Flow Calibration OHLCV Source Fix
+
+V1.8.8.1 fixes the V1.8.8 calibration issue where V188 components returned null because raw OHLCV inputs were not available in the endpoint row context. The calibration endpoint now reads OHLCV from embedded snapshot flow rows when present and falls back to existing archived OHLCV payloads.
+
+Rows now report whether OHLCV input is available, the OHLCV source, rows used, missing fields, latest OHLCV values, previous close, and a clear unavailable reason when V188 cannot be computed.
+
+The fix keeps production flow unchanged and remains scoped to the current Top 11 ranked candidates plus Fixed Watchlist 11, max 26 unique tickers. It performs no full-universe calculation and no live provider calls.
+
+This release does not change production thresholds, scoring, Entry / Position actions, provider ladder behavior, universe scan logic, Fixed Watchlist membership, Supabase schema, environment variables, or real trading behavior.

@@ -1,12 +1,13 @@
 import "server-only";
 
-import type { DailyFlowDetail } from "@/lib/capitalFlow";
+import type { DailyFlowDetail, OhlcvCandle } from "@/lib/capitalFlow";
+import { getArchivedMarketDataForTicker } from "@/lib/marketDataProviders";
 import { getLatestSnapshot } from "@/lib/snapshotStore";
 import type { SnapshotResponse, StockCandidate } from "@/types/stock";
 
 const MAX_FLOW_CALIBRATION_TICKERS = 26;
 const TOP_RANKED_LIMIT = 11;
-const ALGORITHM_VERSION = "V1.8.8_ENHANCED_FLOW_PROXY";
+const ALGORITHM_VERSION = "V1.8.8.1_ENHANCED_FLOW_PROXY_OHLCV_SOURCE_FIX";
 
 const FIXED_WATCHLIST = [
   "SOXL",
@@ -60,6 +61,12 @@ type BuildEnhancedFlowCalibrationOptions = {
   limit?: number;
 };
 
+type OhlcvInput = {
+  rows: DailyFlowDetail[];
+  source: string | null;
+  archiveHit: boolean;
+};
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
@@ -92,12 +99,144 @@ function getRecentDailyFlow(candidate: CalibrationCandidate) {
   );
 }
 
+function toDailyFlowDetails(candles: OhlcvCandle[]) {
+  return candles
+    .filter(
+      (candle) =>
+        candle.date instanceof Date &&
+        Number.isFinite(candle.date.getTime()) &&
+        isFiniteNumber(candle.open) &&
+        isFiniteNumber(candle.high) &&
+        isFiniteNumber(candle.low) &&
+        isFiniteNumber(candle.close) &&
+        isFiniteNumber(candle.volume),
+    )
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map<DailyFlowDetail>((candle, index, rows) => {
+      const previous = rows[index - 1] ?? null;
+      const previousClose = previous?.close ?? null;
+      const dollarVolumeValue = candle.close! * candle.volume!;
+      const range = candle.high! - candle.low!;
+      const closeLocation = range === 0
+        ? 0
+        : clamp(((candle.close! - candle.low!) / range - 0.5) * 2, -1, 1);
+      const dailyReturn =
+        isFiniteNumber(previousClose) && previousClose !== 0
+          ? (candle.close! - previousClose) / previousClose
+          : 0;
+      const typical = (candle.high! + candle.low! + candle.close!) / 3;
+      const previousTypical =
+        previous &&
+        isFiniteNumber(previous.high) &&
+        isFiniteNumber(previous.low) &&
+        isFiniteNumber(previous.close)
+          ? (previous.high + previous.low + previous.close) / 3
+          : null;
+      const typicalMove =
+        isFiniteNumber(previousTypical) && previousTypical !== 0
+          ? (typical - previousTypical) / previousTypical
+          : 0;
+
+      return {
+        date: candle.date.toISOString().slice(0, 10),
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close,
+        volume: candle.volume,
+        moneyFlowMultiplier: closeLocation,
+        dailyFlowDollar: dollarVolumeValue * closeLocation,
+        chaikinDailyFlowDollar: dollarVolumeValue * closeLocation,
+        priceChangeWeightedFlow: dollarVolumeValue * clamp(dailyReturn, -0.08, 0.08),
+        mfiLikeFlow:
+          Math.sign(typicalMove) * dollarVolumeValue * Math.abs(clamp(typicalMove, -0.08, 0.08)),
+        obvDirectionalFlow: Math.sign(dailyReturn) * dollarVolumeValue * 0.15,
+      };
+    });
+}
+
+async function resolveOhlcvInput(candidate: CalibrationCandidate): Promise<OhlcvInput> {
+  const snapshotRows = getRecentDailyFlow(candidate).filter(
+    (row) =>
+      isFiniteNumber(row.open) &&
+      isFiniteNumber(row.high) &&
+      isFiniteNumber(row.low) &&
+      isFiniteNumber(row.close) &&
+      isFiniteNumber(row.volume),
+  );
+
+  if (snapshotRows.length >= 2) {
+    return {
+      rows: snapshotRows,
+      source: "SNAPSHOT_RECENT_DAILY_FLOW",
+      archiveHit: false,
+    };
+  }
+
+  const archived = await getArchivedMarketDataForTicker(candidate.ticker.toUpperCase());
+
+  if (archived?.candles.length) {
+    return {
+      rows: toDailyFlowDetails(archived.candles),
+      source: `${archived.provider}_ARCHIVE`,
+      archiveHit: true,
+    };
+  }
+
+  return {
+    rows: snapshotRows,
+    source: snapshotRows.length > 0 ? "SNAPSHOT_RECENT_DAILY_FLOW_PARTIAL" : null,
+    archiveHit: false,
+  };
+}
+
 function latestDailyFlow(candidate: CalibrationCandidate) {
   return getRecentDailyFlow(candidate).at(-1) ?? null;
 }
 
 function previousDailyFlow(candidate: CalibrationCandidate) {
   return getRecentDailyFlow(candidate).at(-2) ?? null;
+}
+
+function averageDollarVolume(rows: DailyFlowDetail[]) {
+  const values = rows
+    .slice(-20)
+    .map((row) => dollarVolume(row))
+    .filter(isFiniteNumber);
+
+  if (values.length === 0) return null;
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function missingOhlcvFields(rows: DailyFlowDetail[]) {
+  const latest = rows.at(-1) ?? null;
+  const previous = rows.at(-2) ?? null;
+  const missing: string[] = [];
+
+  if (!latest) {
+    return [
+      "latestOpen",
+      "latestHigh",
+      "latestLow",
+      "latestClose",
+      "latestVolume",
+      "previousClose",
+      "previousTypicalPrice",
+    ];
+  }
+
+  if (!isFiniteNumber(latest.open)) missing.push("latestOpen");
+  if (!isFiniteNumber(latest.high)) missing.push("latestHigh");
+  if (!isFiniteNumber(latest.low)) missing.push("latestLow");
+  if (!isFiniteNumber(latest.close)) missing.push("latestClose");
+  if (!isFiniteNumber(latest.volume)) missing.push("latestVolume");
+  if (!isFiniteNumber(previous?.close)) missing.push("previousClose");
+
+  const previousTypical = typicalPrice(previous);
+  if (!isFiniteNumber(previousTypical)) missing.push("previousTypicalPrice");
+
+  return missing;
 }
 
 function dollarVolume(row: DailyFlowDetail | null) {
@@ -300,13 +439,11 @@ function calculateV188EnhancedProxy(candidate: CalibrationCandidate) {
       latest.chaikinDailyFlowDollar ?? latest.dailyFlowDollar ?? candidate.chaikinDailyFlowLatest ?? null,
     priceChangeWeightedComponent:
       isFiniteNumber(latestDollarVolume) && isFiniteNumber(clippedDailyReturn)
-        ? latestDollarVolume * (clippedDailyReturn / 0.08)
+        ? latestDollarVolume * clippedDailyReturn
         : null,
     mfiLikeComponent:
       isFiniteNumber(latestDollarVolume) && isFiniteNumber(clippedTypicalMove)
-        ? Math.sign(clippedTypicalMove) *
-          latestDollarVolume *
-          clamp(Math.abs(clippedTypicalMove) / 0.04, 0, 1)
+        ? Math.sign(clippedTypicalMove) * latestDollarVolume * Math.abs(clippedTypicalMove)
         : null,
     obvDirectionalComponent:
       isFiniteNumber(latestDollarVolume) && isFiniteNumber(dailyReturn)
@@ -318,7 +455,7 @@ function calculateV188EnhancedProxy(candidate: CalibrationCandidate) {
         : null,
     gapAdjustedComponent:
       isFiniteNumber(latestDollarVolume) && isFiniteNumber(gapAdjustedReturn)
-        ? latestDollarVolume * (gapAdjustedReturn / 0.08)
+        ? latestDollarVolume * gapAdjustedReturn
         : null,
   };
 
@@ -376,18 +513,13 @@ function calculateV188EnhancedProxy(candidate: CalibrationCandidate) {
       ? round((dominantCount / componentDirections.length) * 100, 2)
       : null;
   const directionConflictFlag = positiveComponentCount > 0 && negativeComponentCount > 0;
-  const meaningfulMagnitude =
-    isFiniteNumber(enhancedProxyFlow1D_V188) &&
-    isFiniteNumber(componentClipMagnitude) &&
-    Math.abs(enhancedProxyFlow1D_V188) >= componentClipMagnitude * 0.05;
   const flowConfidence: Confidence =
     isFiniteNumber(componentAgreementPct) &&
-    componentAgreementPct >= 70 &&
-    meaningfulMagnitude &&
+    componentAgreementPct >= 80 &&
     availableComponents.length >= 4
       ? "High"
       : isFiniteNumber(componentAgreementPct) &&
-          componentAgreementPct >= 55 &&
+          componentAgreementPct >= 60 &&
           availableComponents.length >= 3
         ? "Medium"
         : "Low";
@@ -448,20 +580,32 @@ function dedupeCandidates(...snapshots: Array<SnapshotResponse | null>) {
   return byTicker;
 }
 
-function buildCalibrationRow(
+async function buildCalibrationRow(
   candidate: CalibrationCandidate,
   topRankedTickers: Set<string>,
   fixedWatchlistTickers: Set<string>,
 ) {
   const ticker = candidate.ticker.toUpperCase();
-  const latest = latestDailyFlow(candidate);
-  const legacyProxyFlow1D = getLegacyProxyFlow1D(candidate, latest);
-  const enhancedProxyFlow1D_V187 = calculateV187EnhancedProxy(candidate);
-  const enhanced = calculateV188EnhancedProxy(candidate);
+  const ohlcvInput = await resolveOhlcvInput(candidate);
+  const resolvedAvgDollarVolume20D =
+    candidate.avgDollarVolume20D ?? averageDollarVolume(ohlcvInput.rows);
+  const candidateWithOhlcv = {
+    ...candidate,
+    avgDollarVolume20D: resolvedAvgDollarVolume20D,
+    recentDailyFlow: ohlcvInput.rows,
+  };
+  const latest = latestDailyFlow(candidateWithOhlcv);
+  const previous = previousDailyFlow(candidateWithOhlcv);
+  const ohlcvMissingFields = missingOhlcvFields(ohlcvInput.rows);
+  const ohlcvInputAvailable = ohlcvMissingFields.length === 0;
+  const legacyProxyFlow1D = getLegacyProxyFlow1D(candidateWithOhlcv, latest);
+  const enhancedProxyFlow1D_V187 = calculateV187EnhancedProxy(candidateWithOhlcv);
+  const enhanced = calculateV188EnhancedProxy(candidateWithOhlcv);
   const enhancedProxyFlow1D_V188 = enhanced.enhancedProxyFlow1D_V188;
   const legacyProxyDirection = direction(legacyProxyFlow1D);
   const enhancedProxyDirection_V187 = direction(enhancedProxyFlow1D_V187);
   const enhancedProxyDirection_V188 = direction(enhancedProxyFlow1D_V188);
+  const previousTypicalPrice = typicalPrice(previous);
 
   return {
     ticker,
@@ -484,6 +628,21 @@ function buildCalibrationRow(
       enhancedProxyDirection_V187 !== "Unknown" &&
       enhancedProxyDirection_V188 !== "Unknown" &&
       enhancedProxyDirection_V187 !== enhancedProxyDirection_V188,
+    ohlcvInputAvailable,
+    ohlcvSource: ohlcvInput.source,
+    ohlcvRowsUsed: ohlcvInput.rows.length,
+    ohlcvMissingFields,
+    v188UnavailableReason:
+      ohlcvInputAvailable && isFiniteNumber(enhancedProxyFlow1D_V188)
+        ? null
+        : "Missing raw OHLCV history required for component calculation.",
+    latestOpen: latest?.open ?? null,
+    latestHigh: latest?.high ?? null,
+    latestLow: latest?.low ?? null,
+    latestClose: latest?.close ?? null,
+    latestVolume: latest?.volume ?? null,
+    previousClose: previous?.close ?? null,
+    previousTypicalPrice,
     components: {
       chaikinComponent: enhanced.components.chaikinComponent.clipped,
       priceChangeWeightedComponent: enhanced.components.priceChangeWeightedComponent.clipped,
@@ -517,10 +676,11 @@ function buildCalibrationRow(
     wasClipped: enhanced.wasClipped,
     clippingReason: enhanced.clippingReason,
     maxAllowedMagnitude: enhanced.maxAllowedMagnitude,
-    avgDollarVolume20D: candidate.avgDollarVolume20D ?? null,
+    avgDollarVolume20D: resolvedAvgDollarVolume20D,
     marketCap: candidate.marketCap ?? null,
     latestDollarVolume: enhanced.latestDollarVolume,
     latestFlowDate: enhanced.latest?.date ?? null,
+    archiveHit: ohlcvInput.archiveHit,
     calibrationStatus: "RESEARCH_ONLY_NOT_PRODUCTION",
   };
 }
@@ -532,9 +692,15 @@ function average(values: Array<number | null>) {
   return finiteValues.reduce((sum, value) => sum + value, 0) / finiteValues.length;
 }
 
-function summarizeRows(rows: ReturnType<typeof buildCalibrationRow>[]) {
+type CalibrationRow = Awaited<ReturnType<typeof buildCalibrationRow>>;
+
+function summarizeRows(rows: CalibrationRow[]) {
   return {
     rowCount: rows.length,
+    v188ComputedCount: rows.filter((row) => isFiniteNumber(row.enhancedProxyFlow1D_V188)).length,
+    v188UnavailableCount: rows.filter((row) => !isFiniteNumber(row.enhancedProxyFlow1D_V188)).length,
+    ohlcvAvailableCount: rows.filter((row) => row.ohlcvInputAvailable).length,
+    ohlcvMissingCount: rows.filter((row) => !row.ohlcvInputAvailable).length,
     positiveCount: rows.filter((row) => row.enhancedProxyDirection_V188 === "Positive").length,
     negativeCount: rows.filter((row) => row.enhancedProxyDirection_V188 === "Negative").length,
     neutralCount: rows.filter((row) => row.enhancedProxyDirection_V188 === "Neutral").length,
@@ -571,12 +737,15 @@ export async function buildEnhancedFlowCalibrationReport(
   fixedItems.forEach((item) => orderedTickerSet.add(item.ticker.toUpperCase()));
 
   const flowCalibrationTickerSet = Array.from(orderedTickerSet).slice(0, limit);
-  const rows = flowCalibrationTickerSet
-    .map((ticker) => candidateByTicker.get(ticker))
-    .filter((candidate): candidate is CalibrationCandidate => candidate != null)
-    .map((candidate) =>
-      buildCalibrationRow(candidate, topRankedTickers, fixedWatchlistTickers),
-    );
+  const rows = await Promise.all(
+    flowCalibrationTickerSet
+      .map((ticker) => candidateByTicker.get(ticker))
+      .filter((candidate): candidate is CalibrationCandidate => candidate != null)
+      .map((candidate) =>
+        buildCalibrationRow(candidate, topRankedTickers, fixedWatchlistTickers),
+      ),
+  );
+  const archiveHitCount = rows.filter((row) => row.archiveHit).length;
 
   return {
     ok: true,
@@ -593,7 +762,15 @@ export async function buildEnhancedFlowCalibrationReport(
       fullUniverseCalibrationAllowed: false,
       liveProviderCallCount: 0,
       notes:
-        "V1.8.8 reads latest persisted snapshots only and does not compute enhanced calibration for the full universe.",
+        "V1.8.8.1 reads latest persisted snapshots and existing archived OHLCV only; it does not compute enhanced calibration for the full universe.",
+    },
+    calibrationQuotaGuard: {
+      enabled: true,
+      maxFlowCalibrationTickers: MAX_FLOW_CALIBRATION_TICKERS,
+      fullUniverseCalculationAllowed: false,
+      liveProviderCallCount: 0,
+      archiveHitCount,
+      providerQuotaExhausted: false,
     },
     algorithmVersion: ALGORITHM_VERSION,
     componentWeights: COMPONENT_WEIGHTS,

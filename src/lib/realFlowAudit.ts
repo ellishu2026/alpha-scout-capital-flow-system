@@ -518,7 +518,7 @@ export async function buildRealFlowAuditReport(options: BuildRealFlowAuditOption
     ],
     enhancedFlowCalibrationAvailable: true,
     enhancedFlowCalibrationEndpoint: "/api/debug/enhanced-flow-calibration?limit=26",
-    enhancedAlgorithmVersion: "V1.8.8_ENHANCED_FLOW_PROXY",
+    enhancedAlgorithmVersion: "V1.8.8.1_ENHANCED_FLOW_PROXY_OHLCV_SOURCE_FIX",
     productionFlowChanged: false,
   };
 }

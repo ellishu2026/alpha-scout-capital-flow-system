@@ -13,7 +13,7 @@ import {
 } from "@/lib/providerUsageLimit";
 import { getSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
-type ProviderName = "POLYGON" | "ALPHA_VANTAGE" | "TWELVE_DATA" | "EODHD";
+export type ProviderName = "POLYGON" | "ALPHA_VANTAGE" | "TWELVE_DATA" | "EODHD";
 
 export const POLYGON_LIVE_ENABLED =
   process.env.POLYGON_LIVE_ENABLED === "true";
@@ -257,6 +257,39 @@ async function getArchivedMarketData({
   }
 
   return parseArchivePayload(data.payload, provider);
+}
+
+export async function getArchivedMarketDataForTicker(ticker: string): Promise<
+  | {
+      provider: ProviderName;
+      candles: OhlcvCandle[];
+      summary: ProviderPayloadSummary;
+    }
+  | null
+> {
+  const archiveProviderChecked: ProviderName[] = [
+    "POLYGON",
+    "ALPHA_VANTAGE",
+    "TWELVE_DATA",
+    "EODHD",
+  ];
+
+  for (const provider of archiveProviderChecked) {
+    const archived = await getArchivedMarketData({
+      ticker,
+      provider,
+    });
+
+    if (archived) {
+      return {
+        provider,
+        candles: archived.candles,
+        summary: archived.summary,
+      };
+    }
+  }
+
+  return null;
 }
 
 async function fetchAlphaVantageCandles(symbol: string): Promise<{
