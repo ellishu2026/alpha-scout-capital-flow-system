@@ -328,81 +328,154 @@ async function buildOverlayMap(tickers: string[]) {
 
 function applyOverlayToItem(candidate: StockCandidate, overlay?: EstimatedFlowOverlay) {
   if (!overlay) return candidate;
-  const requiredDisplayNumber = (value: number | null) =>
-    isFiniteNumber(value) ? value : Number.NaN;
+  const fallbackProvider =
+    candidate.providerUsed ??
+    candidate.flowWindowProviderUsed ??
+    candidate.capitalFlowDataSource ??
+    candidate.estimatedFlowProxySource ??
+    "UNKNOWN";
+  const fallbackSource =
+    String(fallbackProvider).includes("ARCHIVE") || candidate.archiveStatus === "ARCHIVE_HIT"
+      ? "Archive Proxy"
+      : candidate.flowDataTier === "ENHANCED_OHLCV_PROXY" ||
+          candidate.flowDataTierLabel === "Enhanced OHLCV Proxy" ||
+          candidate.proxyMethod === ESTIMATED_FLOW_PROXY_METHOD
+        ? "Enhanced OHLCV Proxy"
+        : fallbackProvider === "UNKNOWN"
+          ? "Unavailable"
+          : String(fallbackProvider);
+  const hasMoomooDirectFlow =
+    overlay.flowDataTier === MOOMOO_FLOW_TIER && isFiniteNumber(overlay.directNetFlow);
+  const useProxyOverlay = overlay.estimatedFlowProxyAvailable && !hasMoomooDirectFlow;
+  const flow1DSource = hasMoomooDirectFlow
+    ? "Moomoo Direct Flow"
+    : useProxyOverlay
+      ? overlay.flow1DSource
+      : fallbackSource;
+  const optionalFlow = (
+    overlayValue: number | null,
+    candidateValue: number | null | undefined,
+  ) => (useProxyOverlay && isFiniteNumber(overlayValue) ? overlayValue : candidateValue);
+  const requiredFlow = (overlayValue: number | null, candidateValue: number) =>
+    useProxyOverlay && isFiniteNumber(overlayValue) ? overlayValue : candidateValue;
 
   return {
     ...candidate,
-    capitalFlow1D: overlay.capitalFlow1D,
-    capitalFlow3D: requiredDisplayNumber(overlay.capitalFlow3D),
-    capitalFlow5D: requiredDisplayNumber(overlay.capitalFlow5D),
-    capitalFlow10D: overlay.capitalFlow10D,
-    capitalFlow20D: overlay.capitalFlow20D,
-    capitalFlow5W: requiredDisplayNumber(overlay.capitalFlow5W),
-    capitalFlow6W: overlay.capitalFlow6W,
-    capitalFlow9W: overlay.capitalFlow9W,
-    capitalFlow12W: overlay.capitalFlow12W,
-    flowDataTier: overlay.flowDataTier ?? ("ENHANCED_OHLCV_PROXY" as const),
-    flowDataTierLabel: overlay.flowDataTierLabel ?? "Enhanced OHLCV Proxy",
-    flowDataQualityScore: overlay.flowDataQualityScore ?? 45,
+    capitalFlow1D: hasMoomooDirectFlow
+      ? overlay.directNetFlow
+      : optionalFlow(overlay.capitalFlow1D, candidate.capitalFlow1D),
+    capitalFlow3D: requiredFlow(overlay.capitalFlow3D, candidate.capitalFlow3D),
+    capitalFlow5D: requiredFlow(overlay.capitalFlow5D, candidate.capitalFlow5D),
+    capitalFlow10D: optionalFlow(overlay.capitalFlow10D, candidate.capitalFlow10D),
+    capitalFlow20D: optionalFlow(overlay.capitalFlow20D, candidate.capitalFlow20D),
+    capitalFlow5W: requiredFlow(overlay.capitalFlow5W, candidate.capitalFlow5W),
+    capitalFlow6W: optionalFlow(overlay.capitalFlow6W, candidate.capitalFlow6W),
+    capitalFlow9W: optionalFlow(overlay.capitalFlow9W, candidate.capitalFlow9W),
+    capitalFlow12W: optionalFlow(overlay.capitalFlow12W, candidate.capitalFlow12W),
+    flowDataTier: hasMoomooDirectFlow
+      ? MOOMOO_FLOW_TIER
+      : useProxyOverlay
+        ? ("ENHANCED_OHLCV_PROXY" as const)
+        : candidate.flowDataTier,
+    flowDataTierLabel: hasMoomooDirectFlow
+      ? MOOMOO_FLOW_TIER_LABEL
+      : useProxyOverlay
+        ? "Enhanced OHLCV Proxy"
+        : candidate.flowDataTierLabel,
+    flowDataQualityScore: hasMoomooDirectFlow
+      ? MOOMOO_FLOW_QUALITY_SCORE
+      : useProxyOverlay
+        ? 45
+        : candidate.flowDataQualityScore,
     flowDataConfidence:
-      overlay.flowDataConfidence ??
-      (overlay.estimatedFlowProxyAvailable ? ("Medium" as const) : ("Low" as const)),
-    realFlowAvailable: overlay.realFlowAvailable ?? false,
-    realBuyAmount: overlay.directBuyAmount ?? null,
-    realSellAmount: overlay.directSellAmount ?? null,
-    realNetFlow: overlay.directNetFlow ?? null,
-    moomooFlowAvailable: Boolean(overlay.moomooFlow),
-    moomooBuyAmount: overlay.directBuyAmount ?? null,
-    moomooSellAmount: overlay.directSellAmount ?? null,
-    moomooNetFlow: overlay.directNetFlow ?? null,
+      hasMoomooDirectFlow
+        ? "High"
+        : useProxyOverlay
+          ? ("Medium" as const)
+          : candidate.flowDataConfidence,
+    realFlowAvailable: hasMoomooDirectFlow ? true : candidate.realFlowAvailable ?? false,
+    realBuyAmount: hasMoomooDirectFlow
+      ? overlay.directBuyAmount ?? null
+      : candidate.realBuyAmount ?? null,
+    realSellAmount: hasMoomooDirectFlow
+      ? overlay.directSellAmount ?? null
+      : candidate.realSellAmount ?? null,
+    realNetFlow: hasMoomooDirectFlow
+      ? overlay.directNetFlow ?? null
+      : candidate.realNetFlow ?? null,
+    moomooFlowAvailable: hasMoomooDirectFlow,
+    moomooBuyAmount: hasMoomooDirectFlow ? overlay.directBuyAmount ?? null : null,
+    moomooSellAmount: hasMoomooDirectFlow ? overlay.directSellAmount ?? null : null,
+    moomooNetFlow: hasMoomooDirectFlow ? overlay.directNetFlow ?? null : null,
     moomooFlowDate: overlay.moomooFlow?.flowDate ?? null,
     moomooFlowSource: overlay.estimatedFlowProxySource,
     moomooFlowArchiveHit: overlay.moomooFlow?.source === "ARCHIVE",
-    moomooFlowStatus: overlay.moomooFlow ? "AVAILABLE" : null,
-    flow1DSource: overlay.flow1DSource,
-    oneDayFlowSource: overlay.flow1DSource,
-    enhancedProxyAvailable:
-      overlay.flowDataTier === MOOMOO_FLOW_TIER ? true : overlay.estimatedFlowProxyAvailable,
+    moomooFlowStatus: hasMoomooDirectFlow ? "AVAILABLE" : "FALLBACK_PROXY",
+    flow1DSource,
+    oneDayFlowSource: flow1DSource,
+    fallbackProviderUsed: hasMoomooDirectFlow ? null : String(fallbackProvider),
+    enhancedProxyAvailable: hasMoomooDirectFlow
+      ? candidate.enhancedProxyAvailable ?? true
+      : useProxyOverlay
+        ? true
+        : candidate.enhancedProxyAvailable,
     enhancedProxyAlgorithmVersion:
-      overlay.flowDataTier === MOOMOO_FLOW_TIER
+      hasMoomooDirectFlow
         ? MOOMOO_FLOW_VERSION
-        : ESTIMATED_FLOW_PROXY_VERSION,
-    enhancedProxyFlow1D_V188: overlay.enhancedProxyFlow1D_V188,
-    enhancedProxyDirection_V188: overlay.enhancedProxyDirection_V188,
-    proxyMethod:
-      overlay.flowDataTier === MOOMOO_FLOW_TIER
-        ? MOOMOO_PROVIDER
-        : ESTIMATED_FLOW_PROXY_METHOD,
-    estimatedFlowProxyAvailable: overlay.estimatedFlowProxyAvailable,
-    estimatedFlowProxyStatus: overlay.estimatedFlowProxyStatus,
-    estimatedFlowProxyUnavailableReason: overlay.estimatedFlowProxyUnavailableReason,
-    estimatedFlowProxyRowsUsed: overlay.estimatedFlowProxyRowsUsed,
-    estimatedFlowProxySource: overlay.estimatedFlowProxySource,
-    estimatedFlowProxyUpdatedAt: overlay.estimatedFlowProxyUpdatedAt,
-    providerUsed: overlay.providerUsed ?? candidate.providerUsed,
+        : useProxyOverlay
+          ? ESTIMATED_FLOW_PROXY_VERSION
+          : candidate.enhancedProxyAlgorithmVersion,
+    enhancedProxyFlow1D_V188: useProxyOverlay
+      ? overlay.enhancedProxyFlow1D_V188
+      : candidate.enhancedProxyFlow1D_V188,
+    enhancedProxyDirection_V188: useProxyOverlay
+      ? overlay.enhancedProxyDirection_V188
+      : candidate.enhancedProxyDirection_V188,
+    proxyMethod: hasMoomooDirectFlow
+      ? MOOMOO_PROVIDER
+      : useProxyOverlay
+        ? ESTIMATED_FLOW_PROXY_METHOD
+        : candidate.proxyMethod,
+    estimatedFlowProxyAvailable: useProxyOverlay || candidate.estimatedFlowProxyAvailable,
+    estimatedFlowProxyStatus: useProxyOverlay
+      ? overlay.estimatedFlowProxyStatus
+      : candidate.estimatedFlowProxyStatus ?? overlay.estimatedFlowProxyStatus,
+    estimatedFlowProxyUnavailableReason: useProxyOverlay
+      ? overlay.estimatedFlowProxyUnavailableReason
+      : candidate.estimatedFlowProxyUnavailableReason ??
+        overlay.estimatedFlowProxyUnavailableReason,
+    estimatedFlowProxyRowsUsed: useProxyOverlay
+      ? overlay.estimatedFlowProxyRowsUsed
+      : candidate.estimatedFlowProxyRowsUsed,
+    estimatedFlowProxySource: useProxyOverlay
+      ? overlay.estimatedFlowProxySource
+      : candidate.estimatedFlowProxySource,
+    estimatedFlowProxyUpdatedAt: useProxyOverlay
+      ? overlay.estimatedFlowProxyUpdatedAt
+      : candidate.estimatedFlowProxyUpdatedAt,
+    providerUsed: hasMoomooDirectFlow ? overlay.providerUsed : candidate.providerUsed,
     capitalFlowDataSource:
-      overlay.flowDataTier === MOOMOO_FLOW_TIER
+      hasMoomooDirectFlow
         ? MOOMOO_PROVIDER
         : candidate.capitalFlowDataSource,
     capitalFlowQuality:
-      overlay.flowDataTier === MOOMOO_FLOW_TIER
+      hasMoomooDirectFlow
         ? ("REAL_PROVIDER" as const)
         : candidate.capitalFlowQuality,
     currentProductionFlowSource:
-      overlay.flowDataTier === MOOMOO_FLOW_TIER
+      hasMoomooDirectFlow
         ? MOOMOO_PROVIDER
         : candidate.currentProductionFlowSource,
     currentProductionFlowSourceClass:
-      overlay.flowDataTier === MOOMOO_FLOW_TIER
+      hasMoomooDirectFlow
         ? "DIRECT_CAPITAL_DISTRIBUTION"
         : candidate.currentProductionFlowSourceClass,
     recommendedFlowUpgradeSource:
-      overlay.flowDataTier === MOOMOO_FLOW_TIER
+      hasMoomooDirectFlow
         ? "Accumulate Moomoo Direct Capital Flow archive; evaluate Databento/Nasdaq/IEX for institutional-grade confirmation."
         : candidate.recommendedFlowUpgradeSource,
     recommendedFlowUpgradeReason:
-      overlay.flowDataTier === MOOMOO_FLOW_TIER
+      hasMoomooDirectFlow
         ? "Moomoo get_capital_distribution exposes direct capital-in and capital-out fields for scoped tickers without using trading APIs."
         : candidate.recommendedFlowUpgradeReason,
     productionFlowChanged: false,

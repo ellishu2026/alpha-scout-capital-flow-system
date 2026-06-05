@@ -319,6 +319,7 @@ export type StockCandidate = {
   moomooFlowStatus?: string | null;
   flow1DSource?: string | null;
   oneDayFlowSource?: string | null;
+  fallbackProviderUsed?: string | null;
   enhancedProxyAvailable?: boolean;
   enhancedProxyAlgorithmVersion?: string | null;
   enhancedProxyFlow1D_V188?: number | null;

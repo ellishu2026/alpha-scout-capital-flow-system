@@ -52,6 +52,7 @@
 - V1.9.1.2 Fixed Watchlist Page Mapping Fix
 - V1.9.2 Moomoo Direct Capital Flow Provider
 - V1.9.2.1 Moomoo Source Visibility & 1D Flow Binding Fix
+- V1.9.2.2 Moomoo Fallback Ladder Restore
 
 ## Next Recommended Steps
 
@@ -341,3 +342,9 @@ No trading API, order placement, account trading, position trading, production s
 V1.9.2.1 makes Moomoo visible in the Provider Quota / Source Status UI even when production cannot reach local OpenD. The diagnostics now show Moomoo status, source label, scoped request guard, and the fallback message: Moomoo Direct Flow unavailable; using Enhanced OHLCV Proxy fallback.
 
 The main Ranked Candidates 1D cell now explicitly prioritizes `moomooNetFlow` when `moomooFlowAvailable=true`; otherwise it uses the existing Enhanced OHLCV Proxy Est.Flow fallback and exposes `flow1DSource` / `oneDayFlowSource` metadata. Entry / Position actions, scoring, thresholds, provider ladder scope, fixed watchlist, and Risk Gate logic remain unchanged.
+
+## Moomoo Fallback Ladder Restore
+
+V1.9.2.2 restores the display fallback ladder so unavailable Moomoo data cannot overwrite existing archive/proxy flow windows with `N/A`. Moomoo remains the highest-priority display source only for valid 1D `moomooNetFlow`; all other windows, and all rows without Moomoo direct flow, continue using the existing Alpha Vantage / Polygon / Twelve Data / EODHD archive and Enhanced OHLCV Proxy values.
+
+Provider Quota / Status keeps the V1.9.2.1 Moomoo visibility. Row diagnostics expose `fallbackProviderUsed` and `flow1DSource` so proxy/archive fallback is explicit. Entry / Position actions, scoring, thresholds, Risk Gate behavior, universe scope, fixed watchlist, and provider quota limits are unchanged.
