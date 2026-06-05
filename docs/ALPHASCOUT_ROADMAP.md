@@ -56,6 +56,7 @@
 - V1.9.3 Moomoo Local Collector & Archive Ingest
 - V1.9.4 Dynamic Moomoo 20-Ticker Coverage & 4D Backfill Test
 - V1.9.5 Moomoo get_capital_flow Historical Backfill Experiment
+- V1.9.5.1 Flow Data Diagnostics Moomoo-First UI Fix
 
 ## Next Recommended Steps
 
@@ -375,3 +376,11 @@ V1.9.5 extends the local collector’s `--backfill-days 4` mode to call `get_cap
 Historical rows are explicitly marked with `calculationMethod=MOOMOO_GET_CAPITAL_FLOW_LAST_INTRADAY_ROW` and `buySellBreakdownAvailable=false` when buy/sell amounts are not exposed. Latest-day `get_capital_distribution` ingestion remains unchanged and keeps the direct buy/sell/net breakdown.
 
 The experiment is still capped to 20 dynamic tickers and four recent trading days, fails per ticker/date, and never expands to the full market. No trading context, order placement, account, position, scoring, Entry / Position action, threshold, Risk Gate, fixed watchlist, or ranked scoring logic changes are introduced.
+
+## Flow Data Diagnostics Moomoo-First UI Fix
+
+V1.9.5.1 updates Flow Data Diagnostics so Moomoo Direct Flow is shown as the first and highest-priority flow source in Provider Coverage, Provider Quota / Status, Source Lists, and the visible Flow Data Ladder explanation. Moomoo Direct Archive is distinguished from OHLCV / proxy archive coverage.
+
+Row-level 1D source tooltips now explicitly say `Moomoo Direct Flow from archived capital distribution data` when Moomoo is used, while proxy-based rows continue to say the value is estimated from the Enhanced OHLCV Proxy and is not real buy/sell net flow.
+
+This is a UI/diagnostics-only patch. It does not change collector logic, ingest/archive writes, historical backfill, Entry / Position actions, scoring, thresholds, Risk Gate behavior, fixed watchlist, universe selection, or trading functionality.

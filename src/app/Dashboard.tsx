@@ -81,6 +81,8 @@ const tickerStickyCellClass =
   "sticky left-[5.5rem] z-10 w-20 min-w-20 border-r border-slate-200 bg-white px-1.5 py-1.5 text-[11px] font-bold text-slate-950 shadow-[2px_0_3px_rgba(15,23,42,0.05)]";
 const estimatedFlowTooltip =
   "Estimated flow based on Enhanced OHLCV Proxy, not real buy/sell net flow.";
+const moomooDirectFlowTooltip =
+  "Moomoo Direct Flow from archived capital distribution data.";
 
 const MID_CAP_MIN = 50_000_000_000;
 const MID_CAP_MAX = 300_000_000_000;
@@ -311,6 +313,10 @@ function formatMaybeNumber(value: number | null | undefined, suffix = "") {
     : "N/A";
 }
 
+function uniqueTickers(items: StockCandidate[]) {
+  return Array.from(new Set(items.map((item) => item.ticker).filter(Boolean)));
+}
+
 function quotaLabel(
   used: number | null | undefined,
   remaining: number | null | undefined,
@@ -500,7 +506,7 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
         className={`${numericCell} ${toneForValue(flow1D)}`}
         title={`Window: 1D · Source: ${flow1DSource}. ${
           candidate.moomooFlowAvailable
-            ? "Direct capital distribution net flow."
+            ? moomooDirectFlowTooltip
             : estimatedFlowTooltip
         }`}
       >
@@ -926,6 +932,39 @@ function DiagnosticsSection({
   const universeCoverage = snapshot.universeCoverageSummary;
   const estimatedFlowSummary = snapshot.estimatedFlowProxyDisplaySummary;
   const moomooGuard = estimatedFlowSummary?.moomooQuotaGuard;
+  const allDiagnosticsItems = [
+    ...snapshot.items,
+    ...(snapshot.fixedSnapshot?.items ?? []),
+  ];
+  const scopedMoomooCount =
+    estimatedFlowSummary?.scopedTickerCount ??
+    moomooGuard?.scopedSymbolCount ??
+    uniqueTickers(allDiagnosticsItems).length;
+  const moomooDirectCount =
+    estimatedFlowSummary?.moomooDirectFlowAvailableCount ??
+    uniqueTickers(
+      allDiagnosticsItems.filter((item) => item.moomooFlowAvailable),
+    ).length;
+  const moomooArchiveCount =
+    estimatedFlowSummary?.moomooArchiveTickerCount ?? moomooDirectCount;
+  const moomooFallbackCount =
+    estimatedFlowSummary?.moomooFallbackCount ??
+    Math.max(scopedMoomooCount - moomooDirectCount, 0);
+  const moomooDirectPct =
+    scopedMoomooCount > 0
+      ? `${Math.round((moomooDirectCount / scopedMoomooCount) * 100)}%`
+      : "N/A";
+  const moomooDirectTickers = uniqueTickers(
+    allDiagnosticsItems.filter((item) => item.moomooFlowAvailable),
+  );
+  const moomooDateCoverage = estimatedFlowSummary?.moomooArchiveDateCoverage;
+  const moomooDateCoverageLabel =
+    moomooDateCoverage && Object.keys(moomooDateCoverage).length > 0
+      ? Object.entries(moomooDateCoverage)
+          .sort(([a], [b]) => b.localeCompare(a))
+          .map(([date, count]) => `${date}:${count}`)
+          .join(" · ")
+      : "N/A";
   const moomooUsedLabel = moomooGuard
     ? `Used ${moomooGuard.liveProviderCallCount} / Limit ${moomooGuard.maxSymbolsPerRun}`
     : "Used 0 / Limit 20";
@@ -1082,13 +1121,20 @@ function DiagnosticsSection({
         <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
           <p className="mb-1 font-semibold text-slate-800">Provider Coverage</p>
           <div className="grid grid-cols-2 gap-1.5">
+            <DiagnosticMetric label="Moomoo Direct %" value={moomooDirectPct} />
             <DiagnosticMetric
-              label="Real %"
+              label="Moomoo Direct Count"
+              value={`${moomooDirectCount} / ${scopedMoomooCount}`}
+            />
+            <DiagnosticMetric label="Moomoo Archive" value={moomooArchiveCount} />
+            <DiagnosticMetric label="Moomoo Fallback" value={moomooFallbackCount} />
+            <DiagnosticMetric
+              label="Legacy Real %"
               value={
                 coverage ? `${coverage.realProviderCoveragePct}%` : "N/A"
               }
             />
-            <DiagnosticMetric label="Real Count" value={coverage?.realProviderCoverageCount} />
+            <DiagnosticMetric label="Legacy Real Count" value={coverage?.realProviderCoverageCount} />
             <DiagnosticMetric
               label="Tickers"
               value={
@@ -1097,7 +1143,7 @@ function DiagnosticsSection({
                   : "N/A"
               }
             />
-            <DiagnosticMetric label="Archive" value={coverage?.archiveHitCount} />
+            <DiagnosticMetric label="OHLCV/Proxy Archive" value={coverage?.archiveHitCount} />
             <DiagnosticMetric label="AV Live" value={coverage?.alphaVantageLiveCount} />
             <DiagnosticMetric label="Twelve" value={coverage?.twelveDataLiveCount} />
             <DiagnosticMetric label="EODHD" value={coverage?.eodhdLiveCount} />
@@ -1132,6 +1178,13 @@ function DiagnosticsSection({
         <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
           <p className="mb-1 font-semibold text-slate-800">Provider Quota</p>
           <div className="grid grid-cols-2 gap-1.5">
+            <DiagnosticMetric label="Moomoo" value={moomooUsedLabel} />
+            <DiagnosticMetric label="Moomoo Status" value={moomooStatus} />
+            <DiagnosticMetric
+              label="Moomoo Source"
+              value={estimatedFlowSummary?.moomooProvider ?? "MOOMOO_CAPITAL_DISTRIBUTION"}
+            />
+            <DiagnosticMetric label="Moomoo Dates" value={moomooDateCoverageLabel} />
             <DiagnosticMetric
               label="Polygon"
               value={quotaLabel(used?.polygon, remaining?.polygon)}
@@ -1147,12 +1200,6 @@ function DiagnosticsSection({
             <DiagnosticMetric
               label="EODHD"
               value={quotaLabel(used?.eodhd, remaining?.eodhd)}
-            />
-            <DiagnosticMetric label="Moomoo" value={moomooUsedLabel} />
-            <DiagnosticMetric label="Moomoo Status" value={moomooStatus} />
-            <DiagnosticMetric
-              label="Moomoo Source"
-              value={estimatedFlowSummary?.moomooProvider ?? "MOOMOO_CAPITAL_DISTRIBUTION"}
             />
           </div>
           <p className="mt-1.5 text-[10px] leading-snug text-slate-500">
@@ -1189,12 +1236,26 @@ function DiagnosticsSection({
         <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
           <p className="mb-1 font-semibold text-slate-800">Source Lists</p>
           <div className="grid gap-1">
-            <TickerList label="Archive" tickers={coverage?.archiveHitTickers} />
+            <TickerList label="Moomoo Direct Archive" tickers={moomooDirectTickers} />
+            <TickerList label="Enhanced OHLCV Proxy Archive" tickers={coverage?.archiveHitTickers} />
             <TickerList label="AV Live" tickers={coverage?.alphaVantageLiveTickers} />
+            <TickerList label="Polygon Live" tickers={coverage?.polygonLiveTickers} />
             <TickerList label="Twelve Live" tickers={coverage?.twelveDataLiveTickers} />
             <TickerList label="EODHD Live" tickers={coverage?.eodhdLiveTickers} />
             <TickerList label="YF Proxy" tickers={coverage?.compositeProxyFallbackTickers} />
             <TickerList label="Errors" tickers={coverage?.providerErrorTickers} />
+          </div>
+          <div className="mt-2 rounded border border-slate-200 bg-white p-1.5 text-[10px] leading-snug text-slate-600">
+            <p className="font-semibold text-slate-800">Flow Data Ladder</p>
+            <p>
+              1. Moomoo Direct Flow Archive · 2. Enhanced OHLCV Proxy Archive ·
+              3. Alpha Vantage / Polygon / Twelve / EODHD OHLCV · 4. yfinance
+              fallback · 5. unavailable.
+            </p>
+            <p className="mt-1">
+              Moomoo Direct Flow is provider direct capital flow data. Other
+              providers are OHLCV-based proxy sources unless explicitly upgraded.
+            </p>
           </div>
         </article>
       </div>
@@ -1419,7 +1480,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.9.5
+                AlphaScout Capital Flow System V1.9.5.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard
