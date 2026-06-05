@@ -213,7 +213,16 @@ function buildOverlayFromCandles(
 }
 
 function buildOverlayFromMoomooRows(rows: MoomooCapitalDistribution[]): EstimatedFlowOverlay {
-  const sortedRows = rows.slice().sort((a, b) => a.flowDate.localeCompare(b.flowDate));
+  const byDate = new Map<string, MoomooCapitalDistribution>();
+  rows.forEach((row) => {
+    const existing = byDate.get(row.flowDate);
+    if (!existing || row.provider === MOOMOO_PROVIDER) {
+      byDate.set(row.flowDate, row);
+    }
+  });
+  const sortedRows = Array.from(byDate.values()).sort((a, b) =>
+    a.flowDate.localeCompare(b.flowDate),
+  );
   const latest = sortedRows.at(-1) ?? null;
 
   if (!latest) {
@@ -506,6 +515,11 @@ export async function applyEstimatedFlowProxyDisplayToSnapshot(
     applyOverlayToItem(item, overlayMap.get(item.ticker.toUpperCase()));
   const moomooArchiveTickerCount = moomooHistory.size;
   const moomooArchiveDateCoverage = buildMoomooDateCoverage(moomooHistory);
+  const archiveDates = Object.keys(moomooArchiveDateCoverage).sort();
+  const latestArchiveDate = archiveDates.at(-1) ?? null;
+  const historicalRowsSaved = archiveDates
+    .filter((date) => date !== latestArchiveDate)
+    .reduce((sum, date) => sum + moomooArchiveDateCoverage[date], 0);
 
   return {
     ...snapshot,
@@ -538,6 +552,9 @@ export async function applyEstimatedFlowProxyDisplayToSnapshot(
       moomooDirectFlowAvailableCount: moomooArchiveTickerCount,
       moomooFallbackCount: Math.max(tickers.length - moomooArchiveTickerCount, 0),
       maxSymbolsPerRun: moomooSummary.maxSymbolsPerRun,
+      historicalBackfillSupported:
+        archiveDates.length > 1 ? "partial" : false,
+      historicalRowsSaved,
       moomooErrors,
       productionFlowChanged: false,
     },

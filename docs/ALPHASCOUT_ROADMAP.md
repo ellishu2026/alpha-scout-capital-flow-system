@@ -55,6 +55,7 @@
 - V1.9.2.2 Moomoo Fallback Ladder Restore
 - V1.9.3 Moomoo Local Collector & Archive Ingest
 - V1.9.4 Dynamic Moomoo 20-Ticker Coverage & 4D Backfill Test
+- V1.9.5 Moomoo get_capital_flow Historical Backfill Experiment
 
 ## Next Recommended Steps
 
@@ -335,7 +336,7 @@ This is a mapping fix only. It does not remove `AMD` or `VRT` from other organic
 
 V1.9.2 adds `MOOMOO_CAPITAL_DISTRIBUTION` as an optional archive-first direct capital-flow provider for the scoped dashboard ticker set. It uses Moomoo OpenD quote/capital distribution data only, calculating buy amount from `capital_in_super`, `capital_in_big`, `capital_in_mid`, and `capital_in_small`, sell amount from `capital_out_super`, `capital_out_big`, `capital_out_mid`, and `capital_out_small`, and net flow as buy minus sell.
 
-The provider is guarded to max 20 symbols per run, 25 requests per run, 1200ms request spacing, and one retry. Backfill remains throttled to max 5 symbols and 3 days per run if historical capital distribution is supported. If Moomoo is unavailable, rows fall back to the existing Enhanced OHLCV Proxy display path.
+The provider is guarded to max 20 symbols per run, 25 requests per run, 1200ms request spacing, and one retry. Backfill remains throttled to a short-range 4-day experiment before any longer-range historical collection is considered. If Moomoo is unavailable, rows fall back to the existing Enhanced OHLCV Proxy display path.
 
 No trading API, order placement, account trading, position trading, production scoring change, Entry / Position rule change, threshold change, Risk Gate change, or universe expansion is introduced. `productionFlowChanged` remains false.
 
@@ -366,3 +367,11 @@ V1.9.4 updates the local Moomoo collector so daily collection can run in `--auto
 V1.9.4 also adds a controlled `--backfill-days 4` capability probe. The collector tests whether the installed Moomoo quote API exposes historical capital distribution / capital flow access without blocking current-day upload. If historical date access is unsupported or latest-day-only, it records that status and continues the normal archive ingest.
 
 Refresh diagnostics now expose Moomoo archive coverage counts and date coverage for the scoped display set. Production still never connects directly to local OpenD, never imports trading contexts, and never changes Entry / Position actions, scoring, thresholds, Risk Gate behavior, universe scope, or fixed watchlist definitions.
+
+## Moomoo get_capital_flow Historical Backfill Experiment
+
+V1.9.5 extends the local collector’s `--backfill-days 4` mode to call `get_capital_flow(stock_code, period_type="INTRADAY", start=..., end=...)` for the dynamic 20-ticker universe. For each requested trading date, the collector keeps only returned rows whose `capital_flow_item_time` or equivalent date matches the target date, uses the last valid intraday row as daily `netFlow`, and uploads successful rows as `MOOMOO_CAPITAL_FLOW` archive records.
+
+Historical rows are explicitly marked with `calculationMethod=MOOMOO_GET_CAPITAL_FLOW_LAST_INTRADAY_ROW` and `buySellBreakdownAvailable=false` when buy/sell amounts are not exposed. Latest-day `get_capital_distribution` ingestion remains unchanged and keeps the direct buy/sell/net breakdown.
+
+The experiment is still capped to 20 dynamic tickers and four recent trading days, fails per ticker/date, and never expands to the full market. No trading context, order placement, account, position, scoring, Entry / Position action, threshold, Risk Gate, fixed watchlist, or ranked scoring logic changes are introduced.

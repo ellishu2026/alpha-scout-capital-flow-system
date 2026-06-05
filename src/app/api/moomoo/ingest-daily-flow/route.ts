@@ -2,6 +2,7 @@ import {
   MOOMOO_FLOW_QUALITY_SCORE,
   MOOMOO_FLOW_TIER,
   MOOMOO_FLOW_TIER_LABEL,
+  MOOMOO_CAPITAL_FLOW_SOURCE,
   MOOMOO_PROVIDER,
   MOOMOO_QUOTA_GUARD,
   ingestMoomooDailyFlows,
@@ -41,14 +42,16 @@ export async function POST(request: NextRequest) {
     | null;
   const date = validDate(body?.date);
 
-  if (!body || !date || body.source !== MOOMOO_PROVIDER || !Array.isArray(body.items)) {
+  const validSource = body?.source === MOOMOO_PROVIDER || body?.source === MOOMOO_CAPITAL_FLOW_SOURCE;
+
+  if (!body || !date || !validSource || !Array.isArray(body.items)) {
     return NextResponse.json(
       {
         ok: false,
         message: "Invalid Moomoo ingest payload.",
         required: {
           date: "YYYY-MM-DD",
-          source: MOOMOO_PROVIDER,
+          source: `${MOOMOO_PROVIDER} or ${MOOMOO_CAPITAL_FLOW_SOURCE}`,
           items: "array",
         },
       },
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     ok: ingestResult.failedCount === 0,
     generatedAt: new Date().toISOString(),
-    provider: MOOMOO_PROVIDER,
+    provider: body.source,
     date,
     flowDataTier: MOOMOO_FLOW_TIER,
     flowDataTierLabel: MOOMOO_FLOW_TIER_LABEL,
@@ -85,4 +88,3 @@ export async function POST(request: NextRequest) {
     productionFlowChanged: false,
   });
 }
-

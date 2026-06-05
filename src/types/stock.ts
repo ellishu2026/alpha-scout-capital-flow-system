@@ -1123,6 +1123,8 @@ export type SnapshotResponse = {
     moomooDirectFlowAvailableCount?: number;
     moomooFallbackCount?: number;
     maxSymbolsPerRun?: number;
+    historicalBackfillSupported?: boolean | "partial";
+    historicalRowsSaved?: number;
     moomooQuotaGuard?: {
       enabled: boolean;
       liveEnabled: boolean;
