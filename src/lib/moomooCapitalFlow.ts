@@ -45,6 +45,42 @@ export type MoomooCapitalDistribution = {
   rawPayloadSummary?: Record<string, unknown>;
 };
 
+export type MoomooIngestItem = {
+  ticker?: unknown;
+  buyAmount?: unknown;
+  sellAmount?: unknown;
+  netFlow?: unknown;
+  capitalInSuper?: unknown;
+  capitalInBig?: unknown;
+  capitalInMid?: unknown;
+  capitalInSmall?: unknown;
+  capitalOutSuper?: unknown;
+  capitalOutBig?: unknown;
+  capitalOutMid?: unknown;
+  capitalOutSmall?: unknown;
+  capital_in_super?: unknown;
+  capital_in_big?: unknown;
+  capital_in_mid?: unknown;
+  capital_in_small?: unknown;
+  capital_out_super?: unknown;
+  capital_out_big?: unknown;
+  capital_out_mid?: unknown;
+  capital_out_small?: unknown;
+  updateTime?: unknown;
+  update_time?: unknown;
+  currency?: unknown;
+};
+
+export type MoomooIngestResult = {
+  ticker: string;
+  ok: boolean;
+  status: string;
+  error?: string;
+  buyAmount?: number;
+  sellAmount?: number;
+  netFlow?: number;
+};
+
 export type MoomooFlowGuardSummary = {
   enabled: boolean;
   liveEnabled: boolean;
@@ -171,7 +207,7 @@ async function getArchivedMoomooRows(ticker: string) {
     .sort((a, b) => a.flowDate.localeCompare(b.flowDate));
 }
 
-async function archiveMoomooDistribution(row: MoomooCapitalDistribution) {
+export async function archiveMoomooDistribution(row: MoomooCapitalDistribution) {
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) return { archived: false, status: "SUPABASE_UNAVAILABLE" };
@@ -189,9 +225,19 @@ async function archiveMoomooDistribution(row: MoomooCapitalDistribution) {
             endpointType: "MOOMOO_GET_CAPITAL_DISTRIBUTION",
             latestDate: row.flowDate,
             resultCount: 1,
-            status: "ARCHIVED",
+            status: "SAVED",
+            archiveStatus: "SAVED",
+            flowDataTier: MOOMOO_FLOW_TIER,
+            flowDataTierLabel: MOOMOO_FLOW_TIER_LABEL,
+            flowDataQualityScore: MOOMOO_FLOW_QUALITY_SCORE,
           },
-          distribution: row,
+          distribution: {
+            ...row,
+            archiveStatus: "SAVED",
+            flowDataTier: MOOMOO_FLOW_TIER,
+            flowDataTierLabel: MOOMOO_FLOW_TIER_LABEL,
+            flowDataQualityScore: MOOMOO_FLOW_QUALITY_SCORE,
+          },
         },
       },
       { onConflict: "ticker,provider,data_date" },
@@ -201,7 +247,112 @@ async function archiveMoomooDistribution(row: MoomooCapitalDistribution) {
     return { archived: false, status: "ARCHIVE_FAILED", error: error.message };
   }
 
-  return { archived: true, status: "ARCHIVED" };
+  return { archived: true, status: "SAVED" };
+}
+
+export function buildMoomooDistributionFromIngest({
+  date,
+  item,
+}: {
+  date: string;
+  item: MoomooIngestItem;
+}) {
+  const ticker = typeof item.ticker === "string" ? normalizeTicker(item.ticker) : "";
+
+  if (!ticker) {
+    throw new Error("TICKER_REQUIRED");
+  }
+
+  const capitalInSuper = toNumber(item.capitalInSuper ?? item.capital_in_super) ?? 0;
+  const capitalInBig = toNumber(item.capitalInBig ?? item.capital_in_big) ?? 0;
+  const capitalInMid = toNumber(item.capitalInMid ?? item.capital_in_mid) ?? 0;
+  const capitalInSmall = toNumber(item.capitalInSmall ?? item.capital_in_small) ?? 0;
+  const capitalOutSuper = toNumber(item.capitalOutSuper ?? item.capital_out_super) ?? 0;
+  const capitalOutBig = toNumber(item.capitalOutBig ?? item.capital_out_big) ?? 0;
+  const capitalOutMid = toNumber(item.capitalOutMid ?? item.capital_out_mid) ?? 0;
+  const capitalOutSmall = toNumber(item.capitalOutSmall ?? item.capital_out_small) ?? 0;
+  const calculatedBuyAmount =
+    capitalInSuper + capitalInBig + capitalInMid + capitalInSmall;
+  const calculatedSellAmount =
+    capitalOutSuper + capitalOutBig + capitalOutMid + capitalOutSmall;
+  const buyAmount = toNumber(item.buyAmount) ?? calculatedBuyAmount;
+  const sellAmount = toNumber(item.sellAmount) ?? calculatedSellAmount;
+  const netFlow = toNumber(item.netFlow) ?? buyAmount - sellAmount;
+
+  if (![buyAmount, sellAmount, netFlow].every(Number.isFinite)) {
+    throw new Error("INVALID_FLOW_AMOUNTS");
+  }
+
+  return {
+    ticker,
+    provider: MOOMOO_PROVIDER,
+    flowDate: date,
+    currency: String(item.currency ?? "USD"),
+    buyAmount,
+    sellAmount,
+    netFlow,
+    capitalInSuper,
+    capitalInBig,
+    capitalInMid,
+    capitalInSmall,
+    capitalOutSuper,
+    capitalOutBig,
+    capitalOutMid,
+    capitalOutSmall,
+    source: "ARCHIVE" as const,
+    rawPayloadSummary: {
+      endpointType: "MOOMOO_INGEST_DAILY_FLOW",
+      updateTime: item.updateTime ?? item.update_time ?? null,
+      archiveStatus: "SAVED",
+      flowDataTier: MOOMOO_FLOW_TIER,
+      flowDataTierLabel: MOOMOO_FLOW_TIER_LABEL,
+      flowDataQualityScore: MOOMOO_FLOW_QUALITY_SCORE,
+    },
+  } satisfies MoomooCapitalDistribution;
+}
+
+export async function ingestMoomooDailyFlows({
+  date,
+  items,
+}: {
+  date: string;
+  items: MoomooIngestItem[];
+}) {
+  const scopedItems = items.slice(0, MOOMOO_QUOTA_GUARD.maxSymbolsPerRun);
+  const results: MoomooIngestResult[] = [];
+
+  for (const item of scopedItems) {
+    const ticker = typeof item.ticker === "string" ? normalizeTicker(item.ticker) : "UNKNOWN";
+
+    try {
+      const row = buildMoomooDistributionFromIngest({ date, item });
+      const archiveResult = await archiveMoomooDistribution(row);
+
+      results.push({
+        ticker: row.ticker,
+        ok: archiveResult.archived,
+        status: archiveResult.status,
+        error: archiveResult.error,
+        buyAmount: row.buyAmount,
+        sellAmount: row.sellAmount,
+        netFlow: row.netFlow,
+      });
+    } catch (error) {
+      results.push({
+        ticker,
+        ok: false,
+        status: "FAILED",
+        error: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+      });
+    }
+  }
+
+  return {
+    results,
+    savedCount: results.filter((result) => result.ok).length,
+    failedCount: results.filter((result) => !result.ok).length,
+    skippedDueToScopeCount: Math.max(items.length - scopedItems.length, 0),
+  };
 }
 
 async function fetchMoomooDistributionLive(ticker: string) {

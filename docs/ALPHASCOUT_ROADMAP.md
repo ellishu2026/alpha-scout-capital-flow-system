@@ -53,6 +53,7 @@
 - V1.9.2 Moomoo Direct Capital Flow Provider
 - V1.9.2.1 Moomoo Source Visibility & 1D Flow Binding Fix
 - V1.9.2.2 Moomoo Fallback Ladder Restore
+- V1.9.3 Moomoo Local Collector & Archive Ingest
 
 ## Next Recommended Steps
 
@@ -348,3 +349,11 @@ The main Ranked Candidates 1D cell now explicitly prioritizes `moomooNetFlow` wh
 V1.9.2.2 restores the display fallback ladder so unavailable Moomoo data cannot overwrite existing archive/proxy flow windows with `N/A`. Moomoo remains the highest-priority display source only for valid 1D `moomooNetFlow`; all other windows, and all rows without Moomoo direct flow, continue using the existing Alpha Vantage / Polygon / Twelve Data / EODHD archive and Enhanced OHLCV Proxy values.
 
 Provider Quota / Status keeps the V1.9.2.1 Moomoo visibility. Row diagnostics expose `fallbackProviderUsed` and `flow1DSource` so proxy/archive fallback is explicit. Entry / Position actions, scoring, thresholds, Risk Gate behavior, universe scope, fixed watchlist, and provider quota limits are unchanged.
+
+## Moomoo Local Collector & Archive Ingest
+
+V1.9.3 adds `POST /api/moomoo/ingest-daily-flow` for authenticated Moomoo daily flow archive ingestion. The endpoint requires a dedicated `MOOMOO_INGEST_TOKEN`, accepts `MOOMOO_CAPITAL_DISTRIBUTION` rows, caps uploads at 20 items per run, and stores buy amount, sell amount, net flow, capital-in/out bucket fields, tier metadata, and `archiveStatus=SAVED` in the existing archive store.
+
+V1.9.3 also adds `scripts/moomoo_collect_and_upload.py` for MacBook Neo. The script connects to local OpenD at `127.0.0.1:11111` using `OpenQuoteContext` only, calls `get_capital_distribution`, calculates buy/sell/net flow, sleeps 1.2 seconds between requests, and uploads to the ingest API. No trading context, order placement, account, position, or trading endpoint is imported or used.
+
+Production Vercel still does not connect to local OpenD. It reads archived Moomoo rows when the local collector uploads them; otherwise the existing Enhanced OHLCV Proxy / archive fallback ladder remains active. Entry / Position actions, scoring, thresholds, Risk Gate behavior, universe scope, and fixed watchlist are unchanged.
