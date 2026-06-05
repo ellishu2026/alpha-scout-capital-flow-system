@@ -401,14 +401,30 @@ function applyOverlayToItem(candidate: StockCandidate, overlay?: EstimatedFlowOv
     capitalFlow1D: hasMoomooDirectFlow
       ? overlay.directNetFlow
       : optionalFlow(overlay.capitalFlow1D, candidate.capitalFlow1D),
-    capitalFlow3D: requiredFlow(overlay.capitalFlow3D, candidate.capitalFlow3D),
-    capitalFlow5D: requiredFlow(overlay.capitalFlow5D, candidate.capitalFlow5D),
-    capitalFlow10D: optionalFlow(overlay.capitalFlow10D, candidate.capitalFlow10D),
-    capitalFlow20D: optionalFlow(overlay.capitalFlow20D, candidate.capitalFlow20D),
-    capitalFlow5W: requiredFlow(overlay.capitalFlow5W, candidate.capitalFlow5W),
-    capitalFlow6W: optionalFlow(overlay.capitalFlow6W, candidate.capitalFlow6W),
-    capitalFlow9W: optionalFlow(overlay.capitalFlow9W, candidate.capitalFlow9W),
-    capitalFlow12W: optionalFlow(overlay.capitalFlow12W, candidate.capitalFlow12W),
+    capitalFlow3D: hasMoomooDirectFlow
+      ? overlay.capitalFlow3D ?? candidate.capitalFlow3D
+      : requiredFlow(overlay.capitalFlow3D, candidate.capitalFlow3D),
+    capitalFlow5D: hasMoomooDirectFlow
+      ? overlay.capitalFlow5D ?? candidate.capitalFlow5D
+      : requiredFlow(overlay.capitalFlow5D, candidate.capitalFlow5D),
+    capitalFlow10D: hasMoomooDirectFlow
+      ? overlay.capitalFlow10D ?? candidate.capitalFlow10D
+      : optionalFlow(overlay.capitalFlow10D, candidate.capitalFlow10D),
+    capitalFlow20D: hasMoomooDirectFlow
+      ? overlay.capitalFlow20D ?? candidate.capitalFlow20D
+      : optionalFlow(overlay.capitalFlow20D, candidate.capitalFlow20D),
+    capitalFlow5W: hasMoomooDirectFlow
+      ? overlay.capitalFlow5W ?? candidate.capitalFlow5W
+      : requiredFlow(overlay.capitalFlow5W, candidate.capitalFlow5W),
+    capitalFlow6W: hasMoomooDirectFlow
+      ? overlay.capitalFlow6W ?? candidate.capitalFlow6W
+      : optionalFlow(overlay.capitalFlow6W, candidate.capitalFlow6W),
+    capitalFlow9W: hasMoomooDirectFlow
+      ? overlay.capitalFlow9W ?? candidate.capitalFlow9W
+      : optionalFlow(overlay.capitalFlow9W, candidate.capitalFlow9W),
+    capitalFlow12W: hasMoomooDirectFlow
+      ? overlay.capitalFlow12W ?? candidate.capitalFlow12W
+      : optionalFlow(overlay.capitalFlow12W, candidate.capitalFlow12W),
     flowDataTier: hasMoomooDirectFlow
       ? MOOMOO_FLOW_TIER
       : useProxyOverlay
