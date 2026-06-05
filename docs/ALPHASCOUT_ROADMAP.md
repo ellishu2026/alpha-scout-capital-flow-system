@@ -59,6 +59,7 @@
 - V1.9.5.1 Flow Data Diagnostics Moomoo-First UI Fix
 - V1.9.5.2 Moomoo Backfill US Market Date Handling Cleanup
 - V1.9.5.3 Daily Collector Checklist & Coverage Summary
+- V1.9.6 Moomoo Fixed List Historical XLSX Import & Flow Window Rebuild
 
 ## Next Recommended Steps
 
@@ -402,3 +403,11 @@ V1.9.5.3 adds `docs/MOOMOO_DAILY_COLLECTOR_CHECKLIST.md` as the daily operating 
 V1.9.5.3 also adds `scripts/run_moomoo_daily_collection.sh`, a one-command helper that loads `.env.local`, verifies `MOOMOO_INGEST_TOKEN` and `ALPHASCOUT_REFRESH_TOKEN`, runs the dynamic collector with `--auto-universe --backfill-days 4`, calls production refresh verification, and prints a compact Moomoo coverage summary without printing secrets.
 
 The collector now prints a final PASS / WARNING / FAIL daily status block. Latest-day Moomoo archive success is treated separately from historical backfill warnings, and the script explicitly reports `NO_TRADING_API_USED = true`. This is operating-procedure and reporting support only; it does not change archive read logic, ingest behavior, Entry / Position actions, scoring, thresholds, Risk Gate behavior, universe selection, fixed watchlist, or trading functionality.
+
+## Moomoo Fixed List Historical XLSX Import & Flow Window Rebuild
+
+V1.9.6 adds `scripts/import_moomoo_net_inflow_xlsx.py` for manually exported Moomoo daily net inflow files. The importer reads the `Net Inflow Data` sheet from `data/imports/moomoo/net_inflow_from_moomoo.xlsx` or a `--file` path, parses Excel serial dates, uses `Net Inflow USD` as authoritative daily `netFlow`, and filters strictly to the current Fixed List: `SOXL`, `SMH`, `NVDA`, `MSFT`, `GOOGL`, `ORCL`, `RKLB`, `LLY`, and `IONQ`.
+
+Imported rows are archived through the existing Moomoo ingest path as `MOOMOO_HISTORICAL_XLSX_IMPORT`, with `flowDataTier=MOOMOO_DIRECT_CAPITAL_FLOW`, `flowDataQualityScore=85`, `buyAmount=null`, `sellAmount=null`, `buySellBreakdownAvailable=false`, and `calculationMethod=MOOMOO_MANUAL_EXPORT_NET_INFLOW`. Same-date display precedence now treats imported XLSX rows as the authoritative Moomoo direct-flow source for covered fixed-list dates.
+
+The import script can print a fixed-list-only local window preview for `1D`, `3D`, `5D`, `10D`, `20D`, `5W`, `6W`, `9W`, and `12W` using US trading days ending at `--end-date`. It does not run market scan refresh, does not pull provider data, does not change daily Moomoo collector logic, and does not change Entry / Position actions, scoring, thresholds, Risk Gate behavior, fixed watchlist membership, ranked candidate logic, or trading functionality.

@@ -8,6 +8,7 @@ import {
   MOOMOO_FLOW_TIER,
   MOOMOO_FLOW_TIER_LABEL,
   MOOMOO_FLOW_VERSION,
+  MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER,
   MOOMOO_PROVIDER,
   fetchScopedMoomooCapitalFlows,
   type MoomooCapitalDistribution,
@@ -214,9 +215,15 @@ function buildOverlayFromCandles(
 
 function buildOverlayFromMoomooRows(rows: MoomooCapitalDistribution[]): EstimatedFlowOverlay {
   const byDate = new Map<string, MoomooCapitalDistribution>();
+  const providerPriority = (row: MoomooCapitalDistribution) => {
+    if (row.provider === MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER) return 3;
+    if (row.provider === MOOMOO_PROVIDER) return 2;
+    return 1;
+  };
+
   rows.forEach((row) => {
     const existing = byDate.get(row.flowDate);
-    if (!existing || row.provider === MOOMOO_PROVIDER) {
+    if (!existing || providerPriority(row) >= providerPriority(existing)) {
       byDate.set(row.flowDate, row);
     }
   });
@@ -246,15 +253,19 @@ function buildOverlayFromMoomooRows(rows: MoomooCapitalDistribution[]): Estimate
     estimatedFlowProxyUnavailableReason: null,
     estimatedFlowProxyRowsUsed: sortedRows.length,
     estimatedFlowProxySource:
-      latest.source === "ARCHIVE"
-        ? "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
-        : "MOOMOO_CAPITAL_DISTRIBUTION",
+      latest.provider === MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER
+        ? "Moomoo Historical XLSX Import"
+        : latest.source === "ARCHIVE"
+          ? "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
+          : "MOOMOO_CAPITAL_DISTRIBUTION",
     estimatedFlowProxyUpdatedAt: latest.flowDate,
     flow1DSource: "Moomoo Direct Flow",
     providerUsed:
-      latest.source === "ARCHIVE"
-        ? "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
-        : "MOOMOO_CAPITAL_DISTRIBUTION",
+      latest.provider === MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER
+        ? "MOOMOO_HISTORICAL_XLSX_IMPORT"
+        : latest.source === "ARCHIVE"
+          ? "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
+          : "MOOMOO_CAPITAL_DISTRIBUTION",
     flowDataTier: MOOMOO_FLOW_TIER,
     flowDataTierLabel: MOOMOO_FLOW_TIER_LABEL,
     flowDataQualityScore: MOOMOO_FLOW_QUALITY_SCORE,

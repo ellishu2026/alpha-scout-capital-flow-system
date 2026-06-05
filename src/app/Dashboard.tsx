@@ -285,6 +285,7 @@ function providerShortLabel(provider?: StockCandidate["providerUsed"]) {
     EODHD_ARCHIVE: "EODHD Archive",
     POLYGON_ARCHIVE: "Polygon Archive",
     MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE: "Moomoo Flow Archive",
+    MOOMOO_HISTORICAL_XLSX_IMPORT: "Moomoo XLSX Import",
     MOOMOO_CAPITAL_DISTRIBUTION: "Moomoo Flow",
     ALPHA_VANTAGE: "Alpha",
     TWELVE_DATA: "TWELVE",
@@ -1480,7 +1481,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.9.5.3
+                AlphaScout Capital Flow System V1.9.6
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

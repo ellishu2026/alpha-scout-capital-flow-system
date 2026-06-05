@@ -10,6 +10,8 @@ const execFileAsync = promisify(execFile);
 export const MOOMOO_PROVIDER = "MOOMOO_CAPITAL_DISTRIBUTION" as const;
 export const MOOMOO_CAPITAL_FLOW_SOURCE = "MOOMOO_CAPITAL_FLOW" as const;
 export const MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER = "MOOMOO_CAPITAL_FLOW_ARCHIVE" as const;
+export const MOOMOO_HISTORICAL_XLSX_IMPORT_SOURCE = "MOOMOO_HISTORICAL_XLSX_IMPORT" as const;
+export const MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER = "MOOMOO_HISTORICAL_XLSX_IMPORT" as const;
 export const MOOMOO_FLOW_TIER = "MOOMOO_DIRECT_CAPITAL_FLOW" as const;
 export const MOOMOO_FLOW_TIER_LABEL = "Moomoo Direct Capital Flow";
 export const MOOMOO_FLOW_QUALITY_SCORE = 85;
@@ -29,7 +31,10 @@ export const MOOMOO_QUOTA_GUARD = {
 
 export type MoomooCapitalDistribution = {
   ticker: string;
-  provider: typeof MOOMOO_PROVIDER | typeof MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER;
+  provider:
+    | typeof MOOMOO_PROVIDER
+    | typeof MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
+    | typeof MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER;
   flowDate: string;
   currency: string;
   buyAmount: number | null;
@@ -153,9 +158,13 @@ function parseDistributionPayload(
   const capitalOutBig = toNumber(row.capital_out_big ?? row.capitalOutBig) ?? 0;
   const capitalOutMid = toNumber(row.capital_out_mid ?? row.capitalOutMid) ?? 0;
   const capitalOutSmall = toNumber(row.capital_out_small ?? row.capitalOutSmall) ?? 0;
-  const provider = String(row.provider ?? MOOMOO_PROVIDER) === MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
-    ? MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
-    : MOOMOO_PROVIDER;
+  const rawProvider = String(row.provider ?? MOOMOO_PROVIDER);
+  const provider =
+    rawProvider === MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
+      ? MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
+      : rawProvider === MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER
+        ? MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER
+        : MOOMOO_PROVIDER;
   const buySellBreakdownAvailable =
     typeof row.buySellBreakdownAvailable === "boolean"
       ? row.buySellBreakdownAvailable
@@ -195,15 +204,20 @@ function parseDistributionPayload(
     buySellBreakdownAvailable,
     calculationMethod: String(
       row.calculationMethod ??
-        (provider === MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
-          ? "MOOMOO_GET_CAPITAL_FLOW_LAST_INTRADAY_ROW"
-          : "MOOMOO_GET_CAPITAL_DISTRIBUTION"),
+        (provider === MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER
+          ? "MOOMOO_MANUAL_EXPORT_NET_INFLOW"
+          : provider === MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
+            ? "MOOMOO_GET_CAPITAL_FLOW_LAST_INTRADAY_ROW"
+            : "MOOMOO_GET_CAPITAL_DISTRIBUTION"),
     ),
     source,
     rawPayloadSummary: {
-      endpointType: provider === MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
-        ? "MOOMOO_GET_CAPITAL_FLOW"
-        : "MOOMOO_GET_CAPITAL_DISTRIBUTION",
+      endpointType:
+        provider === MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER
+          ? "MOOMOO_HISTORICAL_XLSX_IMPORT"
+          : provider === MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
+            ? "MOOMOO_GET_CAPITAL_FLOW"
+            : "MOOMOO_GET_CAPITAL_DISTRIBUTION",
       code: row.code ?? moomooCode(ticker),
       status: row.status ?? "OK",
     },
@@ -219,9 +233,13 @@ async function getArchivedMoomooRows(ticker: string) {
     .from("alpha_scout_market_data_archive")
     .select("data_date,provider,payload")
     .eq("ticker", normalizeTicker(ticker))
-    .in("provider", [MOOMOO_PROVIDER, MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER])
+    .in("provider", [
+      MOOMOO_PROVIDER,
+      MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER,
+      MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER,
+    ])
     .order("data_date", { ascending: false })
-    .limit(60);
+    .limit(120);
 
   if (error || !data) return [];
 
@@ -317,7 +335,10 @@ export function buildMoomooDistributionFromIngest({
   const calculatedSellAmount =
     capitalOutSuper + capitalOutBig + capitalOutMid + capitalOutSmall;
   const itemSource = String(item.source ?? MOOMOO_PROVIDER);
-  const isCapitalFlowHistory = itemSource === MOOMOO_CAPITAL_FLOW_SOURCE;
+  const isCapitalFlowHistory =
+    itemSource === MOOMOO_CAPITAL_FLOW_SOURCE ||
+    itemSource === MOOMOO_HISTORICAL_XLSX_IMPORT_SOURCE;
+  const isHistoricalXlsxImport = itemSource === MOOMOO_HISTORICAL_XLSX_IMPORT_SOURCE;
   const buyAmount = toNumber(item.buyAmount) ?? (isCapitalFlowHistory ? null : calculatedBuyAmount);
   const sellAmount = toNumber(item.sellAmount) ?? (isCapitalFlowHistory ? null : calculatedSellAmount);
   const netFlow = toNumber(item.netFlow) ??
@@ -330,7 +351,11 @@ export function buildMoomooDistributionFromIngest({
 
   return {
     ticker,
-    provider: isCapitalFlowHistory ? MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER : MOOMOO_PROVIDER,
+    provider: isHistoricalXlsxImport
+      ? MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER
+      : isCapitalFlowHistory
+        ? MOOMOO_CAPITAL_FLOW_ARCHIVE_PROVIDER
+        : MOOMOO_PROVIDER,
     flowDate: date,
     currency: String(item.currency ?? "USD"),
     buyAmount,
@@ -350,14 +375,18 @@ export function buildMoomooDistributionFromIngest({
         : !isCapitalFlowHistory,
     calculationMethod: String(
       item.calculationMethod ??
-        (isCapitalFlowHistory
-          ? "MOOMOO_GET_CAPITAL_FLOW_LAST_INTRADAY_ROW"
-          : "MOOMOO_GET_CAPITAL_DISTRIBUTION"),
+        (isHistoricalXlsxImport
+          ? "MOOMOO_MANUAL_EXPORT_NET_INFLOW"
+          : isCapitalFlowHistory
+            ? "MOOMOO_GET_CAPITAL_FLOW_LAST_INTRADAY_ROW"
+            : "MOOMOO_GET_CAPITAL_DISTRIBUTION"),
     ),
     source: "ARCHIVE" as const,
     rawPayloadSummary: {
       endpointType: isCapitalFlowHistory
-        ? "MOOMOO_GET_CAPITAL_FLOW"
+        ? isHistoricalXlsxImport
+          ? "MOOMOO_HISTORICAL_XLSX_IMPORT"
+          : "MOOMOO_GET_CAPITAL_FLOW"
         : "MOOMOO_INGEST_DAILY_FLOW",
       source: itemSource,
       updateTime: item.updateTime ?? item.update_time ?? null,

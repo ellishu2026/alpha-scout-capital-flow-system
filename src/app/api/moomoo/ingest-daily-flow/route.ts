@@ -3,6 +3,7 @@ import {
   MOOMOO_FLOW_TIER,
   MOOMOO_FLOW_TIER_LABEL,
   MOOMOO_CAPITAL_FLOW_SOURCE,
+  MOOMOO_HISTORICAL_XLSX_IMPORT_SOURCE,
   MOOMOO_PROVIDER,
   MOOMOO_QUOTA_GUARD,
   ingestMoomooDailyFlows,
@@ -42,7 +43,10 @@ export async function POST(request: NextRequest) {
     | null;
   const date = validDate(body?.date);
 
-  const validSource = body?.source === MOOMOO_PROVIDER || body?.source === MOOMOO_CAPITAL_FLOW_SOURCE;
+  const validSource =
+    body?.source === MOOMOO_PROVIDER ||
+    body?.source === MOOMOO_CAPITAL_FLOW_SOURCE ||
+    body?.source === MOOMOO_HISTORICAL_XLSX_IMPORT_SOURCE;
 
   if (!body || !date || !validSource || !Array.isArray(body.items)) {
     return NextResponse.json(
@@ -51,7 +55,7 @@ export async function POST(request: NextRequest) {
         message: "Invalid Moomoo ingest payload.",
         required: {
           date: "YYYY-MM-DD",
-          source: `${MOOMOO_PROVIDER} or ${MOOMOO_CAPITAL_FLOW_SOURCE}`,
+          source: `${MOOMOO_PROVIDER}, ${MOOMOO_CAPITAL_FLOW_SOURCE}, or ${MOOMOO_HISTORICAL_XLSX_IMPORT_SOURCE}`,
           items: "array",
         },
       },

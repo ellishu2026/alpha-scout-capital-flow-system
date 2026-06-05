@@ -16,6 +16,7 @@ export type SnapshotMode = "MARKET_SCAN" | "FIXED_WATCHLIST" | "MOCK";
 export type PersistenceStatus = "SAVED" | "DISABLED" | "FAILED";
 export type CapitalFlowDataSource =
   | "MOOMOO_CAPITAL_DISTRIBUTION"
+  | "MOOMOO_HISTORICAL_XLSX_IMPORT"
   | "YFINANCE_CHAIKIN"
   | "YFINANCE_COMPOSITE_PROXY"
   | "ALPHA_VANTAGE"
@@ -26,12 +27,14 @@ export type CapitalFlowDataSource =
 export type ProviderUsed =
   | CapitalFlowDataSource
   | "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
+  | "MOOMOO_HISTORICAL_XLSX_IMPORT"
   | "ALPHA_VANTAGE_ARCHIVE"
   | "TWELVE_DATA_ARCHIVE"
   | "EODHD_ARCHIVE"
   | "POLYGON_ARCHIVE";
 export type ArchiveHitProvider =
   | "MOOMOO_CAPITAL_DISTRIBUTION"
+  | "MOOMOO_HISTORICAL_XLSX_IMPORT"
   | "POLYGON"
   | "ALPHA_VANTAGE"
   | "TWELVE_DATA"
