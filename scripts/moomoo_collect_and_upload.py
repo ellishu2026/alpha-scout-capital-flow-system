@@ -632,16 +632,109 @@ def post_historical_groups(
     return responses, saved, failed
 
 
+def bool_text(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
+def print_daily_status(
+    summary: dict[str, Any] | None = None,
+    missing_env: list[str] | None = None,
+) -> None:
+    summary = summary or {}
+    missing_env = missing_env or []
+    final_ticker_count = int(summary.get("finalTickerCount") or 0)
+    max_symbols = int(summary.get("maxSymbolsPerRun") or MAX_SYMBOLS_PER_RUN)
+    saved_count = int(summary.get("savedCount") or 0)
+    latest_saved = int(summary.get("latestDayCollectionRowsSaved") or 0)
+    ingest_ok = bool(summary.get("ingestOk"))
+    historical_supported = summary.get("historicalBackfillSupported")
+    latest_ok = (
+        ingest_ok
+        and latest_saved > 0
+        and latest_saved == final_ticker_count
+        and final_ticker_count <= max_symbols
+    )
+
+    print("---- daily collector status ----")
+
+    if missing_env:
+        print(f"FAIL missingEnv = {', '.join(missing_env)}")
+        print("FAIL required environment variables are missing")
+        print("NO_TRADING_API_USED = true")
+        return
+
+    if final_ticker_count > max_symbols:
+        print(
+            "FAIL finalTickerCount = "
+            f"{final_ticker_count} > maxSymbolsPerRun {max_symbols}"
+        )
+    else:
+        print(
+            "PASS finalTickerCount = "
+            f"{final_ticker_count} <= maxSymbolsPerRun {max_symbols}"
+        )
+
+    if ingest_ok:
+        print("PASS ingestOk = true")
+    else:
+        print("FAIL ingestOk = false")
+
+    if latest_saved == final_ticker_count and latest_saved > 0:
+        print(f"PASS latestDayCollectionRowsSaved = {latest_saved}")
+        print("PASS Moomoo latest-day archive saved")
+    else:
+        print(
+            "FAIL latestDayCollectionRowsSaved = "
+            f"{latest_saved} expected {final_ticker_count}"
+        )
+
+    if saved_count > 0:
+        print(f"PASS savedCount = {saved_count}")
+    else:
+        print("FAIL savedCount = 0")
+
+    if historical_supported is False and latest_ok:
+        print("WARNING historicalBackfillSupported = false")
+    elif historical_supported == "partial":
+        print("WARNING historicalBackfillSupported = partial")
+    elif historical_supported is True:
+        print("PASS historicalBackfillSupported = true")
+    else:
+        print(f"INFO historicalBackfillSupported = {bool_text(historical_supported)}")
+
+    print(
+        "INFO historicalTargetDates = "
+        f"{json.dumps(summary.get('historicalTargetDates') or [])}"
+    )
+    print(
+        "INFO historicalReason = "
+        f"{summary.get('historicalReason') or summary.get('reason') or ''}"
+    )
+    print("NO_TRADING_API_USED = true")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--endpoint", default=os.getenv("ALPHASCOUT_MOOMOO_INGEST_URL", DEFAULT_ENDPOINT))
+    parser.add_argument(
+        "--endpoint",
+        default=os.getenv("ALPHASCOUT_MOOMOO_INGEST_URL", DEFAULT_ENDPOINT),
+    )
     parser.add_argument("--token", default=os.getenv("MOOMOO_INGEST_TOKEN"))
     parser.add_argument("--host", default=os.getenv("MOOMOO_OPEND_HOST", "127.0.0.1"))
-    parser.add_argument("--port", type=int, default=int(os.getenv("MOOMOO_OPEND_PORT", "11111")))
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.getenv("MOOMOO_OPEND_PORT", "11111")),
+    )
     parser.add_argument("--date", default=dt.date.today().isoformat())
     parser.add_argument("--tickers", default=os.getenv("MOOMOO_TICKERS"))
     parser.add_argument("--auto-universe", action="store_true")
-    parser.add_argument("--refresh-url", default=os.getenv("ALPHASCOUT_REFRESH_URL", DEFAULT_REFRESH_ENDPOINT))
+    parser.add_argument(
+        "--refresh-url",
+        default=os.getenv("ALPHASCOUT_REFRESH_URL", DEFAULT_REFRESH_ENDPOINT),
+    )
     parser.add_argument(
         "--refresh-token",
         default=os.getenv("ALPHASCOUT_REFRESH_TOKEN") or os.getenv("CRON_SECRET"),
@@ -650,8 +743,13 @@ def main() -> int:
     parser.add_argument("--backfill-days", type=int, default=1)
     args = parser.parse_args()
 
+    missing_env: list[str] = []
     if not args.token:
-        print("MOOMOO_INGEST_TOKEN is required.", file=sys.stderr)
+        missing_env.append("MOOMOO_INGEST_TOKEN")
+    if args.auto_universe and not args.refresh_token and not args.refresh_payload:
+        missing_env.append("ALPHASCOUT_REFRESH_TOKEN")
+    if missing_env:
+        print_daily_status(missing_env=missing_env)
         return 2
 
     tickers, universe_summary = select_tickers(args)
@@ -713,8 +811,7 @@ def main() -> int:
         if item["date"] not in archive_coverage_by_ticker[item["ticker"]]:
             archive_coverage_by_ticker[item["ticker"]].append(item["date"])
 
-    print("---- upload summary ----")
-    print(json.dumps({
+    upload_summary = {
         "requestedTickers": len(tickers),
         "collected": len(items),
         "localErrors": errors,
@@ -735,7 +832,11 @@ def main() -> int:
         "historicalIngestResponses": historical_responses,
         "dateCoverage": date_coverage,
         "moomooArchiveCoverageByTicker": archive_coverage_by_ticker,
-    }, indent=2))
+    }
+
+    print("---- upload summary ----")
+    print(json.dumps(upload_summary, indent=2))
+    print_daily_status(upload_summary)
     return 0 if ingest_ok else 1
 
 

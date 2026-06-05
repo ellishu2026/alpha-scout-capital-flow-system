@@ -58,6 +58,7 @@
 - V1.9.5 Moomoo get_capital_flow Historical Backfill Experiment
 - V1.9.5.1 Flow Data Diagnostics Moomoo-First UI Fix
 - V1.9.5.2 Moomoo Backfill US Market Date Handling Cleanup
+- V1.9.5.3 Daily Collector Checklist & Coverage Summary
 
 ## Next Recommended Steps
 
@@ -393,3 +394,11 @@ V1.9.5.2 cleans up the local Moomoo collector date model for US equities. Latest
 Historical `--backfill-days 4` now means four prior US trading days excluding the latest completed market date. Weekends and common US market holidays are skipped. Latest-day `get_capital_distribution` rows and historical `get_capital_flow` rows are reported separately with `latestDayCollectionDate`, `historicalTargetDates`, `historicalSupportedDates`, `historicalFailedDates`, and clearer reason text.
 
 This is collector/reporting cleanup only. It preserves Moomoo-first diagnostics, latest-day archive behavior, historical net-flow-only archive behavior, Entry / Position actions, scoring, thresholds, Risk Gate behavior, fixed watchlist, universe selection, and no-trading security constraints.
+
+## Daily Collector Checklist & Coverage Summary
+
+V1.9.5.3 adds `docs/MOOMOO_DAILY_COLLECTOR_CHECKLIST.md` as the daily operating checklist for MacBook Neo. It documents the required Moomoo OpenD and Terminal windows, required `.env.local` variables, the exact collector command, production refresh verification, and the coverage fields to inspect after a run.
+
+V1.9.5.3 also adds `scripts/run_moomoo_daily_collection.sh`, a one-command helper that loads `.env.local`, verifies `MOOMOO_INGEST_TOKEN` and `ALPHASCOUT_REFRESH_TOKEN`, runs the dynamic collector with `--auto-universe --backfill-days 4`, calls production refresh verification, and prints a compact Moomoo coverage summary without printing secrets.
+
+The collector now prints a final PASS / WARNING / FAIL daily status block. Latest-day Moomoo archive success is treated separately from historical backfill warnings, and the script explicitly reports `NO_TRADING_API_USED = true`. This is operating-procedure and reporting support only; it does not change archive read logic, ingest behavior, Entry / Position actions, scoring, thresholds, Risk Gate behavior, universe selection, fixed watchlist, or trading functionality.
