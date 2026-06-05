@@ -626,13 +626,16 @@ export async function refreshDailySnapshot({
     currentMarketSnapshot,
     previousMarketSnapshot,
   );
+  const orderedFreshFixedSnapshot = freshFixedSnapshot
+    ? normalizeFixedWatchlistSnapshot(freshFixedSnapshot, marketSnapshot)
+    : undefined;
   const {
     marketSnapshot: marketSnapshotWithBuckets,
     fixedSnapshot,
     marketTop15Items,
   } = annotateCoverageBuckets({
     marketSnapshot,
-    fixedSnapshot: freshFixedSnapshot,
+    fixedSnapshot: orderedFreshFixedSnapshot,
     marketTop15Items:
       marketCoverageSnapshot.mode === "MARKET_SCAN"
         ? marketCoverageSnapshot.items
