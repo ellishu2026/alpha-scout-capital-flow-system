@@ -16,6 +16,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from moomoo import OpenQuoteContext, RET_OK
@@ -44,6 +45,7 @@ MAX_SYMBOLS_PER_RUN = 20
 REQUEST_INTERVAL_SECONDS = 1.2
 RETRY_LIMIT = 1
 MAX_BACKFILL_DAYS = 4
+US_EASTERN_TZ = ZoneInfo("America/New_York")
 
 
 def moomoo_code(ticker: str) -> str:
@@ -93,6 +95,94 @@ def build_item(ticker: str, row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def parse_iso_date(value: Any) -> dt.date | None:
+    if not value:
+        return None
+
+    text = str(value).strip()
+    if len(text) < 10:
+        return None
+
+    try:
+        return dt.date.fromisoformat(text[:10])
+    except ValueError:
+        return None
+
+
+def observed_date(month: int, day: int, year: int) -> dt.date:
+    holiday = dt.date(year, month, day)
+    if holiday.weekday() == 5:
+        return holiday - dt.timedelta(days=1)
+    if holiday.weekday() == 6:
+        return holiday + dt.timedelta(days=1)
+    return holiday
+
+
+def nth_weekday(year: int, month: int, weekday: int, n: int) -> dt.date:
+    current = dt.date(year, month, 1)
+    while current.weekday() != weekday:
+        current += dt.timedelta(days=1)
+    return current + dt.timedelta(days=7 * (n - 1))
+
+
+def last_weekday(year: int, month: int, weekday: int) -> dt.date:
+    if month == 12:
+        current = dt.date(year + 1, 1, 1) - dt.timedelta(days=1)
+    else:
+        current = dt.date(year, month + 1, 1) - dt.timedelta(days=1)
+    while current.weekday() != weekday:
+        current -= dt.timedelta(days=1)
+    return current
+
+
+def us_market_holidays(year: int) -> set[dt.date]:
+    return {
+        observed_date(1, 1, year),
+        nth_weekday(year, 1, 0, 3),
+        nth_weekday(year, 2, 0, 3),
+        last_weekday(year, 5, 0),
+        observed_date(6, 19, year),
+        observed_date(7, 4, year),
+        nth_weekday(year, 9, 0, 1),
+        nth_weekday(year, 11, 3, 4),
+        observed_date(12, 25, year),
+    }
+
+
+def is_us_trading_day(day: dt.date) -> bool:
+    return day.weekday() < 5 and day not in us_market_holidays(day.year)
+
+
+def latest_completed_us_market_date(now: dt.datetime | None = None) -> dt.date:
+    current = now.astimezone(US_EASTERN_TZ) if now else dt.datetime.now(US_EASTERN_TZ)
+    candidate = current.date()
+    market_close_buffer = dt.time(16, 15)
+
+    if not is_us_trading_day(candidate) or current.time() < market_close_buffer:
+        candidate -= dt.timedelta(days=1)
+
+    while not is_us_trading_day(candidate):
+        candidate -= dt.timedelta(days=1)
+
+    return candidate
+
+
+def infer_latest_completed_market_date(items: list[dict[str, Any]]) -> str:
+    item_dates = [
+        parse_iso_date(item.get("updateTime") or item.get("date"))
+        for item in items
+    ]
+    valid_dates = sorted(
+        {
+            day
+            for day in item_dates
+            if day is not None and is_us_trading_day(day)
+        },
+    )
+
+    return (valid_dates[-1] if valid_dates else latest_completed_us_market_date()).isoformat()
+
+
 def rows_from_data(data: Any) -> list[dict[str, Any]]:
     if hasattr(data, "to_dict"):
         return data.to_dict("records")
@@ -120,16 +210,16 @@ def fetch_capital_distribution(ctx: OpenQuoteContext, ticker: str) -> dict[str, 
     raise RuntimeError(f"{ticker}: {last_error or 'MOOMOO_REQUEST_FAILED'}")
 
 
-def recent_trading_days(end_date: str, count: int) -> list[str]:
-    current = dt.date.fromisoformat(end_date)
+def previous_us_trading_days(latest_completed_market_date: str, count: int) -> list[str]:
+    current = dt.date.fromisoformat(latest_completed_market_date) - dt.timedelta(days=1)
     days: list[str] = []
 
     while len(days) < count:
-        if current.weekday() < 5:
+        if is_us_trading_day(current):
             days.append(current.isoformat())
         current -= dt.timedelta(days=1)
 
-    return days
+    return list(reversed(days))
 
 
 def row_date(row: dict[str, Any]) -> str | None:
@@ -378,7 +468,7 @@ def select_tickers(args: argparse.Namespace) -> tuple[list[str], dict[str, Any]]
 def collect_historical_backfill(
     ctx: OpenQuoteContext,
     tickers: list[str],
-    end_date: str,
+    latest_completed_market_date: str,
     backfill_days: int,
 ) -> dict[str, Any]:
     tested_days = max(0, min(backfill_days, MAX_BACKFILL_DAYS))
@@ -388,11 +478,14 @@ def collect_historical_backfill(
             "historicalBackfillSupported": False,
             "backfillDaysRequested": tested_days,
             "testedDays": tested_days,
-            "supportedDays": 1 if tickers else 0,
+            "historicalTargetDates": [],
+            "historicalSupportedDates": [],
+            "historicalFailedDates": [],
+            "supportedDays": 0,
             "failedDays": [],
             "failedTickerDates": [],
             "historicalRowsFailed": 0,
-            "reason": "Current-day collection only; backfill test was not requested.",
+            "historicalReason": "Latest-day collection only; historical backfill test was not requested.",
             "apiChecks": [],
         }
 
@@ -437,10 +530,9 @@ def collect_historical_backfill(
 
         api_checks.append(check)
 
-    target_days = recent_trading_days(end_date, tested_days)
+    target_days = previous_us_trading_days(latest_completed_market_date, tested_days)
     historical_items: list[dict[str, Any]] = []
     failed_ticker_dates: list[dict[str, str]] = []
-    failed_days: set[str] = set()
 
     for ticker_index, ticker in enumerate(tickers):
         if ticker_index > 0:
@@ -451,14 +543,20 @@ def collect_historical_backfill(
             try:
                 historical_items.append(fetch_capital_flow_day(ctx, ticker, target_date))
             except Exception as exc:  # noqa: BLE001 - per ticker/date failure should continue
-                failed_days.add(target_date)
                 failed_ticker_dates.append({
                     "ticker": ticker,
                     "date": target_date,
                     "error": str(exc),
                 })
 
-    supported_days = len({item["date"] for item in historical_items})
+    supported_date_set = {item["date"] for item in historical_items}
+    supported_dates = sorted(supported_date_set)
+    failed_date_list = [
+        target_date
+        for target_date in target_days
+        if target_date not in supported_date_set
+    ]
+    supported_days = len(supported_date_set)
     historical_supported: bool | str
     if supported_days == tested_days:
         historical_supported = True
@@ -467,20 +565,39 @@ def collect_historical_backfill(
     else:
         historical_supported = False
 
+    if supported_days == tested_days:
+        reason = (
+            f"Latest completed US market date {latest_completed_market_date} was collected "
+            "separately through get_capital_distribution. Moomoo get_capital_flow "
+            "returned matching rows for all requested prior US trading dates."
+        )
+    elif supported_days > 0:
+        reason = (
+            f"Latest completed US market date {latest_completed_market_date} was collected "
+            "separately through get_capital_distribution. Moomoo get_capital_flow "
+            f"returned matching rows for {', '.join(supported_dates)} only. Other "
+            "requested historical trading dates returned no matching rows."
+        )
+    else:
+        reason = (
+            f"Latest completed US market date {latest_completed_market_date} was collected "
+            "separately through get_capital_distribution. Moomoo get_capital_flow did "
+            "not return matching rows for the requested prior US trading dates."
+        )
+
     return {
         "items": historical_items,
         "historicalBackfillSupported": historical_supported,
         "backfillDaysRequested": tested_days,
         "testedDays": tested_days,
+        "historicalTargetDates": target_days,
+        "historicalSupportedDates": supported_dates,
+        "historicalFailedDates": failed_date_list,
         "supportedDays": supported_days,
-        "failedDays": sorted(failed_days),
+        "failedDays": failed_date_list,
         "failedTickerDates": failed_ticker_dates,
         "historicalRowsFailed": len(failed_ticker_dates),
-        "reason": (
-            "Moomoo get_capital_flow returned matching target-date rows."
-            if historical_items
-            else "Moomoo get_capital_flow did not return matching target-date rows for this run."
-        ),
+        "historicalReason": reason,
         "apiChecks": api_checks,
     }
 
@@ -547,12 +664,6 @@ def main() -> int:
     ctx = OpenQuoteContext(host=args.host, port=args.port)
 
     try:
-        historical_result = collect_historical_backfill(
-            ctx,
-            tickers,
-            args.date,
-            args.backfill_days,
-        )
         for index, ticker in enumerate(tickers):
             if index > 0:
                 time.sleep(REQUEST_INTERVAL_SECONDS)
@@ -566,11 +677,20 @@ def main() -> int:
             except Exception as exc:  # noqa: BLE001 - per-ticker failures should continue
                 errors.append(f"{ticker}:{exc}")
                 print(f"{ticker}: FAILED {exc}", file=sys.stderr)
+
+        latest_market_date = infer_latest_completed_market_date(items)
+        historical_result = collect_historical_backfill(
+            ctx,
+            tickers,
+            latest_market_date,
+            args.backfill_days,
+        )
     finally:
         ctx.close()
 
+    latest_market_date = infer_latest_completed_market_date(items)
     payload = {
-        "date": args.date,
+        "date": latest_market_date,
         "source": "MOOMOO_CAPITAL_DISTRIBUTION",
         "items": items,
     }
@@ -584,10 +704,10 @@ def main() -> int:
     ingest_ok = bool(response.get("ok")) and all(
         bool(result.get("ok")) for result in historical_responses
     )
-    date_coverage: dict[str, int] = {args.date: len(items)}
+    date_coverage: dict[str, int] = {latest_market_date: len(items)}
     for item in historical_items:
         date_coverage[item["date"]] = date_coverage.get(item["date"], 0) + 1
-    archive_coverage_by_ticker = {item["ticker"]: [args.date] for item in items}
+    archive_coverage_by_ticker = {item["ticker"]: [latest_market_date] for item in items}
     for item in historical_items:
         archive_coverage_by_ticker.setdefault(item["ticker"], [])
         if item["date"] not in archive_coverage_by_ticker[item["ticker"]]:
@@ -603,7 +723,14 @@ def main() -> int:
         "failedCount": int(response.get("failedCount") or 0) + historical_failed,
         "skippedDueToScopeCount": response.get("skippedDueToScopeCount"),
         **universe_summary,
+        "latestCompletedMarketDate": latest_market_date,
+        "latestDayCollectionDate": latest_market_date,
+        "latestDayCollectionRowsSaved": response.get("savedCount"),
+        "latestDayCollectionStatus": "SAVED" if response.get("ok") else "FAILED",
+        "latestDayCollectionSource": "MOOMOO_CAPITAL_DISTRIBUTION",
+        "latestDayBuySellBreakdownAvailable": True,
         **historical_result,
+        "reason": historical_result.get("historicalReason"),
         "historicalRowsSaved": historical_saved,
         "historicalIngestResponses": historical_responses,
         "dateCoverage": date_coverage,

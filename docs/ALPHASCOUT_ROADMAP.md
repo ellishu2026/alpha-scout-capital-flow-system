@@ -57,6 +57,7 @@
 - V1.9.4 Dynamic Moomoo 20-Ticker Coverage & 4D Backfill Test
 - V1.9.5 Moomoo get_capital_flow Historical Backfill Experiment
 - V1.9.5.1 Flow Data Diagnostics Moomoo-First UI Fix
+- V1.9.5.2 Moomoo Backfill US Market Date Handling Cleanup
 
 ## Next Recommended Steps
 
@@ -384,3 +385,11 @@ V1.9.5.1 updates Flow Data Diagnostics so Moomoo Direct Flow is shown as the fir
 Row-level 1D source tooltips now explicitly say `Moomoo Direct Flow from archived capital distribution data` when Moomoo is used, while proxy-based rows continue to say the value is estimated from the Enhanced OHLCV Proxy and is not real buy/sell net flow.
 
 This is a UI/diagnostics-only patch. It does not change collector logic, ingest/archive writes, historical backfill, Entry / Position actions, scoring, thresholds, Risk Gate behavior, fixed watchlist, universe selection, or trading functionality.
+
+## Moomoo Backfill US Market Date Handling Cleanup
+
+V1.9.5.2 cleans up the local Moomoo collector date model for US equities. Latest-day collection now infers `latestCompletedMarketDate` from Moomoo returned data dates when available, with a US/Eastern market-close fallback, instead of blindly using the local machine calendar date.
+
+Historical `--backfill-days 4` now means four prior US trading days excluding the latest completed market date. Weekends and common US market holidays are skipped. Latest-day `get_capital_distribution` rows and historical `get_capital_flow` rows are reported separately with `latestDayCollectionDate`, `historicalTargetDates`, `historicalSupportedDates`, `historicalFailedDates`, and clearer reason text.
+
+This is collector/reporting cleanup only. It preserves Moomoo-first diagnostics, latest-day archive behavior, historical net-flow-only archive behavior, Entry / Position actions, scoring, thresholds, Risk Gate behavior, fixed watchlist, universe selection, and no-trading security constraints.
