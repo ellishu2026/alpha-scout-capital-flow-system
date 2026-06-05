@@ -20,7 +20,7 @@ export const MOOMOO_QUOTA_GUARD = {
   maxRequestsPerRun: 25,
   retryLimit: 1,
   maxBackfillSymbolsPerRun: 5,
-  maxBackfillDaysPerRun: 3,
+  maxBackfillDaysPerRun: 4,
   backfillRequestIntervalMs: 1500,
   tradingApiAllowed: false,
 } as const;

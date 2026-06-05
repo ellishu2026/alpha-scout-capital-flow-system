@@ -1118,6 +1118,11 @@ export type SnapshotResponse = {
     moomooProvider?: string;
     moomooFlowTier?: string;
     moomooFlowTierLabel?: string;
+    moomooArchiveTickerCount?: number;
+    moomooArchiveDateCoverage?: Record<string, number>;
+    moomooDirectFlowAvailableCount?: number;
+    moomooFallbackCount?: number;
+    maxSymbolsPerRun?: number;
     moomooQuotaGuard?: {
       enabled: boolean;
       liveEnabled: boolean;

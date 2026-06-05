@@ -323,7 +323,20 @@ async function buildOverlayMap(tickers: string[]) {
     overlayMap,
     moomooSummary: moomooResult.guard,
     moomooErrors: moomooResult.errors,
+    moomooHistory: moomooResult.history,
   };
+}
+
+function buildMoomooDateCoverage(history: Map<string, MoomooCapitalDistribution[]>) {
+  const coverage: Record<string, number> = {};
+
+  history.forEach((rows) => {
+    rows.forEach((row) => {
+      coverage[row.flowDate] = (coverage[row.flowDate] ?? 0) + 1;
+    });
+  });
+
+  return coverage;
 }
 
 function applyOverlayToItem(candidate: StockCandidate, overlay?: EstimatedFlowOverlay) {
@@ -487,9 +500,12 @@ export async function applyEstimatedFlowProxyDisplayToSnapshot(
 ): Promise<SnapshotResponse> {
   const fixedSnapshot = snapshot.fixedSnapshot ?? null;
   const tickers = scopedTickerSet(snapshot, fixedSnapshot);
-  const { overlayMap, moomooSummary, moomooErrors } = await buildOverlayMap(tickers);
+  const { overlayMap, moomooSummary, moomooErrors, moomooHistory } =
+    await buildOverlayMap(tickers);
   const apply = (item: StockCandidate) =>
     applyOverlayToItem(item, overlayMap.get(item.ticker.toUpperCase()));
+  const moomooArchiveTickerCount = moomooHistory.size;
+  const moomooArchiveDateCoverage = buildMoomooDateCoverage(moomooHistory);
 
   return {
     ...snapshot,
@@ -517,6 +533,11 @@ export async function applyEstimatedFlowProxyDisplayToSnapshot(
       moomooFlowTier: MOOMOO_FLOW_TIER,
       moomooFlowTierLabel: MOOMOO_FLOW_TIER_LABEL,
       moomooQuotaGuard: moomooSummary,
+      moomooArchiveTickerCount,
+      moomooArchiveDateCoverage,
+      moomooDirectFlowAvailableCount: moomooArchiveTickerCount,
+      moomooFallbackCount: Math.max(tickers.length - moomooArchiveTickerCount, 0),
+      maxSymbolsPerRun: moomooSummary.maxSymbolsPerRun,
       moomooErrors,
       productionFlowChanged: false,
     },

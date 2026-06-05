@@ -54,6 +54,7 @@
 - V1.9.2.1 Moomoo Source Visibility & 1D Flow Binding Fix
 - V1.9.2.2 Moomoo Fallback Ladder Restore
 - V1.9.3 Moomoo Local Collector & Archive Ingest
+- V1.9.4 Dynamic Moomoo 20-Ticker Coverage & 4D Backfill Test
 
 ## Next Recommended Steps
 
@@ -357,3 +358,11 @@ V1.9.3 adds `POST /api/moomoo/ingest-daily-flow` for authenticated Moomoo daily 
 V1.9.3 also adds `scripts/moomoo_collect_and_upload.py` for MacBook Neo. The script connects to local OpenD at `127.0.0.1:11111` using `OpenQuoteContext` only, calls `get_capital_distribution`, calculates buy/sell/net flow, sleeps 1.2 seconds between requests, and uploads to the ingest API. No trading context, order placement, account, position, or trading endpoint is imported or used.
 
 Production Vercel still does not connect to local OpenD. It reads archived Moomoo rows when the local collector uploads them; otherwise the existing Enhanced OHLCV Proxy / archive fallback ladder remains active. Entry / Position actions, scoring, thresholds, Risk Gate behavior, universe scope, and fixed watchlist are unchanged.
+
+## Dynamic Moomoo 20-Ticker Coverage & 4D Backfill Test
+
+V1.9.4 updates the local Moomoo collector so daily collection can run in `--auto-universe` mode. The collector loads the latest AlphaScout refresh payload, takes Fixed List tickers first, appends Ranked Candidates in ranked order, deduplicates, and caps the final collection universe at 20 tickers. Manual `--tickers` mode remains available for single-ticker or small-batch checks.
+
+V1.9.4 also adds a controlled `--backfill-days 4` capability probe. The collector tests whether the installed Moomoo quote API exposes historical capital distribution / capital flow access without blocking current-day upload. If historical date access is unsupported or latest-day-only, it records that status and continues the normal archive ingest.
+
+Refresh diagnostics now expose Moomoo archive coverage counts and date coverage for the scoped display set. Production still never connects directly to local OpenD, never imports trading contexts, and never changes Entry / Position actions, scoring, thresholds, Risk Gate behavior, universe scope, or fixed watchlist definitions.
