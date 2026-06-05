@@ -317,6 +317,8 @@ export type StockCandidate = {
   moomooFlowSource?: string | null;
   moomooFlowArchiveHit?: boolean;
   moomooFlowStatus?: string | null;
+  flow1DSource?: string | null;
+  oneDayFlowSource?: string | null;
   enhancedProxyAvailable?: boolean;
   enhancedProxyAlgorithmVersion?: string | null;
   enhancedProxyFlow1D_V188?: number | null;
@@ -1131,6 +1133,9 @@ export type SnapshotResponse = {
       failedCount: number;
       tradingApiAllowed: false;
       fallbackToEnhancedProxy: boolean;
+      status?: string;
+      sourceLabel?: string;
+      statusMessage?: string;
     };
     moomooErrors?: string[];
     productionFlowChanged: boolean;

@@ -410,6 +410,28 @@ function getFlowWindowValue(
   );
 }
 
+function getOneDayFlowValue(candidate: StockCandidate) {
+  if (candidate.moomooFlowAvailable && typeof candidate.moomooNetFlow === "number") {
+    return candidate.moomooNetFlow;
+  }
+
+  return getFlowWindowValue(candidate, "capitalFlow1D");
+}
+
+function flow1DSourceLabel(candidate: StockCandidate) {
+  if (candidate.moomooFlowAvailable && typeof candidate.moomooNetFlow === "number") {
+    return "Moomoo Direct Flow";
+  }
+
+  return (
+    candidate.flow1DSource ??
+    candidate.oneDayFlowSource ??
+    candidate.flowDataTierLabel ??
+    candidate.estimatedFlowProxySource ??
+    "Enhanced OHLCV Proxy"
+  );
+}
+
 function getPersistenceLabel(snapshot: SnapshotResponse) {
   if (snapshot.persistenceStatus === "SAVED") {
     return "Saved";
@@ -425,7 +447,8 @@ function getPersistenceLabel(snapshot: SnapshotResponse) {
 function TableRow({ candidate }: { candidate: StockCandidate }) {
   const numericCell = "px-1.5 py-1.5 text-left text-[10px] tabular-nums";
   const financialsUnavailable = hasUnavailableFinancials(candidate);
-  const flow1D = getFlowWindowValue(candidate, "capitalFlow1D");
+  const flow1D = getOneDayFlowValue(candidate);
+  const flow1DSource = flow1DSourceLabel(candidate);
   const flow3D = getFlowWindowValue(candidate, "capitalFlow3D");
   const flow5D = getFlowWindowValue(candidate, "capitalFlow5D");
   const flow10D = getFlowWindowValue(candidate, "capitalFlow10D");
@@ -475,7 +498,11 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
       </td>
       <td
         className={`${numericCell} ${toneForValue(flow1D)}`}
-        title={`${estimatedFlowTooltip} Window: 1D`}
+        title={`Window: 1D · Source: ${flow1DSource}. ${
+          candidate.moomooFlowAvailable
+            ? "Direct capital distribution net flow."
+            : estimatedFlowTooltip
+        }`}
       >
         {formatLargeCurrency(flow1D)}
       </td>
@@ -897,6 +924,19 @@ function DiagnosticsSection({
   const entrySummary = snapshot.entryActionSummary ?? snapshot.actionSignalSummary;
   const positionSummary = snapshot.positionActionSummary;
   const universeCoverage = snapshot.universeCoverageSummary;
+  const estimatedFlowSummary = snapshot.estimatedFlowProxyDisplaySummary;
+  const moomooGuard = estimatedFlowSummary?.moomooQuotaGuard;
+  const moomooUsedLabel = moomooGuard
+    ? `Used ${moomooGuard.liveProviderCallCount} / Limit ${moomooGuard.maxSymbolsPerRun}`
+    : "Used 0 / Limit 20";
+  const moomooStatus =
+    moomooGuard?.status ??
+    (estimatedFlowSummary?.moomooCapitalDistributionAvailable
+      ? "Fallback Proxy"
+      : "Unavailable");
+  const moomooStatusMessage =
+    moomooGuard?.statusMessage ??
+    "Moomoo Direct Flow unavailable; using Enhanced OHLCV Proxy fallback.";
 
   if (!expanded) {
     return null;
@@ -1108,7 +1148,16 @@ function DiagnosticsSection({
               label="EODHD"
               value={quotaLabel(used?.eodhd, remaining?.eodhd)}
             />
+            <DiagnosticMetric label="Moomoo" value={moomooUsedLabel} />
+            <DiagnosticMetric label="Moomoo Status" value={moomooStatus} />
+            <DiagnosticMetric
+              label="Moomoo Source"
+              value={estimatedFlowSummary?.moomooProvider ?? "MOOMOO_CAPITAL_DISTRIBUTION"}
+            />
           </div>
+          <p className="mt-1.5 text-[10px] leading-snug text-slate-500">
+            {moomooStatusMessage}
+          </p>
         </article>
 
         <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
@@ -1370,7 +1419,7 @@ export function Dashboard({
                 Daily Close Snapshot
               </p>
               <h1 className="mt-0.5 whitespace-nowrap text-[21px] font-semibold tracking-normal text-slate-950 sm:text-2xl lg:text-[26px]">
-                AlphaScout Capital Flow System V1.9.2
+                AlphaScout Capital Flow System V1.9.2.1
               </h1>
               <p className="mt-0.5 text-xs text-slate-600">
                 Capital-flow-driven US stock candidate selection dashboard

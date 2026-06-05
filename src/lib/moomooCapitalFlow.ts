@@ -61,6 +61,9 @@ export type MoomooFlowGuardSummary = {
   failedCount: number;
   tradingApiAllowed: false;
   fallbackToEnhancedProxy: boolean;
+  status: "Available" | "Unavailable" | "Fallback Proxy" | "Local OpenD Required";
+  sourceLabel: typeof MOOMOO_PROVIDER;
+  statusMessage: string;
 };
 
 export type MoomooFlowResult = {
@@ -319,6 +322,14 @@ export async function fetchScopedMoomooCapitalFlows(tickers: string[]): Promise<
     }
   }
 
+  const status =
+    rows.size > 0
+      ? "Available"
+      : liveEnabled
+        ? "Unavailable"
+        : "Local OpenD Required";
+  const fallbackToEnhancedProxy = rows.size < scopedTickers.length;
+
   return {
     rows,
     history,
@@ -338,7 +349,12 @@ export async function fetchScopedMoomooCapitalFlows(tickers: string[]): Promise<
       skippedDueToQuotaCount,
       failedCount: errors.length,
       tradingApiAllowed: false,
-      fallbackToEnhancedProxy: rows.size < scopedTickers.length,
+      fallbackToEnhancedProxy,
+      status: fallbackToEnhancedProxy && rows.size === 0 ? "Fallback Proxy" : status,
+      sourceLabel: MOOMOO_PROVIDER,
+      statusMessage: fallbackToEnhancedProxy
+        ? "Moomoo Direct Flow unavailable; using Enhanced OHLCV Proxy fallback."
+        : "Moomoo Direct Flow available for scoped ticker display.",
     },
   };
 }

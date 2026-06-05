@@ -51,6 +51,7 @@
 - V1.9.1.1 Fixed Watchlist Refresh
 - V1.9.1.2 Fixed Watchlist Page Mapping Fix
 - V1.9.2 Moomoo Direct Capital Flow Provider
+- V1.9.2.1 Moomoo Source Visibility & 1D Flow Binding Fix
 
 ## Next Recommended Steps
 
@@ -334,3 +335,9 @@ V1.9.2 adds `MOOMOO_CAPITAL_DISTRIBUTION` as an optional archive-first direct ca
 The provider is guarded to max 20 symbols per run, 25 requests per run, 1200ms request spacing, and one retry. Backfill remains throttled to max 5 symbols and 3 days per run if historical capital distribution is supported. If Moomoo is unavailable, rows fall back to the existing Enhanced OHLCV Proxy display path.
 
 No trading API, order placement, account trading, position trading, production scoring change, Entry / Position rule change, threshold change, Risk Gate change, or universe expansion is introduced. `productionFlowChanged` remains false.
+
+## Moomoo Source Visibility & 1D Flow Binding Fix
+
+V1.9.2.1 makes Moomoo visible in the Provider Quota / Source Status UI even when production cannot reach local OpenD. The diagnostics now show Moomoo status, source label, scoped request guard, and the fallback message: Moomoo Direct Flow unavailable; using Enhanced OHLCV Proxy fallback.
+
+The main Ranked Candidates 1D cell now explicitly prioritizes `moomooNetFlow` when `moomooFlowAvailable=true`; otherwise it uses the existing Enhanced OHLCV Proxy Est.Flow fallback and exposes `flow1DSource` / `oneDayFlowSource` metadata. Entry / Position actions, scoring, thresholds, provider ladder scope, fixed watchlist, and Risk Gate logic remain unchanged.

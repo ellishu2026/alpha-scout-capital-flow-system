@@ -49,6 +49,7 @@ type EstimatedFlowOverlay = {
   estimatedFlowProxyRowsUsed: number;
   estimatedFlowProxySource: string | null;
   estimatedFlowProxyUpdatedAt: string | null;
+  flow1DSource: string;
   providerUsed?: StockCandidate["providerUsed"];
   flowDataTier?: StockCandidate["flowDataTier"];
   flowDataTierLabel?: string;
@@ -207,6 +208,7 @@ function buildOverlayFromCandles(
     estimatedFlowProxyRowsUsed: rows.length,
     estimatedFlowProxySource: source,
     estimatedFlowProxyUpdatedAt: latest?.date ?? null,
+    flow1DSource: available ? "Enhanced OHLCV Proxy" : "Unavailable",
   };
 }
 
@@ -239,6 +241,7 @@ function buildOverlayFromMoomooRows(rows: MoomooCapitalDistribution[]): Estimate
         ? "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
         : "MOOMOO_CAPITAL_DISTRIBUTION",
     estimatedFlowProxyUpdatedAt: latest.flowDate,
+    flow1DSource: "Moomoo Direct Flow",
     providerUsed:
       latest.source === "ARCHIVE"
         ? "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
@@ -274,6 +277,7 @@ function insufficientOverlay(reason: string): EstimatedFlowOverlay {
     estimatedFlowProxyRowsUsed: 0,
     estimatedFlowProxySource: null,
     estimatedFlowProxyUpdatedAt: null,
+    flow1DSource: "Unavailable",
   };
 }
 
@@ -356,6 +360,8 @@ function applyOverlayToItem(candidate: StockCandidate, overlay?: EstimatedFlowOv
     moomooFlowSource: overlay.estimatedFlowProxySource,
     moomooFlowArchiveHit: overlay.moomooFlow?.source === "ARCHIVE",
     moomooFlowStatus: overlay.moomooFlow ? "AVAILABLE" : null,
+    flow1DSource: overlay.flow1DSource,
+    oneDayFlowSource: overlay.flow1DSource,
     enhancedProxyAvailable:
       overlay.flowDataTier === MOOMOO_FLOW_TIER ? true : overlay.estimatedFlowProxyAvailable,
     enhancedProxyAlgorithmVersion:
