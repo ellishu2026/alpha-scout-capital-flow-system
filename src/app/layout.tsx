@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { APP_TITLE } from "@/lib/appVersion";
+import { APP_TITLE } from "@/lib/version";
 import "./globals.css";
 
 export const metadata: Metadata = {

@@ -1,2 +1,6 @@
-export const APP_VERSION = "V1.9.7.3";
-export const APP_TITLE = `AlphaScout Capital Flow System ${APP_VERSION}`;
+export {
+  APP_NAME,
+  APP_TITLE,
+  APP_VERSION,
+  APP_VERSION_LABEL,
+} from "@/lib/version";

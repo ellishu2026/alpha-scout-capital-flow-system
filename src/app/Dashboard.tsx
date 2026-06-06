@@ -1,6 +1,6 @@
 "use client";
 
-import { APP_TITLE } from "@/lib/appVersion";
+import { APP_TITLE } from "@/lib/version";
 import { FIXED_WATCHLIST_SYMBOLS } from "@/lib/marketUniverse";
 import {
   formatCurrency,
