@@ -214,18 +214,14 @@ function buildOverlayFromCandles(
 }
 
 function buildOverlayFromMoomooRows(rows: MoomooCapitalDistribution[]): EstimatedFlowOverlay {
-  const xlsxRows = rows.filter(
-    (row) => row.provider === MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER,
-  );
-  const sourceRows = xlsxRows.length > 0 ? xlsxRows : rows;
   const byDate = new Map<string, MoomooCapitalDistribution>();
   const providerPriority = (row: MoomooCapitalDistribution) => {
+    if (row.provider === MOOMOO_PROVIDER) return 4;
     if (row.provider === MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER) return 3;
-    if (row.provider === MOOMOO_PROVIDER) return 2;
     return 1;
   };
 
-  sourceRows.forEach((row) => {
+  rows.forEach((row) => {
     const existing = byDate.get(row.flowDate);
     if (!existing || providerPriority(row) >= providerPriority(existing)) {
       byDate.set(row.flowDate, row);
@@ -260,8 +256,8 @@ function buildOverlayFromMoomooRows(rows: MoomooCapitalDistribution[]): Estimate
       latest.provider === MOOMOO_HISTORICAL_XLSX_IMPORT_PROVIDER
         ? "Moomoo Historical XLSX Import"
         : latest.source === "ARCHIVE"
-          ? "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"
-          : "MOOMOO_CAPITAL_DISTRIBUTION",
+          ? "Moomoo Capital Distribution Archive"
+          : "Moomoo Capital Distribution",
     estimatedFlowProxyUpdatedAt: latest.flowDate,
     flow1DSource: "Moomoo Direct Flow",
     providerUsed:

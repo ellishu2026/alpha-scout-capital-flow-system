@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { APP_TITLE } from "@/lib/appVersion";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AlphaScout Capital Flow System V1.9.6",
+  title: APP_TITLE,
   description: "Capital-flow-driven US stock selection dashboard",
 };
 

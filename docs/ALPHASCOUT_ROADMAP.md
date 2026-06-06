@@ -429,3 +429,9 @@ This is a display-only diagnostics refinement. It does not change Moomoo archive
 V1.9.7.2 changes `scripts/run_moomoo_daily_collection.sh` so normal daily operation runs `python3 scripts/moomoo_collect_and_upload.py --auto-universe` without `--backfill-days 4`. The collector itself now defaults `--backfill-days` to `0`, so daily runs collect only the latest completed US market date and mark `historicalMode=disabled`.
 
 The explicit historical experiment remains available with `python3 scripts/moomoo_collect_and_upload.py --auto-universe --backfill-days 4`. The daily checklist now documents latest-day-only as the default and treats historical backfill as optional/manual. This does not change Moomoo archive data, fixed-list XLSX windows, ranked candidate selection, Entry / Position actions, scoring, thresholds, provider priority, Risk Gate behavior, or trading functionality.
+
+## Fixed List Latest Daily Moomoo Overlay & Version Display Fix
+
+V1.9.7.3 fixes fixed-list Moomoo archive precedence so latest daily collector rows from `MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE` are included in the same combined Moomoo window history as `MOOMOO_HISTORICAL_XLSX_IMPORT` rows. Same-date precedence now favors daily collector capital distribution rows over XLSX rows, while XLSX remains the historical source for prior covered dates.
+
+Fixed-list flow windows now end at the latest available Moomoo archive date for the ticker, so a new daily collector row such as `2026-06-05` becomes the `1D` endpoint and the older XLSX archive fills the trailing multi-day windows. V1.9.7.3 also centralizes the visible app version with `APP_VERSION=V1.9.7.3` so the dashboard title and metadata stay aligned. This does not change Entry / Position actions, scoring, thresholds, ranked candidate logic, daily collector latest-day-only behavior, provider priority, Risk Gate behavior, or trading functionality.
