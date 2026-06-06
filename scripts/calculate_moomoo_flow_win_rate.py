@@ -45,6 +45,10 @@ FLOW_PROVIDER_PRIORITY = {
 OUTPUT_JSON = Path("data/research/moomoo_flow_win_rate_v1978.json")
 OUTPUT_CSV = Path("data/research/moomoo_flow_win_rate_v1978.csv")
 OUTPUT_MD = Path("docs/research/moomoo-flow-win-rate-v1978.md")
+OUTPUT_JSON_V199 = Path("data/research/moomoo_flow_win_rate_v199.json")
+OUTPUT_CSV_V199 = Path("data/research/moomoo_flow_win_rate_v199.csv")
+OUTPUT_MD_V199 = Path("docs/research/moomoo-flow-win-rate-v199.md")
+DEFAULT_PRICE_ARCHIVE = Path("data/research/fixed_close_prices_v199.json")
 
 
 @dataclass(frozen=True)
@@ -203,16 +207,46 @@ def load_local_xlsx_flow_rows(path: Path) -> list[FlowRow]:
     return sorted(rows, key=lambda row: (row.ticker, row.date))
 
 
-def load_research_inputs(xlsx_file: Path) -> tuple[list[FlowRow], list[PriceRow], str, str | None]:
+def load_local_price_rows(path: Path) -> list[PriceRow]:
+    if not path.exists():
+        return []
+    payload = json.loads(path.read_text())
+    records = payload.get("rows") if isinstance(payload, dict) else []
+    rows: list[PriceRow] = []
+    for record in records or []:
+        if not isinstance(record, dict):
+            continue
+        ticker = str(record.get("ticker") or "").upper()
+        date = str(record.get("date") or "")[:10]
+        adjusted = to_float(record.get("adjustedClose"))
+        close = to_float(record.get("close"))
+        selected = adjusted if adjusted is not None and adjusted > 0 else close
+        source = str(record.get("source") or "LOCAL_PRICE_ARCHIVE")
+        if ticker in FIXED_LIST and date and selected is not None and selected > 0:
+            rows.append(PriceRow(ticker=ticker, date=date, close=selected, provider=source))
+    by_key = {(row.ticker, row.date): row for row in rows}
+    return sorted(by_key.values(), key=lambda row: (row.ticker, row.date))
+
+
+def load_research_inputs(
+    xlsx_file: Path,
+    price_archive: Path,
+) -> tuple[list[FlowRow], list[PriceRow], str, str | None]:
+    local_price_rows = load_local_price_rows(price_archive)
     if supabase_configured():
         flow_rows, price_rows = fetch_archives()
-        return flow_rows, price_rows, "SUPABASE_ARCHIVE", None
+        if price_rows:
+            return flow_rows, price_rows, "SUPABASE_ARCHIVE", None
+        warning = "SUPABASE_PRICE_ARCHIVE_EMPTY: using local fixed-list close price archive."
+        return flow_rows, local_price_rows, "SUPABASE_FLOW_LOCAL_PRICE_ARCHIVE", warning
     flow_rows = load_local_xlsx_flow_rows(xlsx_file)
+    if local_price_rows:
+        return flow_rows, local_price_rows, "LOCAL_XLSX_FLOW_FIXED_CLOSE_PRICE_ARCHIVE", None
     return (
         flow_rows,
         [],
         "LOCAL_XLSX_FLOW_ONLY",
-        "SUPABASE_ENV_MISSING: price archive was unavailable locally; forward-return samples are Not Ready.",
+        "PRICE_ARCHIVE_MISSING: run scripts/fetch_fixed_close_prices.py before calculating forward returns.",
     )
 
 
@@ -428,11 +462,11 @@ def num(value: float | None) -> str:
 
 
 def write_outputs(summary: dict[str, Any], metrics: list[dict[str, Any]]) -> None:
-    OUTPUT_JSON.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_MD.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_JSON.write_text(json.dumps({"summary": summary, "metrics": metrics}, indent=2))
-    with OUTPUT_CSV.open("w", newline="") as file:
+    OUTPUT_JSON_V199.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_CSV_V199.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_MD_V199.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_JSON_V199.write_text(json.dumps({"summary": summary, "metrics": metrics}, indent=2))
+    with OUTPUT_CSV_V199.open("w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=list(metrics[0].keys()) if metrics else [])
         if metrics:
             writer.writeheader()
@@ -462,7 +496,9 @@ def write_outputs(summary: dict[str, Any], metrics: list[dict[str, Any]]) -> Non
             )
         return "\n".join(lines)
 
-    md = f"""# Fixed List Moomoo Flow Win Rate Research V1.9.8
+    ready_counts = Counter(row["readyStatus"] for row in metrics)
+
+    md = f"""# Fixed List Moomoo Flow Win Rate Research V1.9.9
 
 Research only. No production rule change. No automatic trading action.
 
@@ -471,12 +507,21 @@ Research only. No production rule change. No automatic trading action.
 - Fixed tickers: {', '.join(summary['fixedTickers'])}
 - Moomoo flow rows: {summary['moomooFlowRows']}
 - Price rows: {summary['priceRows']}
+- Forward return rows: {summary['forwardReturnRows']}
 - Data source mode: {summary['dataSourceMode']}
 - Date range: {summary['dateMin']} -> {summary['dateMax']}
 - Usable signal rows: {summary['usableSignalRows']}
 - Metrics generated: {len(metrics)}
+- Ready status counts: {dict(ready_counts)}
 - Missing price rows by horizon: {summary['missingPriceRowsByHorizon']}
 - Data warning: {summary.get('dataWarning') or 'None'}
+
+## Price Data Source Coverage
+
+- Price date range: {summary.get('priceDateMin')} -> {summary.get('priceDateMax')}
+- Price source counts: {summary.get('priceSourceCounts')}
+- Price rows by ticker: {summary.get('priceRowsByTicker')}
+- Missing forward price rows by horizon: {summary.get('missingForwardPriceRowsByHorizon')}
 
 ## Ticker Coverage
 
@@ -501,26 +546,31 @@ This research compares Moomoo flow conditions with forward returns only. It does
 ## Limitations
 
 - Fixed List only.
-- Uses existing OHLCV archive close prices; missing signal/future prices are excluded per horizon.
+- Uses fixed-list archived daily close prices; missing signal/future prices are excluded per horizon.
 - Recent dates lack longer forward-return horizons by definition.
 - Moomoo XLSX rows provide net inflow only; daily collector rows may include buy/sell breakdown.
 """
-    OUTPUT_MD.write_text(md)
+    OUTPUT_MD_V199.write_text(md)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixed-list-only", action="store_true")
     parser.add_argument("--xlsx-file", default=DEFAULT_XLSX_FILE)
+    parser.add_argument("--price-archive", default=DEFAULT_PRICE_ARCHIVE)
     args = parser.parse_args()
     if not args.fixed_list_only:
-        print("--fixed-list-only is required for V1.9.8 research.")
+        print("--fixed-list-only is required for V1.9.9 research.")
         return 2
     load_env()
-    flow_rows, price_rows, data_source_mode, data_warning = load_research_inputs(Path(args.xlsx_file))
+    flow_rows, price_rows, data_source_mode, data_warning = load_research_inputs(
+        Path(args.xlsx_file),
+        Path(args.price_archive),
+    )
     signal_rows = build_signal_rows(flow_rows, price_rows)
     metrics = compute_metrics(signal_rows)
     date_values = [row.date for row in flow_rows]
+    price_dates = [row.date for row in price_rows]
     ticker_coverage = {
         ticker: {
             "flowRows": sum(1 for row in flow_rows if row.ticker == ticker),
@@ -534,23 +584,60 @@ def main() -> int:
         f"{horizon}D": sum(1 for row in signal_rows if row.get(f"return_{horizon}D") is None)
         for horizon in HORIZONS
     }
+    forward_rows_by_horizon = {
+        f"{horizon}D": sum(1 for row in signal_rows if row.get(f"return_{horizon}D") is not None)
+        for horizon in HORIZONS
+    }
     provider_counts = Counter(row.provider for row in flow_rows)
+    price_provider_counts = Counter(row.provider for row in price_rows)
+    ready_counts = Counter(row["readyStatus"] for row in metrics)
+    best_signal_groups = {
+        "top5DWinRate": sorted(
+            [
+                row for row in metrics
+                if row["forwardHorizon"] == "5D" and row["winRate"] is not None
+            ],
+            key=lambda row: (row["winRate"], row["sampleSize"], row["avgReturn"] or -999),
+            reverse=True,
+        )[:10],
+        "top10DAvgReturn": sorted(
+            [
+                row for row in metrics
+                if row["forwardHorizon"] == "10D" and row["avgReturn"] is not None
+            ],
+            key=lambda row: (row["avgReturn"], row["sampleSize"]),
+            reverse=True,
+        )[:10],
+    }
     summary = {
-        "version": "V1.9.8_FIXED_LIST_MOOMOO_FLOW_WIN_RATE_RESEARCH",
+        "version": "V1.9.9_FIXED_LIST_MOOMOO_FLOW_WIN_RATE_RESEARCH",
         "researchOnly": True,
         "productionRuleChanged": False,
         "fixedTickers": FIXED_LIST,
         "moomooFlowRows": len(flow_rows),
         "priceRows": len(price_rows),
+        "forwardReturnRows": sum(forward_rows_by_horizon.values()),
+        "forwardReturnRowsByHorizon": forward_rows_by_horizon,
         "dataSourceMode": data_source_mode,
         "dataWarning": data_warning,
         "dateMin": min(date_values) if date_values else None,
         "dateMax": max(date_values) if date_values else None,
+        "priceDateMin": min(price_dates) if price_dates else None,
+        "priceDateMax": max(price_dates) if price_dates else None,
         "usableSignalRows": len(signal_rows),
         "missingPriceRowsByHorizon": missing_by_horizon,
+        "missingForwardPriceRowsByHorizon": missing_by_horizon,
         "providerCounts": dict(provider_counts),
+        "priceSourceCounts": dict(price_provider_counts),
+        "priceRowsByTicker": {
+            ticker: sum(1 for row in price_rows if row.ticker == ticker)
+            for ticker in FIXED_LIST
+        },
+        "metricsCount": len(metrics),
+        "readyStatusSummary": dict(ready_counts),
+        "bestSignalGroups": best_signal_groups,
         "tickerCoverage": ticker_coverage,
-        "outputFiles": [str(OUTPUT_MD), str(OUTPUT_JSON), str(OUTPUT_CSV)],
+        "outputFiles": [str(OUTPUT_MD_V199), str(OUTPUT_JSON_V199), str(OUTPUT_CSV_V199)],
         "noTradingApiUsed": True,
     }
     write_outputs(summary, metrics)

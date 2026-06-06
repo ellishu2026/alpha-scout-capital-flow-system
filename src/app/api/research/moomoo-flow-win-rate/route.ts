@@ -6,14 +6,21 @@ export async function GET() {
   try {
     const filePath = path.join(
       process.cwd(),
-      "data/research/moomoo_flow_win_rate_v1978.json",
+      "data/research/moomoo_flow_win_rate_v199.json",
     );
     const payload = JSON.parse(await readFile(filePath, "utf-8"));
+    const summary = payload.summary ?? {};
 
     return NextResponse.json({
       ok: true,
       researchOnly: true,
       productionRuleChanged: false,
+      moomooFlowRows: summary.moomooFlowRows ?? null,
+      priceRows: summary.priceRows ?? null,
+      forwardReturnRows: summary.forwardReturnRows ?? null,
+      metricsCount: summary.metricsCount ?? payload.metrics?.length ?? null,
+      bestSignalGroups: summary.bestSignalGroups ?? null,
+      readyStatusSummary: summary.readyStatusSummary ?? null,
       ...payload,
     });
   } catch (error) {
