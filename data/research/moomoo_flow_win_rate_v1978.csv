@@ -1,0 +1,131 @@
+signalGroup,category,forwardHorizon,sampleSize,winRate,avgReturn,medianReturn,maxReturn,minReturn,avgWinner,avgLoser,profitFactor,positiveReturnCount,negativeReturnCount,missingPriceRows,readyStatus,matchedSignalRows,totalSignalRows
+flow1D > 0,Simple positive flow,1D,0,,,,,,,,,0,0,337,Not Ready,337,753
+flow1D > 0,Simple positive flow,3D,0,,,,,,,,,0,0,337,Not Ready,337,753
+flow1D > 0,Simple positive flow,5D,0,,,,,,,,,0,0,337,Not Ready,337,753
+flow1D > 0,Simple positive flow,10D,0,,,,,,,,,0,0,337,Not Ready,337,753
+flow1D > 0,Simple positive flow,20D,0,,,,,,,,,0,0,337,Not Ready,337,753
+flow3D > 0,Simple positive flow,1D,0,,,,,,,,,0,0,331,Not Ready,331,753
+flow3D > 0,Simple positive flow,3D,0,,,,,,,,,0,0,331,Not Ready,331,753
+flow3D > 0,Simple positive flow,5D,0,,,,,,,,,0,0,331,Not Ready,331,753
+flow3D > 0,Simple positive flow,10D,0,,,,,,,,,0,0,331,Not Ready,331,753
+flow3D > 0,Simple positive flow,20D,0,,,,,,,,,0,0,331,Not Ready,331,753
+flow5D > 0,Simple positive flow,1D,0,,,,,,,,,0,0,307,Not Ready,307,753
+flow5D > 0,Simple positive flow,3D,0,,,,,,,,,0,0,307,Not Ready,307,753
+flow5D > 0,Simple positive flow,5D,0,,,,,,,,,0,0,307,Not Ready,307,753
+flow5D > 0,Simple positive flow,10D,0,,,,,,,,,0,0,307,Not Ready,307,753
+flow5D > 0,Simple positive flow,20D,0,,,,,,,,,0,0,307,Not Ready,307,753
+flow10D > 0,Simple positive flow,1D,0,,,,,,,,,0,0,301,Not Ready,301,753
+flow10D > 0,Simple positive flow,3D,0,,,,,,,,,0,0,301,Not Ready,301,753
+flow10D > 0,Simple positive flow,5D,0,,,,,,,,,0,0,301,Not Ready,301,753
+flow10D > 0,Simple positive flow,10D,0,,,,,,,,,0,0,301,Not Ready,301,753
+flow10D > 0,Simple positive flow,20D,0,,,,,,,,,0,0,301,Not Ready,301,753
+flow20D > 0,Simple positive flow,1D,0,,,,,,,,,0,0,248,Not Ready,248,753
+flow20D > 0,Simple positive flow,3D,0,,,,,,,,,0,0,248,Not Ready,248,753
+flow20D > 0,Simple positive flow,5D,0,,,,,,,,,0,0,248,Not Ready,248,753
+flow20D > 0,Simple positive flow,10D,0,,,,,,,,,0,0,248,Not Ready,248,753
+flow20D > 0,Simple positive flow,20D,0,,,,,,,,,0,0,248,Not Ready,248,753
+flow1D percentile >= 70,Strong inflow percentile,1D,0,,,,,,,,,0,0,230,Not Ready,230,753
+flow1D percentile >= 70,Strong inflow percentile,3D,0,,,,,,,,,0,0,230,Not Ready,230,753
+flow1D percentile >= 70,Strong inflow percentile,5D,0,,,,,,,,,0,0,230,Not Ready,230,753
+flow1D percentile >= 70,Strong inflow percentile,10D,0,,,,,,,,,0,0,230,Not Ready,230,753
+flow1D percentile >= 70,Strong inflow percentile,20D,0,,,,,,,,,0,0,230,Not Ready,230,753
+flow1D percentile >= 80,Strong inflow percentile,1D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow1D percentile >= 80,Strong inflow percentile,3D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow1D percentile >= 80,Strong inflow percentile,5D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow1D percentile >= 80,Strong inflow percentile,10D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow1D percentile >= 80,Strong inflow percentile,20D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow1D percentile >= 90,Strong inflow percentile,1D,0,,,,,,,,,0,0,82,Not Ready,82,753
+flow1D percentile >= 90,Strong inflow percentile,3D,0,,,,,,,,,0,0,82,Not Ready,82,753
+flow1D percentile >= 90,Strong inflow percentile,5D,0,,,,,,,,,0,0,82,Not Ready,82,753
+flow1D percentile >= 90,Strong inflow percentile,10D,0,,,,,,,,,0,0,82,Not Ready,82,753
+flow1D percentile >= 90,Strong inflow percentile,20D,0,,,,,,,,,0,0,82,Not Ready,82,753
+flow1D percentile <= 10,Large outflow risk,1D,0,,,,,,,,,0,0,73,Not Ready,73,753
+flow1D percentile <= 10,Large outflow risk,3D,0,,,,,,,,,0,0,73,Not Ready,73,753
+flow1D percentile <= 10,Large outflow risk,5D,0,,,,,,,,,0,0,73,Not Ready,73,753
+flow1D percentile <= 10,Large outflow risk,10D,0,,,,,,,,,0,0,73,Not Ready,73,753
+flow1D percentile <= 10,Large outflow risk,20D,0,,,,,,,,,0,0,73,Not Ready,73,753
+flow5D percentile >= 70,Strong inflow percentile,1D,0,,,,,,,,,0,0,220,Not Ready,220,753
+flow5D percentile >= 70,Strong inflow percentile,3D,0,,,,,,,,,0,0,220,Not Ready,220,753
+flow5D percentile >= 70,Strong inflow percentile,5D,0,,,,,,,,,0,0,220,Not Ready,220,753
+flow5D percentile >= 70,Strong inflow percentile,10D,0,,,,,,,,,0,0,220,Not Ready,220,753
+flow5D percentile >= 70,Strong inflow percentile,20D,0,,,,,,,,,0,0,220,Not Ready,220,753
+flow5D percentile >= 80,Strong inflow percentile,1D,0,,,,,,,,,0,0,147,Not Ready,147,753
+flow5D percentile >= 80,Strong inflow percentile,3D,0,,,,,,,,,0,0,147,Not Ready,147,753
+flow5D percentile >= 80,Strong inflow percentile,5D,0,,,,,,,,,0,0,147,Not Ready,147,753
+flow5D percentile >= 80,Strong inflow percentile,10D,0,,,,,,,,,0,0,147,Not Ready,147,753
+flow5D percentile >= 80,Strong inflow percentile,20D,0,,,,,,,,,0,0,147,Not Ready,147,753
+flow5D percentile >= 90,Strong inflow percentile,1D,0,,,,,,,,,0,0,74,Not Ready,74,753
+flow5D percentile >= 90,Strong inflow percentile,3D,0,,,,,,,,,0,0,74,Not Ready,74,753
+flow5D percentile >= 90,Strong inflow percentile,5D,0,,,,,,,,,0,0,74,Not Ready,74,753
+flow5D percentile >= 90,Strong inflow percentile,10D,0,,,,,,,,,0,0,74,Not Ready,74,753
+flow5D percentile >= 90,Strong inflow percentile,20D,0,,,,,,,,,0,0,74,Not Ready,74,753
+flow5D percentile <= 10,Large outflow risk,1D,0,,,,,,,,,0,0,65,Not Ready,65,753
+flow5D percentile <= 10,Large outflow risk,3D,0,,,,,,,,,0,0,65,Not Ready,65,753
+flow5D percentile <= 10,Large outflow risk,5D,0,,,,,,,,,0,0,65,Not Ready,65,753
+flow5D percentile <= 10,Large outflow risk,10D,0,,,,,,,,,0,0,65,Not Ready,65,753
+flow5D percentile <= 10,Large outflow risk,20D,0,,,,,,,,,0,0,65,Not Ready,65,753
+flow20D percentile >= 70,Strong inflow percentile,1D,0,,,,,,,,,0,0,177,Not Ready,177,753
+flow20D percentile >= 70,Strong inflow percentile,3D,0,,,,,,,,,0,0,177,Not Ready,177,753
+flow20D percentile >= 70,Strong inflow percentile,5D,0,,,,,,,,,0,0,177,Not Ready,177,753
+flow20D percentile >= 70,Strong inflow percentile,10D,0,,,,,,,,,0,0,177,Not Ready,177,753
+flow20D percentile >= 70,Strong inflow percentile,20D,0,,,,,,,,,0,0,177,Not Ready,177,753
+flow20D percentile >= 80,Strong inflow percentile,1D,0,,,,,,,,,0,0,120,Not Ready,120,753
+flow20D percentile >= 80,Strong inflow percentile,3D,0,,,,,,,,,0,0,120,Not Ready,120,753
+flow20D percentile >= 80,Strong inflow percentile,5D,0,,,,,,,,,0,0,120,Not Ready,120,753
+flow20D percentile >= 80,Strong inflow percentile,10D,0,,,,,,,,,0,0,120,Not Ready,120,753
+flow20D percentile >= 80,Strong inflow percentile,20D,0,,,,,,,,,0,0,120,Not Ready,120,753
+flow20D percentile >= 90,Strong inflow percentile,1D,0,,,,,,,,,0,0,64,Not Ready,64,753
+flow20D percentile >= 90,Strong inflow percentile,3D,0,,,,,,,,,0,0,64,Not Ready,64,753
+flow20D percentile >= 90,Strong inflow percentile,5D,0,,,,,,,,,0,0,64,Not Ready,64,753
+flow20D percentile >= 90,Strong inflow percentile,10D,0,,,,,,,,,0,0,64,Not Ready,64,753
+flow20D percentile >= 90,Strong inflow percentile,20D,0,,,,,,,,,0,0,64,Not Ready,64,753
+flow20D percentile <= 10,Large outflow risk,1D,0,,,,,,,,,0,0,55,Not Ready,55,753
+flow20D percentile <= 10,Large outflow risk,3D,0,,,,,,,,,0,0,55,Not Ready,55,753
+flow20D percentile <= 10,Large outflow risk,5D,0,,,,,,,,,0,0,55,Not Ready,55,753
+flow20D percentile <= 10,Large outflow risk,10D,0,,,,,,,,,0,0,55,Not Ready,55,753
+flow20D percentile <= 10,Large outflow risk,20D,0,,,,,,,,,0,0,55,Not Ready,55,753
+at least 3 positive days in latest 5D,Persistent inflow,1D,0,,,,,,,,,0,0,302,Not Ready,302,753
+at least 3 positive days in latest 5D,Persistent inflow,3D,0,,,,,,,,,0,0,302,Not Ready,302,753
+at least 3 positive days in latest 5D,Persistent inflow,5D,0,,,,,,,,,0,0,302,Not Ready,302,753
+at least 3 positive days in latest 5D,Persistent inflow,10D,0,,,,,,,,,0,0,302,Not Ready,302,753
+at least 3 positive days in latest 5D,Persistent inflow,20D,0,,,,,,,,,0,0,302,Not Ready,302,753
+at least 4 positive days in latest 5D,Persistent inflow,1D,0,,,,,,,,,0,0,121,Not Ready,121,753
+at least 4 positive days in latest 5D,Persistent inflow,3D,0,,,,,,,,,0,0,121,Not Ready,121,753
+at least 4 positive days in latest 5D,Persistent inflow,5D,0,,,,,,,,,0,0,121,Not Ready,121,753
+at least 4 positive days in latest 5D,Persistent inflow,10D,0,,,,,,,,,0,0,121,Not Ready,121,753
+at least 4 positive days in latest 5D,Persistent inflow,20D,0,,,,,,,,,0,0,121,Not Ready,121,753
+at least 7 positive days in latest 10D,Persistent inflow,1D,0,,,,,,,,,0,0,127,Not Ready,127,753
+at least 7 positive days in latest 10D,Persistent inflow,3D,0,,,,,,,,,0,0,127,Not Ready,127,753
+at least 7 positive days in latest 10D,Persistent inflow,5D,0,,,,,,,,,0,0,127,Not Ready,127,753
+at least 7 positive days in latest 10D,Persistent inflow,10D,0,,,,,,,,,0,0,127,Not Ready,127,753
+at least 7 positive days in latest 10D,Persistent inflow,20D,0,,,,,,,,,0,0,127,Not Ready,127,753
+flow1D > 0 and flow3D > 0 and flow5D > 0,Persistent inflow,1D,0,,,,,,,,,0,0,188,Not Ready,188,753
+flow1D > 0 and flow3D > 0 and flow5D > 0,Persistent inflow,3D,0,,,,,,,,,0,0,188,Not Ready,188,753
+flow1D > 0 and flow3D > 0 and flow5D > 0,Persistent inflow,5D,0,,,,,,,,,0,0,188,Not Ready,188,753
+flow1D > 0 and flow3D > 0 and flow5D > 0,Persistent inflow,10D,0,,,,,,,,,0,0,188,Not Ready,188,753
+flow1D > 0 and flow3D > 0 and flow5D > 0,Persistent inflow,20D,0,,,,,,,,,0,0,188,Not Ready,188,753
+flow3D > 0 and flow5D > 0 and flow10D > 0,Persistent inflow,1D,0,,,,,,,,,0,0,208,Not Ready,208,753
+flow3D > 0 and flow5D > 0 and flow10D > 0,Persistent inflow,3D,0,,,,,,,,,0,0,208,Not Ready,208,753
+flow3D > 0 and flow5D > 0 and flow10D > 0,Persistent inflow,5D,0,,,,,,,,,0,0,208,Not Ready,208,753
+flow3D > 0 and flow5D > 0 and flow10D > 0,Persistent inflow,10D,0,,,,,,,,,0,0,208,Not Ready,208,753
+flow3D > 0 and flow5D > 0 and flow10D > 0,Persistent inflow,20D,0,,,,,,,,,0,0,208,Not Ready,208,753
+flow1D > 0 after prior 3D flow < 0,Reversal,1D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow1D > 0 after prior 3D flow < 0,Reversal,3D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow1D > 0 after prior 3D flow < 0,Reversal,5D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow1D > 0 after prior 3D flow < 0,Reversal,10D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow1D > 0 after prior 3D flow < 0,Reversal,20D,0,,,,,,,,,0,0,156,Not Ready,156,753
+flow3D > 0 after prior 5D flow < 0,Reversal,1D,0,,,,,,,,,0,0,98,Not Ready,98,753
+flow3D > 0 after prior 5D flow < 0,Reversal,3D,0,,,,,,,,,0,0,98,Not Ready,98,753
+flow3D > 0 after prior 5D flow < 0,Reversal,5D,0,,,,,,,,,0,0,98,Not Ready,98,753
+flow3D > 0 after prior 5D flow < 0,Reversal,10D,0,,,,,,,,,0,0,98,Not Ready,98,753
+flow3D > 0 after prior 5D flow < 0,Reversal,20D,0,,,,,,,,,0,0,98,Not Ready,98,753
+flow1D < 0 after prior 3D flow > 0,Reversal,1D,0,,,,,,,,,0,0,155,Not Ready,155,753
+flow1D < 0 after prior 3D flow > 0,Reversal,3D,0,,,,,,,,,0,0,155,Not Ready,155,753
+flow1D < 0 after prior 3D flow > 0,Reversal,5D,0,,,,,,,,,0,0,155,Not Ready,155,753
+flow1D < 0 after prior 3D flow > 0,Reversal,10D,0,,,,,,,,,0,0,155,Not Ready,155,753
+flow1D < 0 after prior 3D flow > 0,Reversal,20D,0,,,,,,,,,0,0,155,Not Ready,155,753
+flow1D < 0 and flow3D < 0 and flow5D < 0,Large outflow risk,1D,0,,,,,,,,,0,0,258,Not Ready,258,753
+flow1D < 0 and flow3D < 0 and flow5D < 0,Large outflow risk,3D,0,,,,,,,,,0,0,258,Not Ready,258,753
+flow1D < 0 and flow3D < 0 and flow5D < 0,Large outflow risk,5D,0,,,,,,,,,0,0,258,Not Ready,258,753
+flow1D < 0 and flow3D < 0 and flow5D < 0,Large outflow risk,10D,0,,,,,,,,,0,0,258,Not Ready,258,753
+flow1D < 0 and flow3D < 0 and flow5D < 0,Large outflow risk,20D,0,,,,,,,,,0,0,258,Not Ready,258,753
