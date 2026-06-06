@@ -25,18 +25,25 @@ Do not print token values.
 
 ## Daily Command
 
+Default daily operation uses latest completed US market date only:
+
 ```bash
 set -a
 source .env.local
 set +a
 
-python3 scripts/moomoo_collect_and_upload.py --auto-universe --backfill-days 4
+python3 scripts/moomoo_collect_and_upload.py --auto-universe
 ```
 
-Manual test commands remain available:
+Optional/manual historical backfill test remains available when explicitly needed:
 
 ```bash
 python3 scripts/moomoo_collect_and_upload.py --auto-universe --backfill-days 4
+```
+
+Manual ticker test commands remain available:
+
+```bash
 python3 scripts/moomoo_collect_and_upload.py --tickers IONQ
 python3 scripts/moomoo_collect_and_upload.py --tickers SOXL,SMH,NVDA
 ```
@@ -51,7 +58,8 @@ The helper script:
 
 - loads `.env.local`
 - verifies required tokens are present
-- runs the dynamic Moomoo collector with `--auto-universe --backfill-days 4`
+- runs the dynamic Moomoo collector with `--auto-universe`
+- collects latest completed US market date only
 - runs production refresh verification
 - prints a compact coverage summary
 
@@ -99,18 +107,22 @@ coverage = (
     or {}
 )
 
+def first_present(*values):
+    for value in values:
+        if value is not None:
+            return value
+    return None
+
 for key, value in {
-    "moomooArchiveTickerCount": coverage.get("moomooArchiveTickerCount") or refresh.get("moomooArchiveTickerCount") or snapshot.get("moomooArchiveTickerCount"),
-    "moomooArchiveDateCoverage": coverage.get("moomooArchiveDateCoverage") or refresh.get("moomooArchiveDateCoverage") or snapshot.get("moomooArchiveDateCoverage"),
-    "moomooDirectFlowAvailableCount": coverage.get("moomooDirectFlowAvailableCount") or refresh.get("moomooDirectFlowAvailableCount") or snapshot.get("moomooDirectFlowAvailableCount"),
-    "moomooFallbackCount": coverage.get("moomooFallbackCount") or refresh.get("moomooFallbackCount") or snapshot.get("moomooFallbackCount"),
-    "maxSymbolsPerRun": coverage.get("maxSymbolsPerRun") or refresh.get("maxSymbolsPerRun") or snapshot.get("maxSymbolsPerRun"),
+    "moomooArchiveTickerCount": first_present(coverage.get("moomooArchiveTickerCount"), refresh.get("moomooArchiveTickerCount"), snapshot.get("moomooArchiveTickerCount")),
+    "moomooArchiveDateCoverage": first_present(coverage.get("moomooArchiveDateCoverage"), refresh.get("moomooArchiveDateCoverage"), snapshot.get("moomooArchiveDateCoverage")),
+    "moomooDirectFlowAvailableCount": first_present(coverage.get("moomooDirectFlowAvailableCount"), refresh.get("moomooDirectFlowAvailableCount"), snapshot.get("moomooDirectFlowAvailableCount")),
+    "moomooFallbackCount": first_present(coverage.get("moomooFallbackCount"), refresh.get("moomooFallbackCount"), snapshot.get("moomooFallbackCount")),
+    "maxSymbolsPerRun": first_present(coverage.get("maxSymbolsPerRun"), refresh.get("maxSymbolsPerRun"), snapshot.get("maxSymbolsPerRun")),
     "latestCompletedMarketDate": collector.get("latestCompletedMarketDate"),
+    "latestDayCollectionDate": collector.get("latestDayCollectionDate"),
     "latestDayCollectionRowsSaved": collector.get("latestDayCollectionRowsSaved"),
-    "historicalTargetDates": collector.get("historicalTargetDates"),
-    "historicalSupportedDates": collector.get("historicalSupportedDates"),
-    "historicalFailedDates": collector.get("historicalFailedDates"),
-    "historicalReason": collector.get("historicalReason") or collector.get("reason"),
+    "historicalMode": collector.get("historicalMode", "disabled"),
 }.items():
     print(f"{key} = {value}")
 PY
@@ -127,13 +139,14 @@ PASS finalTickerCount = 18 <= maxSymbolsPerRun 20
 PASS ingestOk = true
 PASS savedCount = 18
 PASS Moomoo latest-day archive saved
-WARNING historicalBackfillSupported = false
-INFO historicalTargetDates = [...]
-INFO historicalReason = ...
+INFO historicalMode = disabled
+INFO historicalReason = Latest-day collection only; historical backfill test was not requested.
 NO_TRADING_API_USED = true
 ```
 
-Treat the run as successful when latest-day collection passes and `finalTickerCount <= maxSymbolsPerRun`. Historical backfill may show `WARNING` if Moomoo does not return matching prior trading-date rows; latest-day archive coverage is still valid.
+Treat the run as successful when latest-day collection passes and `finalTickerCount <= maxSymbolsPerRun`. Historical backfill is not part of normal daily operation.
+
+When the explicit manual command uses `--backfill-days 4`, historical fields such as `historicalTargetDates`, `historicalSupportedDates`, `historicalFailedDates`, and `historicalReason` may appear. Those fields should not appear as a large date wall in normal daily helper output.
 
 Treat the run as failed if:
 

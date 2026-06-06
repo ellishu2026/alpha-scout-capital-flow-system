@@ -472,21 +472,16 @@ def collect_historical_backfill(
     backfill_days: int,
 ) -> dict[str, Any]:
     tested_days = max(0, min(backfill_days, MAX_BACKFILL_DAYS))
-    if tested_days <= 1 or not tickers:
+    if tested_days <= 0 or not tickers:
         return {
             "items": [],
+            "historicalMode": "disabled",
             "historicalBackfillSupported": False,
             "backfillDaysRequested": tested_days,
             "testedDays": tested_days,
-            "historicalTargetDates": [],
-            "historicalSupportedDates": [],
-            "historicalFailedDates": [],
             "supportedDays": 0,
-            "failedDays": [],
-            "failedTickerDates": [],
             "historicalRowsFailed": 0,
             "historicalReason": "Latest-day collection only; historical backfill test was not requested.",
-            "apiChecks": [],
         }
 
     api_checks: list[dict[str, Any]] = []
@@ -587,6 +582,7 @@ def collect_historical_backfill(
 
     return {
         "items": historical_items,
+        "historicalMode": "enabled",
         "historicalBackfillSupported": historical_supported,
         "backfillDaysRequested": tested_days,
         "testedDays": tested_days,
@@ -650,6 +646,9 @@ def print_daily_status(
     latest_saved = int(summary.get("latestDayCollectionRowsSaved") or 0)
     ingest_ok = bool(summary.get("ingestOk"))
     historical_supported = summary.get("historicalBackfillSupported")
+    historical_mode = summary.get("historicalMode") or (
+        "enabled" if int(summary.get("backfillDaysRequested") or 0) > 0 else "disabled"
+    )
     latest_ok = (
         ingest_ok
         and latest_saved > 0
@@ -694,6 +693,15 @@ def print_daily_status(
         print(f"PASS savedCount = {saved_count}")
     else:
         print("FAIL savedCount = 0")
+
+    if historical_mode == "disabled":
+        print("INFO historicalMode = disabled")
+        print(
+            "INFO historicalReason = "
+            f"{summary.get('historicalReason') or summary.get('reason') or ''}"
+        )
+        print("NO_TRADING_API_USED = true")
+        return
 
     if historical_supported is False and latest_ok:
         print("WARNING historicalBackfillSupported = false")
@@ -740,7 +748,7 @@ def main() -> int:
         default=os.getenv("ALPHASCOUT_REFRESH_TOKEN") or os.getenv("CRON_SECRET"),
     )
     parser.add_argument("--refresh-payload")
-    parser.add_argument("--backfill-days", type=int, default=1)
+    parser.add_argument("--backfill-days", type=int, default=0)
     args = parser.parse_args()
 
     missing_env: list[str] = []

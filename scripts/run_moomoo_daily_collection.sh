@@ -40,7 +40,7 @@ if (( ${#missing[@]} > 0 )); then
 fi
 
 echo "---- running moomoo daily collector ----"
-python3 scripts/moomoo_collect_and_upload.py --auto-universe --backfill-days 4 | tee "$COLLECTOR_OUT"
+python3 scripts/moomoo_collect_and_upload.py --auto-universe | tee "$COLLECTOR_OUT"
 
 echo "---- production refresh verification ----"
 curl -s "${PRODUCTION_URL}/api/cron/refresh" \
@@ -79,6 +79,13 @@ def nested_get(data, keys):
     return data
 
 
+def first_present(*values):
+    for value in values:
+        if value is not None:
+            return value
+    return None
+
+
 collector = load_collector_summary(collector_path)
 refresh = json.load(open(refresh_path, encoding="utf-8"))
 snapshot = refresh.get("snapshot") if isinstance(refresh.get("snapshot"), dict) else {}
@@ -94,24 +101,38 @@ refresh_summary = (
 
 fields = {
     "latestCompletedMarketDate": collector.get("latestCompletedMarketDate"),
+    "latestDayCollectionDate": collector.get("latestDayCollectionDate"),
+    "latestDayCollectionRowsSaved": collector.get("latestDayCollectionRowsSaved"),
     "finalTickerCount": collector.get("finalTickerCount"),
     "savedCount": collector.get("savedCount"),
-    "moomooArchiveTickerCount": refresh_summary.get("moomooArchiveTickerCount")
-    or refresh.get("moomooArchiveTickerCount")
-    or snapshot.get("moomooArchiveTickerCount"),
-    "moomooDirectFlowAvailableCount": refresh_summary.get("moomooDirectFlowAvailableCount")
-    or refresh.get("moomooDirectFlowAvailableCount")
-    or snapshot.get("moomooDirectFlowAvailableCount"),
-    "moomooFallbackCount": refresh_summary.get("moomooFallbackCount")
-    or refresh.get("moomooFallbackCount")
-    or snapshot.get("moomooFallbackCount"),
-    "dateCoverage": collector.get("dateCoverage")
-    or refresh_summary.get("moomooArchiveDateCoverage")
-    or refresh.get("moomooArchiveDateCoverage")
-    or snapshot.get("moomooArchiveDateCoverage"),
-    "historicalBackfillSupported": collector.get("historicalBackfillSupported"),
-    "historicalRowsSaved": collector.get("historicalRowsSaved"),
+    "moomooArchiveTickerCount": first_present(
+        refresh_summary.get("moomooArchiveTickerCount"),
+        refresh.get("moomooArchiveTickerCount"),
+        snapshot.get("moomooArchiveTickerCount"),
+    ),
+    "moomooDirectFlowAvailableCount": first_present(
+        refresh_summary.get("moomooDirectFlowAvailableCount"),
+        refresh.get("moomooDirectFlowAvailableCount"),
+        snapshot.get("moomooDirectFlowAvailableCount"),
+    ),
+    "moomooFallbackCount": first_present(
+        refresh_summary.get("moomooFallbackCount"),
+        refresh.get("moomooFallbackCount"),
+        snapshot.get("moomooFallbackCount"),
+    ),
+    "dateCoverage": first_present(
+        collector.get("dateCoverage"),
+        refresh_summary.get("moomooArchiveDateCoverage"),
+        refresh.get("moomooArchiveDateCoverage"),
+        snapshot.get("moomooArchiveDateCoverage"),
+    ),
+    "historicalMode": collector.get("historicalMode", "disabled"),
 }
+
+if collector.get("historicalMode") == "enabled":
+    fields["historicalBackfillSupported"] = collector.get("historicalBackfillSupported")
+    fields["historicalRowsSaved"] = collector.get("historicalRowsSaved")
+    fields["historicalTargetDates"] = collector.get("historicalTargetDates")
 
 for key, value in fields.items():
     print(f"{key}: {value}")

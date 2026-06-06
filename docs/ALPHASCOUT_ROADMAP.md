@@ -423,3 +423,9 @@ The validator can optionally compare a production refresh JSON fixed snapshot ag
 V1.9.7.1 keeps Moomoo first in Flow Data Diagnostics while replacing the dense `Moomoo Dates` wall with a compact date-coverage summary. Provider Quota now shows latest archive date, archive date range, covered date count, latest coverage, fixed historical row count, and only the five most recent date counts with a remaining-date summary.
 
 This is a display-only diagnostics refinement. It does not change Moomoo archive data, XLSX import data, daily collector behavior, fixed-list window calculations, ranked candidate refresh, Entry / Position actions, scoring, thresholds, win-rate logic, Risk Gate behavior, provider priority, or trading functionality.
+
+## Daily Moomoo Collector Latest-Day Only Default
+
+V1.9.7.2 changes `scripts/run_moomoo_daily_collection.sh` so normal daily operation runs `python3 scripts/moomoo_collect_and_upload.py --auto-universe` without `--backfill-days 4`. The collector itself now defaults `--backfill-days` to `0`, so daily runs collect only the latest completed US market date and mark `historicalMode=disabled`.
+
+The explicit historical experiment remains available with `python3 scripts/moomoo_collect_and_upload.py --auto-universe --backfill-days 4`. The daily checklist now documents latest-day-only as the default and treats historical backfill as optional/manual. This does not change Moomoo archive data, fixed-list XLSX windows, ranked candidate selection, Entry / Position actions, scoring, thresholds, provider priority, Risk Gate behavior, or trading functionality.
