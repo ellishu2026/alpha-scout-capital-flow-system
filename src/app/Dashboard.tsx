@@ -19,6 +19,53 @@ import type {
 } from "@/types/stock";
 import { useMemo, useState } from "react";
 
+type RuleControlResearchSignal = {
+  signalName: string;
+  category: string;
+  horizon: string;
+  sampleSize: number;
+  winRate: number | null;
+  avgReturn: number | null;
+  medianReturn: number | null;
+  profitFactor: number | null;
+  readyStatus: string;
+  bucket: string;
+  selectionReason: string;
+};
+
+type RuleControlResearch = {
+  researchOnly: true;
+  productionRuleChanged: false;
+  version: string;
+  researchVersion: string;
+  candidateCount: number;
+  watchCount: number;
+  rejectedCount: number;
+  riskSignalCount: number;
+  forwardReturnRows: number;
+  priceRows: number;
+  metricsCount: number;
+  readyStatusSummary: Record<string, number>;
+  topCandidates: RuleControlResearchSignal[];
+  leaderboardRows: RuleControlResearchSignal[];
+  forwardReturns: {
+    status: string;
+    checkedRows: number;
+    updatedRows: number;
+    insufficient: number;
+    priceRows: number;
+    metricsCount: number;
+  };
+  promotionGate: {
+    status: string;
+    promotable: number;
+    reason: string;
+  };
+  recommendation: string;
+  recommendedNextStep: string;
+  missingDependencies: string[];
+};
+
 type TabId = "ALL" | "FIXED_LIST" | "MID_CAP" | "HIGH_PRICE" | "OVERLAP";
 
 const tabs: { id: TabId; label: string; pool?: StockPool }[] = [
@@ -692,59 +739,78 @@ function ControlStat({
   );
 }
 
+function researchPct(value: number | null | undefined) {
+  return value == null ? "N/A" : formatPercent(value);
+}
+
+function researchReturn(value: number | null | undefined) {
+  return value == null ? "N/A" : formatPercent(value);
+}
+
+function researchScore(row: RuleControlResearchSignal) {
+  if (row.winRate == null || row.avgReturn == null) return "N/A";
+  return Math.round((row.winRate * 70 + Math.max(row.avgReturn, 0) * 30) * 100);
+}
+
 function WinRateSection({
   report,
+  ruleControlResearch,
   expanded,
   onToggle,
 }: {
   report?: WinRateReport;
+  ruleControlResearch?: RuleControlResearch;
   expanded: boolean;
   onToggle: () => void;
 }) {
   const readiness = report?.calibrationReadiness;
-  const readinessStatus = readiness?.isReadyForRuleCalibration
-    ? "Ready"
-    : "Not Ready";
+  const researchReady = (ruleControlResearch?.forwardReturnRows ?? 0) > 0;
+  const readinessStatus = researchReady
+    ? "Research Ready / Production Locked"
+    : readiness?.isReadyForRuleCalibration
+      ? "Ready"
+      : "Missing Research Data";
   const thresholdSummary = report?.thresholdSimulationSummary;
-  const thresholdStatus = thresholdSummary?.status ?? "Not Ready";
+  const thresholdStatus = researchReady
+    ? "Research Ready / Simulation Prep"
+    : thresholdSummary?.status ?? "Missing Research Data";
   const sampleCount =
-    thresholdSummary?.samples ?? readiness?.availableForwardReturnRows ?? 0;
+    ruleControlResearch?.forwardReturnRows ??
+    thresholdSummary?.samples ??
+    readiness?.availableForwardReturnRows ??
+    0;
   const minSamples =
     thresholdSummary?.minRecommendedSamples ??
     readiness?.minRecommendedSamples ??
     30;
-  const recommendation = thresholdSummary?.bestCandidate
+  const recommendation = ruleControlResearch
+    ? "Review Candidate / Run Simulation"
+    : thresholdSummary?.bestCandidate
     ? "Review Candidate"
     : "Hold Current Rules";
-  const promotionStatus = thresholdSummary?.promotionAllowed
-    ? "Ready"
-    : "Locked / Not Ready";
+  const promotionStatus = ruleControlResearch
+    ? "Research Ready / Production Locked"
+    : thresholdSummary?.promotionAllowed
+      ? "Ready"
+      : "Locked / Not Ready";
   const candidatePills = [
-    "Conservative",
-    "Balanced",
-    "Aggressive",
-    "DQ Strict",
-    "Flow Strict",
-    "Balanced + DQ A",
-    "Balanced + Flow Momentum",
-    "Conservative + Low Drawdown",
-    "Aggressive + High Coverage",
-    "Current Production",
+    "Top Candidates",
+    "Persistent Inflow",
+    "Strong 5D Inflow",
+    "Strong 10D Inflow",
+    "Flow Reversal",
+    "Outflow Risk",
+    "Watch Signals",
+    "Rejected",
   ];
-  const abSamplesLabel = `${sampleCount} / ${minSamples}`;
-  const leaderboardRows = [
-    "Current Production V1.7.6",
-    "Conservative · Comp>=88 · Flow>=90",
-    "Balanced · Comp>=84 · Flow>=87",
-    "Aggressive · Comp>=80 · Flow>=75",
-    "DQ Strict · Grade A only",
-    "Flow Strict · 3D/5D/9D confirm",
-    "Balanced + DQ A",
-    "Balanced + Flow Momentum",
-    "Conservative + Low Drawdown",
-    "Aggressive + High Coverage",
-  ];
+  const bestCandidate = ruleControlResearch?.topCandidates?.[0];
+  const abSamplesLabel = bestCandidate
+    ? String(bestCandidate.sampleSize)
+    : `${sampleCount} / ${minSamples}`;
+  const leaderboardRows = ruleControlResearch?.leaderboardRows ?? [];
   const forwardColumns = ["1D", "3D", "5D", "10D", "20D", "5W", "6W", "9W", "12W"];
+  const insufficientMetrics =
+    ruleControlResearch?.readyStatusSummary?.["Not Ready"] ?? 0;
 
   return (
     <section className="mt-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
@@ -754,8 +820,7 @@ function WinRateSection({
         </h2>
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
           <span className="font-medium text-slate-500">
-            Samples {report?.availableForwardReturnRows ?? 0} / Rows{" "}
-            {report?.totalRowsScanned ?? 0}
+            Samples {sampleCount} forward return rows
           </span>
           <button
             type="button"
@@ -776,7 +841,7 @@ function WinRateSection({
                 <p className="text-slate-500">Rule selection, A/B review, promotion gate, and rolling recommendation.</p>
               </div>
               <p className="font-medium text-slate-600">
-                Samples {sampleCount} / {minSamples} · Status: {readinessStatus}
+                Samples: {sampleCount} forward return rows · Status: {readinessStatus}
               </p>
             </div>
 
@@ -788,6 +853,9 @@ function WinRateSection({
                   <p>Status: Active · Locked</p>
                   <p>Auto Activation: Disabled</p>
                   <p>Risk Gate Required</p>
+                  <p>Research Candidate Set: V2.0.0 Moomoo Flow Signals</p>
+                  <p>Candidates: {ruleControlResearch?.candidateCount ?? "N/A"} · Watch: {ruleControlResearch?.watchCount ?? "N/A"} · Rejected: {ruleControlResearch?.rejectedCount ?? "N/A"}</p>
+                  <p>Production Rule Changed: false</p>
                 </div>
               </div>
 
@@ -801,24 +869,25 @@ function WinRateSection({
                     <ControlPill
                       key={label}
                       label={label}
-                      active={label === "Balanced"}
+                      active={label === "Top Candidates"}
                     />
                   ))}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-                  <ControlStat label="Best" value={thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"} />
+                  <ControlStat label="Best" value={bestCandidate?.signalName ?? thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"} />
+                  <ControlStat label="Horizon" value={bestCandidate?.horizon ?? "N/A"} />
                   <ControlStat label="Recommendation" value={recommendation} />
                 </div>
               </div>
 
               <div className="rounded border border-slate-200 bg-white p-2">
                 <p className="font-semibold text-slate-900">A/B Comparison</p>
-                <p className="mt-1 text-slate-600">A: Current Production · B: Balanced</p>
+                <p className="mt-1 text-slate-600">A: Current Production · B: Top Moomoo Flow Candidate</p>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  <ControlPill label="Compare A/B" disabled />
+                  <ControlPill label="Simulation Required" disabled />
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-                  <ControlStat label="Status" value="Not Ready" />
+                  <ControlStat label="Status" value="Research Only / Simulation Not Yet Promoted" />
                   <ControlStat label="Samples" value={abSamplesLabel} />
                 </div>
               </div>
@@ -829,21 +898,25 @@ function WinRateSection({
                   <span>{promotionStatus}</span>
                   <span>Approval Required</span>
                   <span>Auto Activation Disabled</span>
-                  <span>Promotable 0</span>
+                  <span>Promotable {ruleControlResearch?.promotionGate.promotable ?? 0}</span>
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
                   <ControlPill label="Approve New Threshold" disabled />
                   <ControlPill label="Reject Candidate" disabled />
                   <ControlPill label="Keep Current Rules" active />
                 </div>
-                <p className="mt-1 text-slate-500">Reason: Need at least {minSamples} forward return samples.</p>
+                <p className="mt-1 text-slate-500">
+                  Reason: {ruleControlResearch?.promotionGate.reason ?? `Need at least ${minSamples} forward return samples.`}
+                </p>
               </div>
             </div>
 
             <div className="mt-2 rounded border border-slate-200 bg-white p-2">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <p className="font-semibold text-slate-900">Rolling Recommendation</p>
-                <p className="font-medium text-slate-600">No Change · Auto Activation Disabled · Confidence: Low</p>
+                <p className="font-medium text-slate-600">
+                  {ruleControlResearch?.recommendation ?? "No Change · Auto Activation Disabled · Confidence: Low"}
+                </p>
               </div>
               <div className="mt-1 flex flex-wrap gap-1">
                 <ControlPill label="Review Candidate" disabled />
@@ -857,50 +930,75 @@ function WinRateSection({
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-semibold text-slate-900">Trade Win Rate Leaderboard</p>
-                <p className="text-slate-500">Ranked by Composite Trade Rate Score</p>
+                <p className="text-slate-500">Ranked by V2.0.0 Moomoo flow candidate research score</p>
               </div>
-              <p className="font-medium text-slate-600">Need 30 forward return samples</p>
+              <p className="font-medium text-slate-600">
+                {ruleControlResearch
+                  ? `Candidates ${ruleControlResearch.candidateCount} · Watch ${ruleControlResearch.watchCount} · Not Ready ${insufficientMetrics}`
+                  : "Missing research dependency"}
+              </p>
             </div>
 
             <div className="mt-1.5 max-h-80 overflow-auto rounded border border-slate-200 bg-white">
-              <table className="w-full min-w-[1120px] text-left">
+              <table className="w-full min-w-[1180px] text-left">
                 <thead className="text-[9px] uppercase text-slate-500">
                   <tr>
                     <th className="sticky left-0 top-0 z-30 w-12 min-w-12 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Rank</th>
-                    <th className="sticky left-12 top-0 z-30 min-w-64 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Model + Threshold Combo</th>
+                    <th className="sticky left-12 top-0 z-30 min-w-72 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Signal / Threshold Combo</th>
                     {forwardColumns.map((label) => (
                       <th key={label} className="sticky top-0 z-20 bg-slate-50 px-2 py-1">{label}</th>
                     ))}
-                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Composite Score</th>
+                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Avg Return</th>
+                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Median</th>
+                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">PF</th>
+                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Research Score</th>
                     <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Samples</th>
                     <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {leaderboardRows.map((name, index) => (
-                    <tr key={name} className="border-t border-slate-100">
+                  {leaderboardRows.map((row, index) => (
+                    <tr key={`${row.signalName}-${row.horizon}-${index}`} className="border-t border-slate-100">
                       <td className="sticky left-0 z-10 w-12 min-w-12 border-r border-slate-200 bg-white px-2 py-1.5 font-bold text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">
                         #{index + 1}
                       </td>
-                      <td className="sticky left-12 z-10 min-w-64 border-r border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">
-                        {name}
+                      <td className="sticky left-12 z-10 min-w-72 border-r border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">
+                        <span className="block max-w-72 truncate">{row.signalName}</span>
+                        <span className="text-[9px] font-medium text-slate-500">{row.category} · {row.bucket}</span>
                       </td>
-                      {forwardColumns.map((label) => (
-                        <td key={`${name}-${label}`} className="px-2 py-1.5 text-slate-500">N/A</td>
-                      ))}
-                      <td className="px-2 py-1.5 font-semibold text-slate-500">N/A</td>
-                      <td className="px-2 py-1.5 text-slate-600">0 / {minSamples}</td>
+                      {forwardColumns.map((label) => {
+                        const value = label === row.horizon ? researchPct(row.winRate) : "N/A";
+                        return (
+                          <td key={`${row.signalName}-${row.horizon}-${label}`} className={label === row.horizon ? "px-2 py-1.5 font-semibold text-emerald-700" : "px-2 py-1.5 text-slate-400"}>
+                            {value}
+                          </td>
+                        );
+                      })}
+                      <td className="px-2 py-1.5 font-semibold text-slate-700">{researchReturn(row.avgReturn)}</td>
+                      <td className="px-2 py-1.5 text-slate-700">{researchReturn(row.medianReturn)}</td>
+                      <td className="px-2 py-1.5 text-slate-700">{row.profitFactor == null ? "N/A" : row.profitFactor.toFixed(2)}</td>
+                      <td className="px-2 py-1.5 font-semibold text-slate-800">{researchScore(row)}</td>
+                      <td className="px-2 py-1.5 text-slate-600">{row.sampleSize}</td>
                       <td className="px-2 py-1.5">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${
-                          index === 0
-                            ? "bg-slate-100 text-slate-700 ring-slate-200"
-                            : "bg-amber-50 text-amber-800 ring-amber-200"
+                          row.readyStatus === "Usable"
+                            ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                            : row.readyStatus === "Watch"
+                              ? "bg-amber-50 text-amber-800 ring-amber-200"
+                              : "bg-slate-100 text-slate-600 ring-slate-200"
                         }`}>
-                          {index === 0 ? "Active" : "Not Ready"}
+                          {row.readyStatus}
                         </span>
                       </td>
                     </tr>
                   ))}
+                  {leaderboardRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={17} className="px-2 py-3 text-slate-500">
+                        Missing research dependency: {ruleControlResearch?.missingDependencies?.join(", ") || "V2.0.0 candidate JSON"}
+                      </td>
+                    </tr>
+                  ) : null}
                 </tbody>
               </table>
             </div>
@@ -917,10 +1015,12 @@ function WinRateSection({
 
 function DiagnosticsSection({
   snapshot,
+  ruleControlResearch,
   updatedAt,
   expanded,
 }: {
   snapshot: SnapshotResponse;
+  ruleControlResearch?: RuleControlResearch;
   updatedAt: string;
   expanded: boolean;
 }) {
@@ -990,6 +1090,7 @@ function DiagnosticsSection({
   const moomooStatusMessage =
     moomooGuard?.statusMessage ??
     "Moomoo Direct Flow unavailable; using Enhanced OHLCV Proxy fallback.";
+  const researchForwardReturns = ruleControlResearch?.forwardReturns;
 
   if (!expanded) {
     return null;
@@ -1261,23 +1362,50 @@ function DiagnosticsSection({
           <div className="grid grid-cols-2 gap-1.5">
             <DiagnosticMetric
               label="Status"
-              value={snapshot.forwardReturnUpdateStatus}
+              value={
+                researchForwardReturns?.status ??
+                snapshot.forwardReturnUpdateStatus ??
+                "Missing input: research payload"
+              }
             />
             <DiagnosticMetric
               label="Updated Rows"
-              value={snapshot.forwardReturnUpdatedRows}
+              value={
+                researchForwardReturns?.updatedRows ??
+                snapshot.forwardReturnUpdatedRows
+              }
             />
             <DiagnosticMetric
               label="Checked Rows"
-              value={snapshot.forwardReturnCheckedRows}
+              value={
+                researchForwardReturns?.checkedRows ??
+                snapshot.forwardReturnCheckedRows
+              }
             />
             <DiagnosticMetric
               label="Insufficient"
-              value={snapshot.forwardReturnInsufficientFutureDataRows}
+              value={
+                researchForwardReturns?.insufficient ??
+                snapshot.forwardReturnInsufficientFutureDataRows
+              }
             />
             <DiagnosticMetric
               label="Last Updated"
-              value={snapshot.forwardReturnLastUpdatedAt}
+              value={snapshot.forwardReturnLastUpdatedAt ?? "Research file generated"}
+            />
+            <DiagnosticMetric
+              label="Price Rows"
+              value={
+                researchForwardReturns?.priceRows ??
+                "Missing input: fixed close price archive"
+              }
+            />
+            <DiagnosticMetric
+              label="Metrics"
+              value={
+                researchForwardReturns?.metricsCount ??
+                "Missing input: win-rate research"
+              }
             />
           </div>
         </article>
@@ -1410,11 +1538,13 @@ export function Dashboard({
   fixedSnapshot,
   winRateReport,
   actionHistoryReport,
+  ruleControlResearch,
 }: {
   allSnapshot: SnapshotResponse;
   fixedSnapshot: SnapshotResponse | null;
   winRateReport?: WinRateReport;
   actionHistoryReport?: ActionHistoryReport;
+  ruleControlResearch?: RuleControlResearch;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("ALL");
   const [diagnosticsExpanded, setDiagnosticsExpanded] = useState(false);
@@ -1581,11 +1711,13 @@ export function Dashboard({
           </div>
           <DiagnosticsSection
             snapshot={allSnapshot}
+            ruleControlResearch={ruleControlResearch}
             updatedAt={updatedAt}
             expanded={diagnosticsExpanded}
           />
           <WinRateSection
             report={winRateReport}
+            ruleControlResearch={ruleControlResearch}
             expanded={winRateExpanded}
             onToggle={() => setWinRateExpanded((current) => !current)}
           />
