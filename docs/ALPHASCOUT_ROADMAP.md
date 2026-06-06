@@ -469,3 +469,13 @@ V2.0.1 adds `GET /api/research/rule-control-center`, which combines `moomoo_flow
 The Trade Win Rate Leaderboard now shows Moomoo flow signal rows with horizon-specific win rate, sample size, average return, median return, profit factor, ready status, and a compact research score. Forward Returns diagnostics use research `checkedRows`, `updatedRows`, `priceRows`, `metricsCount`, and Not Ready metric counts, or explicitly name the missing dependency if the research files are absent.
 
 Version guard is advanced to `APP_VERSION=V2.0.1`; `/api/version` and the dashboard title use the same shared source. This is UI/research wiring only and does not change Entry / Position actions, production scoring, threshold simulation production logic, Rule Promotion Gate production logic, A/B production logic, Risk Gate behavior, provider priority, fixed watchlist, ranked candidate scoring, collector/import behavior, or trading functionality.
+
+## Signal Direction Match Rate Simplification
+
+V2.0.2 simplifies the main Rule Control Center win-rate display to `Signal Direction Match Rate`. A win now means the same-day signal direction matches the same-day close price direction: Bullish plus close up, or Bearish plus close down. Neutral or missing signal/price directions are excluded. This is separate from the V1.9.9 forward-return research.
+
+V2.0.2 adds `scripts/calculate_signal_match_win_rate.py`, `GET /api/research/signal-match-win-rate`, and generated outputs `data/research/signal_match_win_rate_v202.json`, `.csv`, and `docs/research/signal-match-win-rate-v202.md`. The calculation uses the fixed-list Moomoo net-flow direction as the Flow Direction Signal when historical Entry / Position signal rows are unavailable, and compares it against same-day close direction from the V1.9.9 close price archive.
+
+The main Candidate Threshold Selection now shows only five categories: Flow Direction, Strong Inflow, Persistent Inflow, Flow Reversal, and Outflow Risk. The Trade Win Rate Leaderboard is simplified to five rows with 1D, 3D, 5D, 10D, and 20D match rates, valid samples, trend, and status. A latest-day detail table shows the nine fixed tickers, signal direction, close direction, and Win/Fail result for Flow Direction.
+
+`/api/research/rule-control-center` now includes the V2.0.2 signal-match summary while keeping forward-return research diagnostics separate. Version guard is advanced to `APP_VERSION=V2.0.2`. This remains research/display only and does not change Entry / Position actions, production scoring, thresholds, Risk Gate logic, rule promotion logic, provider priority, fixed watchlist, ranked scoring, daily collector behavior, import behavior, or trading functionality.

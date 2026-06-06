@@ -1,9 +1,17 @@
-import { buildRuleControlResearch } from "@/lib/ruleControlResearch";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const payload = await buildRuleControlResearch();
+    const filePath = path.join(
+      process.cwd(),
+      "data",
+      "research",
+      "signal_match_win_rate_v202.json",
+    );
+    const payload = JSON.parse(await readFile(filePath, "utf-8"));
+
     return NextResponse.json({
       ok: true,
       ...payload,

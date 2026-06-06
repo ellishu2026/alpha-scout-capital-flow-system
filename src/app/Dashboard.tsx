@@ -33,6 +33,21 @@ type RuleControlResearchSignal = {
   selectionReason: string;
 };
 
+type SignalMatchCategory = {
+  category: string;
+  status: string;
+  latestDate: string | null;
+  winRate1D: number | null;
+  winRate3D: number | null;
+  winRate5D: number | null;
+  winRate10D: number | null;
+  winRate20D: number | null;
+  totalWins: number;
+  totalFails: number;
+  validSamples: number;
+  trend: string;
+};
+
 type RuleControlResearch = {
   researchOnly: true;
   productionRuleChanged: false;
@@ -48,6 +63,26 @@ type RuleControlResearch = {
   readyStatusSummary: Record<string, number>;
   topCandidates: RuleControlResearchSignal[];
   leaderboardRows: RuleControlResearchSignal[];
+  signalMatch: {
+    status: string;
+    latestDate: string | null;
+    definition: string;
+    categories: SignalMatchCategory[];
+    latestDayDetails: Array<{
+      ticker: string;
+      signalDirection: string;
+      closeDirection: string;
+      result: string;
+    }>;
+    latestFlowDirectionSummary: {
+      checkedTickers: number;
+      validSamples: number;
+      wins: number;
+      fails: number;
+      excluded: number;
+      dailyWinRate: number | null;
+    } | null;
+  };
   forwardReturns: {
     status: string;
     checkedRows: number;
@@ -739,17 +774,8 @@ function ControlStat({
   );
 }
 
-function researchPct(value: number | null | undefined) {
+function matchRate(value: number | null | undefined) {
   return value == null ? "N/A" : formatPercent(value);
-}
-
-function researchReturn(value: number | null | undefined) {
-  return value == null ? "N/A" : formatPercent(value);
-}
-
-function researchScore(row: RuleControlResearchSignal) {
-  if (row.winRate == null || row.avgReturn == null) return "N/A";
-  return Math.round((row.winRate * 70 + Math.max(row.avgReturn, 0) * 30) * 100);
 }
 
 function WinRateSection({
@@ -783,32 +809,26 @@ function WinRateSection({
     thresholdSummary?.minRecommendedSamples ??
     readiness?.minRecommendedSamples ??
     30;
-  const recommendation = ruleControlResearch
-    ? "Review Candidate / Run Simulation"
-    : thresholdSummary?.bestCandidate
-    ? "Review Candidate"
-    : "Hold Current Rules";
   const promotionStatus = ruleControlResearch
     ? "Research Ready / Production Locked"
     : thresholdSummary?.promotionAllowed
       ? "Ready"
       : "Locked / Not Ready";
   const candidatePills = [
-    "Top Candidates",
+    "Flow Direction",
+    "Strong Inflow",
     "Persistent Inflow",
-    "Strong 5D Inflow",
-    "Strong 10D Inflow",
     "Flow Reversal",
     "Outflow Risk",
-    "Watch Signals",
-    "Rejected",
   ];
   const bestCandidate = ruleControlResearch?.topCandidates?.[0];
+  const signalMatchRows = ruleControlResearch?.signalMatch.categories ?? [];
+  const flowDirectionSummary =
+    ruleControlResearch?.signalMatch.latestFlowDirectionSummary;
   const abSamplesLabel = bestCandidate
     ? String(bestCandidate.sampleSize)
     : `${sampleCount} / ${minSamples}`;
-  const leaderboardRows = ruleControlResearch?.leaderboardRows ?? [];
-  const forwardColumns = ["1D", "3D", "5D", "10D", "20D", "5W", "6W", "9W", "12W"];
+  const forwardColumns = ["1D", "3D", "5D", "10D", "20D"];
   const insufficientMetrics =
     ruleControlResearch?.readyStatusSummary?.["Not Ready"] ?? 0;
 
@@ -841,7 +861,7 @@ function WinRateSection({
                 <p className="text-slate-500">Rule selection, A/B review, promotion gate, and rolling recommendation.</p>
               </div>
               <p className="font-medium text-slate-600">
-                Samples: {sampleCount} forward return rows · Status: {readinessStatus}
+                Signal Match: {matchRate(flowDirectionSummary?.dailyWinRate)} 1D · Status: {readinessStatus}
               </p>
             </div>
 
@@ -853,8 +873,9 @@ function WinRateSection({
                   <p>Status: Active · Locked</p>
                   <p>Auto Activation: Disabled</p>
                   <p>Risk Gate Required</p>
-                  <p>Research Candidate Set: V2.0.0 Moomoo Flow Signals</p>
+                  <p>Research Candidate Set: V2.0.2 Signal Direction Match Rate</p>
                   <p>Candidates: {ruleControlResearch?.candidateCount ?? "N/A"} · Watch: {ruleControlResearch?.watchCount ?? "N/A"} · Rejected: {ruleControlResearch?.rejectedCount ?? "N/A"}</p>
+                  <p>Latest Match Date: {ruleControlResearch?.signalMatch.latestDate ?? "N/A"}</p>
                   <p>Production Rule Changed: false</p>
                 </div>
               </div>
@@ -869,26 +890,26 @@ function WinRateSection({
                     <ControlPill
                       key={label}
                       label={label}
-                      active={label === "Top Candidates"}
+                      active={label === "Flow Direction"}
                     />
                   ))}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-                  <ControlStat label="Best" value={bestCandidate?.signalName ?? thresholdSummary?.bestCandidate?.ruleSetName ?? "N/A"} />
-                  <ControlStat label="Horizon" value={bestCandidate?.horizon ?? "N/A"} />
-                  <ControlStat label="Recommendation" value={recommendation} />
+                  <ControlStat label="Selected" value="Flow Direction" />
+                  <ControlStat label="1D Match" value={matchRate(flowDirectionSummary?.dailyWinRate)} />
+                  <ControlStat label="Recommendation" value="Research Ready / Simulation Prep" />
                 </div>
               </div>
 
               <div className="rounded border border-slate-200 bg-white p-2">
                 <p className="font-semibold text-slate-900">A/B Comparison</p>
-                <p className="mt-1 text-slate-600">A: Current Production · B: Top Moomoo Flow Candidate</p>
+                <p className="mt-1 text-slate-600">A: Current Production · B: Flow Direction Match Signal</p>
                 <div className="mt-1 flex flex-wrap gap-1">
                   <ControlPill label="Simulation Required" disabled />
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
                   <ControlStat label="Status" value="Research Only / Simulation Not Yet Promoted" />
-                  <ControlStat label="Samples" value={abSamplesLabel} />
+                  <ControlStat label="Samples" value={flowDirectionSummary?.validSamples ?? abSamplesLabel} />
                 </div>
               </div>
 
@@ -929,73 +950,58 @@ function WinRateSection({
           <article className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-semibold text-slate-900">Trade Win Rate Leaderboard</p>
-                <p className="text-slate-500">Ranked by V2.0.0 Moomoo flow candidate research score</p>
+                <p className="font-semibold text-slate-900">Signal Match Rate</p>
+                <p className="text-slate-500">Win = signal direction matches same-day close price direction</p>
               </div>
               <p className="font-medium text-slate-600">
                 {ruleControlResearch
-                  ? `Candidates ${ruleControlResearch.candidateCount} · Watch ${ruleControlResearch.watchCount} · Not Ready ${insufficientMetrics}`
+                  ? `Latest ${ruleControlResearch.signalMatch.latestDate ?? "N/A"} · Fixed tickers ${flowDirectionSummary?.checkedTickers ?? 9} · Not Ready metrics ${insufficientMetrics}`
                   : "Missing research dependency"}
               </p>
             </div>
 
             <div className="mt-1.5 max-h-80 overflow-auto rounded border border-slate-200 bg-white">
-              <table className="w-full min-w-[1180px] text-left">
+              <table className="w-full min-w-[900px] text-left">
                 <thead className="text-[9px] uppercase text-slate-500">
                   <tr>
                     <th className="sticky left-0 top-0 z-30 w-12 min-w-12 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Rank</th>
-                    <th className="sticky left-12 top-0 z-30 min-w-72 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Signal / Threshold Combo</th>
+                    <th className="sticky left-12 top-0 z-30 min-w-48 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Signal Category</th>
                     {forwardColumns.map((label) => (
-                      <th key={label} className="sticky top-0 z-20 bg-slate-50 px-2 py-1">{label}</th>
+                      <th key={label} className="sticky top-0 z-20 bg-slate-50 px-2 py-1">{label} Win Rate</th>
                     ))}
-                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Avg Return</th>
-                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Median</th>
-                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">PF</th>
-                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Research Score</th>
-                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Samples</th>
+                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Valid Samples</th>
+                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Trend</th>
                     <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {leaderboardRows.map((row, index) => (
-                    <tr key={`${row.signalName}-${row.horizon}-${index}`} className="border-t border-slate-100">
+                  {signalMatchRows.slice(0, 5).map((row, index) => (
+                    <tr key={row.category} className="border-t border-slate-100">
                       <td className="sticky left-0 z-10 w-12 min-w-12 border-r border-slate-200 bg-white px-2 py-1.5 font-bold text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">
                         #{index + 1}
                       </td>
-                      <td className="sticky left-12 z-10 min-w-72 border-r border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">
-                        <span className="block max-w-72 truncate">{row.signalName}</span>
-                        <span className="text-[9px] font-medium text-slate-500">{row.category} · {row.bucket}</span>
+                      <td className="sticky left-12 z-10 min-w-48 border-r border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">
+                        <span className="block max-w-48 truncate">{row.category}</span>
+                        <span className="text-[9px] font-medium text-slate-500">Signal Direction Match</span>
                       </td>
-                      {forwardColumns.map((label) => {
-                        const value = label === row.horizon ? researchPct(row.winRate) : "N/A";
-                        return (
-                          <td key={`${row.signalName}-${row.horizon}-${label}`} className={label === row.horizon ? "px-2 py-1.5 font-semibold text-emerald-700" : "px-2 py-1.5 text-slate-400"}>
-                            {value}
-                          </td>
-                        );
-                      })}
-                      <td className="px-2 py-1.5 font-semibold text-slate-700">{researchReturn(row.avgReturn)}</td>
-                      <td className="px-2 py-1.5 text-slate-700">{researchReturn(row.medianReturn)}</td>
-                      <td className="px-2 py-1.5 text-slate-700">{row.profitFactor == null ? "N/A" : row.profitFactor.toFixed(2)}</td>
-                      <td className="px-2 py-1.5 font-semibold text-slate-800">{researchScore(row)}</td>
-                      <td className="px-2 py-1.5 text-slate-600">{row.sampleSize}</td>
+                      <td className="px-2 py-1.5 font-semibold text-slate-800">{matchRate(row.winRate1D)}</td>
+                      <td className="px-2 py-1.5 text-slate-700">{matchRate(row.winRate3D)}</td>
+                      <td className="px-2 py-1.5 text-slate-700">{matchRate(row.winRate5D)}</td>
+                      <td className="px-2 py-1.5 text-slate-700">{matchRate(row.winRate10D)}</td>
+                      <td className="px-2 py-1.5 text-slate-700">{matchRate(row.winRate20D)}</td>
+                      <td className="px-2 py-1.5 text-slate-600">{row.validSamples}</td>
+                      <td className="px-2 py-1.5 text-slate-700">{row.trend}</td>
                       <td className="px-2 py-1.5">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${
-                          row.readyStatus === "Usable"
-                            ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-                            : row.readyStatus === "Watch"
-                              ? "bg-amber-50 text-amber-800 ring-amber-200"
-                              : "bg-slate-100 text-slate-600 ring-slate-200"
-                        }`}>
-                          {row.readyStatus}
+                        <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                          {row.status}
                         </span>
                       </td>
                     </tr>
                   ))}
-                  {leaderboardRows.length === 0 ? (
+                  {signalMatchRows.length === 0 ? (
                     <tr>
-                      <td colSpan={17} className="px-2 py-3 text-slate-500">
-                        Missing research dependency: {ruleControlResearch?.missingDependencies?.join(", ") || "V2.0.0 candidate JSON"}
+                      <td colSpan={10} className="px-2 py-3 text-slate-500">
+                        Missing research dependency: {ruleControlResearch?.missingDependencies?.join(", ") || "signal_match_win_rate_v202.json"}
                       </td>
                     </tr>
                   ) : null}
@@ -1003,8 +1009,45 @@ function WinRateSection({
               </table>
             </div>
 
+            {ruleControlResearch?.signalMatch.latestDayDetails?.length ? (
+              <div className="mt-2 rounded border border-slate-200 bg-white p-2">
+                <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="font-semibold text-slate-900">
+                    Latest Day Details · Flow Direction · {ruleControlResearch.signalMatch.latestDate}
+                  </p>
+                  <p className="text-slate-600">
+                    {flowDirectionSummary?.wins ?? 0} wins / {flowDirectionSummary?.validSamples ?? 0} valid
+                  </p>
+                </div>
+                <div className="mt-1 overflow-x-auto">
+                  <table className="w-full min-w-[520px] text-left text-[10px]">
+                    <thead className="text-[9px] uppercase text-slate-500">
+                      <tr>
+                        <th className="px-2 py-1">Ticker</th>
+                        <th className="px-2 py-1">Signal Direction</th>
+                        <th className="px-2 py-1">Close Direction</th>
+                        <th className="px-2 py-1">Result</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ruleControlResearch.signalMatch.latestDayDetails.map((row) => (
+                        <tr key={row.ticker} className="border-t border-slate-100">
+                          <td className="px-2 py-1 font-bold text-slate-900">{row.ticker}</td>
+                          <td className="px-2 py-1 text-slate-700">{row.signalDirection}</td>
+                          <td className="px-2 py-1 text-slate-700">{row.closeDirection}</td>
+                          <td className={row.result === "Win" ? "px-2 py-1 font-semibold text-emerald-700" : row.result === "Fail" ? "px-2 py-1 font-semibold text-rose-700" : "px-2 py-1 text-slate-500"}>
+                            {row.result}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+
             <p className="mt-1.5 text-slate-500">
-              Trade Win Rate Definition: Buy and Hold win on positive forward return; Avoid, Reduce, Sell Candidate, and Exit win on non-positive forward return. Valid sample means the forward return field is not null.
+              Signal Match Definition: Bullish wins when same-day close is up; Bearish wins when same-day close is down. Neutral or missing signal/price directions are excluded. Forward Returns Research remains separate.
             </p>
           </article>
         </div>
