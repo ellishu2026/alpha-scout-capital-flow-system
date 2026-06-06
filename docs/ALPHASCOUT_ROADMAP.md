@@ -417,3 +417,9 @@ The import script can print a fixed-list-only local window preview for `1D`, `3D
 V1.9.7 adds `scripts/validate_moomoo_fixed_flow_windows.py` as a diagnostic-only validation report for the fixed-list Moomoo XLSX archive. The script verifies the imported row count, fixed ticker coverage, duplicate ticker-date rows, missing US trading dates, and `1D`, `3D`, `5D`, `10D`, `20D`, `5W`, `6W`, `9W`, and `12W` window sums ending on `2026-06-04`.
 
 The validator can optionally compare a production refresh JSON fixed snapshot against the local Moomoo XLSX calculations to confirm source precedence: `flow1DSource=Moomoo Direct Flow`, `moomooFlowSource=Moomoo Historical XLSX Import`, `providerUsed=MOOMOO_HISTORICAL_XLSX_IMPORT`, and `flowDataTier=MOOMOO_DIRECT_CAPITAL_FLOW`. It also prints a fixed-list signal-review summary for strongest inflows, persistent outflows, flow reversals, and action-signal disagreement. This review is reporting only and does not change Entry / Position actions, scoring, thresholds, provider logic, ranked candidates, fixed watchlist membership, archive data, or trading functionality.
+
+## Compact Moomoo Dates Display
+
+V1.9.7.1 keeps Moomoo first in Flow Data Diagnostics while replacing the dense `Moomoo Dates` wall with a compact date-coverage summary. Provider Quota now shows latest archive date, archive date range, covered date count, latest coverage, fixed historical row count, and only the five most recent date counts with a remaining-date summary.
+
+This is a display-only diagnostics refinement. It does not change Moomoo archive data, XLSX import data, daily collector behavior, fixed-list window calculations, ranked candidate refresh, Entry / Position actions, scoring, thresholds, win-rate logic, Risk Gate behavior, provider priority, or trading functionality.

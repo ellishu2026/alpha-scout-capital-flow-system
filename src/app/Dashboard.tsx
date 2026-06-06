@@ -959,13 +959,25 @@ function DiagnosticsSection({
     allDiagnosticsItems.filter((item) => item.moomooFlowAvailable),
   );
   const moomooDateCoverage = estimatedFlowSummary?.moomooArchiveDateCoverage;
-  const moomooDateCoverageLabel =
+  const moomooDateCoverageEntries =
     moomooDateCoverage && Object.keys(moomooDateCoverage).length > 0
-      ? Object.entries(moomooDateCoverage)
-          .sort(([a], [b]) => b.localeCompare(a))
+      ? Object.entries(moomooDateCoverage).sort(([a], [b]) => b.localeCompare(a))
+      : [];
+  const moomooLatestDate = moomooDateCoverageEntries[0]?.[0] ?? "N/A";
+  const moomooOldestDate =
+    moomooDateCoverageEntries.at(-1)?.[0] ?? moomooLatestDate;
+  const moomooLatestCoverage = moomooDateCoverageEntries[0]?.[1] ?? null;
+  const moomooRecentDateCoverageLabel =
+    moomooDateCoverageEntries.length > 0
+      ? moomooDateCoverageEntries
+          .slice(0, 5)
           .map(([date, count]) => `${date}:${count}`)
           .join(" · ")
       : "N/A";
+  const moomooMoreDatesLabel =
+    moomooDateCoverageEntries.length > 5
+      ? `+ ${moomooDateCoverageEntries.length - 5} more dates`
+      : "All shown";
   const moomooUsedLabel = moomooGuard
     ? `Used ${moomooGuard.liveProviderCallCount} / Limit ${moomooGuard.maxSymbolsPerRun}`
     : "Used 0 / Limit 20";
@@ -1185,7 +1197,42 @@ function DiagnosticsSection({
               label="Moomoo Source"
               value={estimatedFlowSummary?.moomooProvider ?? "MOOMOO_CAPITAL_DISTRIBUTION"}
             />
-            <DiagnosticMetric label="Moomoo Dates" value={moomooDateCoverageLabel} />
+            <DiagnosticMetric label="Moomoo Latest" value={moomooLatestDate} />
+            <DiagnosticMetric
+              label="Moomoo Range"
+              value={
+                moomooDateCoverageEntries.length > 0
+                  ? `${moomooOldestDate} -> ${moomooLatestDate}`
+                  : "N/A"
+              }
+            />
+            <DiagnosticMetric
+              label="Covered Dates"
+              value={
+                moomooDateCoverageEntries.length > 0
+                  ? `${moomooDateCoverageEntries.length}+`
+                  : "N/A"
+              }
+            />
+            <DiagnosticMetric
+              label="Latest Coverage"
+              value={
+                moomooLatestCoverage != null
+                  ? `${moomooLatestCoverage} / ${moomooGuard?.maxSymbolsPerRun ?? 20}`
+                  : "N/A"
+              }
+            />
+            <DiagnosticMetric
+              label="Fixed Historical Rows"
+              value={estimatedFlowSummary?.historicalRowsSaved ?? "N/A"}
+            />
+            <div className="col-span-2 min-w-0 rounded border border-slate-200 bg-white px-2 py-1">
+              <span className="text-slate-500">Recent Moomoo Dates</span>
+              <p className="mt-0.5 truncate font-semibold text-slate-950">
+                {moomooRecentDateCoverageLabel}
+              </p>
+              <p className="mt-0.5 text-slate-500">{moomooMoreDatesLabel}</p>
+            </div>
             <DiagnosticMetric
               label="Polygon"
               value={quotaLabel(used?.polygon, remaining?.polygon)}
