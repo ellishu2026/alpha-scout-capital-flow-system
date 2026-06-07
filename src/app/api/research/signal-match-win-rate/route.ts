@@ -22,7 +22,7 @@ export async function GET() {
         ok: false,
         researchOnly: true,
         productionRuleChanged: false,
-        version: "V2.0.2.3.1",
+        version: "V2.0.2.4",
         error: error instanceof Error ? error.message : "UNKNOWN_ERROR",
       },
       { status: 500 },

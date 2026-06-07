@@ -543,7 +543,7 @@ function getPersistenceLabel(snapshot: SnapshotResponse) {
 }
 
 function TableRow({ candidate }: { candidate: StockCandidate }) {
-  const numericCell = "px-1.5 py-1.5 text-left text-[10px] tabular-nums";
+  const numericCell = "min-w-[76px] whitespace-nowrap px-2 py-1.5 text-left text-[10px] tabular-nums";
   const financialsUnavailable = hasUnavailableFinancials(candidate);
   const flow1D = getOneDayFlowValue(candidate);
   const flow1DSource = flow1DSourceLabel(candidate);
@@ -898,7 +898,7 @@ function WinRateSection({
                   <p>Status: Active · Locked</p>
                   <p>Auto Activation: Disabled</p>
                   <p>Risk Gate Required</p>
-                  <p>Research Candidate Set: V2.0.2.3.1 Per-Ticker Flow Signal Match Rate</p>
+                  <p>Research Candidate Set: V2.0.2.4 Per-Ticker Flow Signal Match Rate</p>
                   <p>Candidates: {ruleControlResearch?.candidateCount ?? "N/A"} · Watch: {ruleControlResearch?.watchCount ?? "N/A"} · Rejected: {ruleControlResearch?.rejectedCount ?? "N/A"}</p>
                   <p>Latest Match Date: {ruleControlResearch?.signalMatch.latestDate ?? "N/A"}</p>
                   <p>Production Rule Changed: false</p>
@@ -995,11 +995,11 @@ function WinRateSection({
                     <th className="sticky left-0 top-0 z-30 w-12 min-w-12 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Rank</th>
                     <th className="sticky left-12 top-0 z-30 min-w-48 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Flow Category</th>
                     {forwardColumns.map((label) => (
-                      <th key={label} className="sticky top-0 z-20 bg-slate-50 px-2 py-1">{label} Win Rate</th>
+                      <th key={label} className="sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-2 py-1">{label} Win Rate</th>
                     ))}
-                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Valid Samples</th>
-                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Trend</th>
-                    <th className="sticky top-0 z-20 bg-slate-50 px-2 py-1">Status</th>
+                    <th className="sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-2 py-1">Valid Samples</th>
+                    <th className="sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-2 py-1">Trend</th>
+                    <th className="sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-2 py-1">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1050,14 +1050,14 @@ function WinRateSection({
                     Latest {ruleControlResearch?.signalMatch.latestDate ?? "N/A"}
                   </p>
                 </div>
-                <div className="mt-1 max-h-72 overflow-auto rounded border border-slate-200">
-                  <table className="w-full min-w-[900px] text-left text-[10px]">
+                <div className="mt-1 overflow-x-auto rounded border border-slate-200">
+                  <table className="w-full min-w-[980px] text-left text-[10px]">
                     <thead className="text-[9px] uppercase text-slate-500">
                       <tr>
                         <th className="sticky left-0 top-0 z-30 w-16 min-w-16 border-r border-slate-200 bg-slate-50 px-2 py-1">Rank</th>
                         <th className="sticky left-16 top-0 z-30 min-w-36 border-r border-slate-200 bg-slate-50 px-2 py-1">Ticker</th>
                         {fixedWindowColumns.map((label) => (
-                          <th key={label} className="sticky top-0 z-20 bg-slate-50 px-2 py-1">{label}</th>
+                          <th key={label} className="sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-2 py-1">{label}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1078,7 +1078,7 @@ function WinRateSection({
                             {row.ticker}
                           </td>
                           {fixedWindowColumns.map((label) => (
-                            <td key={label} className="whitespace-nowrap px-2 py-1.5 text-right font-semibold tabular-nums text-slate-800">
+                            <td key={label} className="whitespace-nowrap px-2 py-1 text-right font-semibold tabular-nums text-slate-800">
                               {fixedMatchCell(row.windows[label])}
                             </td>
                           ))}
@@ -1104,31 +1104,32 @@ function WinRateSection({
                     {flowDirectionSummary?.wins ?? 0} wins / {flowDirectionSummary?.validSamples ?? 0} valid
                   </p>
                 </div>
-                <div className="mt-1 overflow-x-auto">
-                  <table className="w-full min-w-[520px] text-left text-[10px]">
-                    <thead className="text-[9px] uppercase text-slate-500">
-                      <tr>
-                        <th className="px-2 py-1">Ticker</th>
-                        <th className="px-2 py-1">Flow State / Signal Direction</th>
-                        <th className="px-2 py-1">Close Direction</th>
-                        <th className="px-2 py-1">Result</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ruleControlResearch.signalMatch.latestDayDetails.map((row) => (
-                        <tr key={row.ticker} className="border-t border-slate-100">
-                          <td className="px-2 py-1 font-bold text-slate-900">{row.ticker}</td>
-                          <td className="px-2 py-1 text-slate-700">
-                            {row.flowState ? `${row.flowState} / ${row.signalDirection}` : row.signalDirection}
-                          </td>
-                          <td className="px-2 py-1 text-slate-700">{row.closeDirection}</td>
-                          <td className={row.result === "Win" ? "px-2 py-1 font-semibold text-emerald-700" : row.result === "Fail" ? "px-2 py-1 font-semibold text-rose-700" : "px-2 py-1 text-slate-500"}>
-                            {row.result}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="mt-1 grid grid-cols-1 gap-1 md:grid-cols-2">
+                  {ruleControlResearch.signalMatch.latestDayDetails.map((row) => (
+                    <div
+                      key={row.ticker}
+                      className="grid grid-cols-[56px_1fr_72px_48px] items-center gap-1 rounded border border-slate-100 bg-slate-50 px-2 py-1 text-[10px]"
+                    >
+                      <span className="font-bold text-slate-900">{row.ticker}</span>
+                      <span className="truncate text-slate-700" title={row.flowState ? `${row.flowState} / ${row.signalDirection}` : row.signalDirection}>
+                        {row.flowState ? `${row.flowState} / ${row.signalDirection}` : row.signalDirection}
+                      </span>
+                      <span className="whitespace-nowrap text-slate-600">
+                        Close {row.closeDirection}
+                      </span>
+                      <span
+                        className={
+                          row.result === "Win"
+                            ? "text-right font-semibold text-emerald-700"
+                            : row.result === "Fail"
+                              ? "text-right font-semibold text-rose-700"
+                              : "text-right text-slate-500"
+                        }
+                      >
+                        {row.result}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : null}
