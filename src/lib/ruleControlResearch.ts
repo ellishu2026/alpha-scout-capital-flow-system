@@ -73,6 +73,24 @@ type FixedTickerWindowSummary = {
   }>;
 };
 
+type PerTickerSignalDiagnostic = {
+  ticker: string;
+  bestFlowState: string;
+  bestWindow: string;
+  bestWinRate: number | null;
+  bestWins: number;
+  bestFails?: number;
+  bestValid: number;
+  samples: number;
+  weakFlowState: string;
+  weakWindow: string;
+  weakWinRate: number | null;
+  weakWins?: number;
+  weakFails?: number;
+  weakValid: number;
+  suggestedNextTest: string;
+};
+
 type SignalMatchPayload = {
   version: string;
   fixedTickerCount: number;
@@ -80,6 +98,7 @@ type SignalMatchPayload = {
   definition: string;
   categories: SignalMatchCategory[];
   fixedTickerWindowSummary?: FixedTickerWindowSummary;
+  perTickerSignalDiagnostics?: PerTickerSignalDiagnostic[];
   latestDayDetails: Array<{
     ticker: string;
     flowState: string;
@@ -100,7 +119,7 @@ type SignalMatchPayload = {
 export type RuleControlResearch = {
   researchOnly: true;
   productionRuleChanged: false;
-  version: "V2.0.2.4";
+  version: "V2.0.2.5";
   researchVersion: string;
   candidateCount: number;
   watchCount: number;
@@ -118,6 +137,7 @@ export type RuleControlResearch = {
     definition: string;
     categories: SignalMatchCategory[];
     fixedTickerWindowSummary: FixedTickerWindowSummary | null;
+    perTickerSignalDiagnostics: PerTickerSignalDiagnostic[];
     latestDayDetails: SignalMatchPayload["latestDayDetails"];
     latestFlowDirectionSummary: SignalMatchPayload["latestFlowDirectionSummary"] | null;
   };
@@ -162,7 +182,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
     readJson<{ summary: WinRateSummary }>(
       "moomoo_flow_win_rate_v199.json",
     ),
-    readJson<SignalMatchPayload>("signal_match_win_rate_v2023.json"),
+    readJson<SignalMatchPayload>("signal_match_win_rate_v2025.json"),
   ]);
 
   if (candidatePayload.status === "rejected") {
@@ -172,7 +192,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
     missingDependencies.push("data/research/moomoo_flow_win_rate_v199.json");
   }
   if (signalMatchPayload.status === "rejected") {
-    missingDependencies.push("data/research/signal_match_win_rate_v2023.json");
+    missingDependencies.push("data/research/signal_match_win_rate_v2025.json");
   }
 
   const candidateSummary =
@@ -198,7 +218,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
   return {
     researchOnly: true,
     productionRuleChanged: false,
-    version: "V2.0.2.4",
+    version: "V2.0.2.5",
     researchVersion: signalMatch?.version ?? candidateSummary?.version ?? "V2.0.0",
     candidateCount: candidateSummary?.candidateCount ?? 0,
     watchCount: candidateSummary?.watchCount ?? 0,
@@ -215,10 +235,12 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
       latestDate: signalMatch?.latestDate ?? null,
       definition:
         signalMatch?.definition ??
-        "Missing input: data/research/signal_match_win_rate_v2023.json",
+        "Missing input: data/research/signal_match_win_rate_v2025.json",
       categories: signalMatch?.categories ?? [],
       fixedTickerWindowSummary:
         signalMatch?.fixedTickerWindowSummary ?? null,
+      perTickerSignalDiagnostics:
+        signalMatch?.perTickerSignalDiagnostics ?? [],
       latestDayDetails: signalMatch?.latestDayDetails ?? [],
       latestFlowDirectionSummary:
         signalMatch?.latestFlowDirectionSummary ?? null,

@@ -73,6 +73,24 @@ type FixedTickerWindowSummary = {
   }>;
 };
 
+type PerTickerSignalDiagnostic = {
+  ticker: string;
+  bestFlowState: string;
+  bestWindow: string;
+  bestWinRate: number | null;
+  bestWins: number;
+  bestFails?: number;
+  bestValid: number;
+  samples: number;
+  weakFlowState: string;
+  weakWindow: string;
+  weakWinRate: number | null;
+  weakWins?: number;
+  weakFails?: number;
+  weakValid: number;
+  suggestedNextTest: string;
+};
+
 type RuleControlResearch = {
   researchOnly: true;
   productionRuleChanged: false;
@@ -94,6 +112,7 @@ type RuleControlResearch = {
     definition: string;
     categories: SignalMatchCategory[];
     fixedTickerWindowSummary: FixedTickerWindowSummary | null;
+    perTickerSignalDiagnostics: PerTickerSignalDiagnostic[];
     latestDayDetails: Array<{
       ticker: string;
       flowState: string;
@@ -898,7 +917,7 @@ function WinRateSection({
                   <p>Status: Active · Locked</p>
                   <p>Auto Activation: Disabled</p>
                   <p>Risk Gate Required</p>
-                  <p>Research Candidate Set: V2.0.2.4 Per-Ticker Flow Signal Match Rate</p>
+                  <p>Research Candidate Set: V2.0.2.5 Per-Ticker Flow Signal Match Rate</p>
                   <p>Candidates: {ruleControlResearch?.candidateCount ?? "N/A"} · Watch: {ruleControlResearch?.watchCount ?? "N/A"} · Rejected: {ruleControlResearch?.rejectedCount ?? "N/A"}</p>
                   <p>Latest Match Date: {ruleControlResearch?.signalMatch.latestDate ?? "N/A"}</p>
                   <p>Production Rule Changed: false</p>
@@ -1093,6 +1112,55 @@ function WinRateSection({
                 Signal Match for Fixed List missing input: fixedTickerWindowSummary
               </div>
             )}
+
+            {ruleControlResearch?.signalMatch.perTickerSignalDiagnostics?.length ? (
+              <div className="mt-2 rounded border border-slate-200 bg-white p-2">
+                <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-900">Per-Ticker Signal Quality Diagnostics</p>
+                    <p className="text-slate-500">
+                      Best signal category by ticker · Research only · No production rule changed
+                    </p>
+                  </div>
+                  <p className="text-slate-600">
+                    Latest {ruleControlResearch.signalMatch.latestDate ?? "N/A"} · Fixed 9
+                  </p>
+                </div>
+                <div className="mt-1 overflow-x-auto rounded border border-slate-200">
+                  <table className="w-full min-w-[900px] text-left text-[10px]">
+                    <thead className="text-[9px] uppercase text-slate-500">
+                      <tr>
+                        <th className="whitespace-nowrap bg-slate-50 px-2 py-1">Ticker</th>
+                        <th className="whitespace-nowrap bg-slate-50 px-2 py-1">Best Flow State</th>
+                        <th className="whitespace-nowrap bg-slate-50 px-2 py-1">Best Window</th>
+                        <th className="whitespace-nowrap bg-slate-50 px-2 py-1 text-right">Best Win Rate</th>
+                        <th className="whitespace-nowrap bg-slate-50 px-2 py-1 text-right">Samples</th>
+                        <th className="whitespace-nowrap bg-slate-50 px-2 py-1">Weak Flow State</th>
+                        <th className="whitespace-nowrap bg-slate-50 px-2 py-1">Suggested Next Test</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ruleControlResearch.signalMatch.perTickerSignalDiagnostics.map((row) => (
+                        <tr key={row.ticker} className="border-t border-slate-100">
+                          <td className="whitespace-nowrap px-2 py-1 font-bold text-slate-900">{row.ticker}</td>
+                          <td className="whitespace-nowrap px-2 py-1 font-semibold text-slate-800">{row.bestFlowState}</td>
+                          <td className="whitespace-nowrap px-2 py-1 text-slate-700">{row.bestWindow}</td>
+                          <td
+                            className="whitespace-nowrap px-2 py-1 text-right font-semibold tabular-nums text-slate-800"
+                            title={`${row.bestWins} wins / ${row.bestValid} valid samples`}
+                          >
+                            {matchRate(row.bestWinRate)}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-1 text-right tabular-nums text-slate-700">{row.samples}</td>
+                          <td className="whitespace-nowrap px-2 py-1 text-slate-700">{row.weakFlowState}</td>
+                          <td className="whitespace-nowrap px-2 py-1 text-slate-600">{row.suggestedNextTest}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
 
             {ruleControlResearch?.signalMatch.latestDayDetails?.length ? (
               <div className="mt-2 rounded border border-slate-200 bg-white p-2">

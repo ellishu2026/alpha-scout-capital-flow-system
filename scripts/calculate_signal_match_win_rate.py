@@ -24,11 +24,11 @@ from calculate_moomoo_flow_win_rate import (
 )
 
 
-OUTPUT_JSON = Path("data/research/signal_match_win_rate_v2023.json")
-OUTPUT_CSV = Path("data/research/signal_match_win_rate_v2023.csv")
-OUTPUT_MD = Path("docs/research/signal-match-win-rate-v2023.md")
+OUTPUT_JSON = Path("data/research/signal_match_win_rate_v2025.json")
+OUTPUT_CSV = Path("data/research/signal_match_win_rate_v2025.csv")
+OUTPUT_MD = Path("docs/research/signal-match-win-rate-v2025.md")
 DAILY_COLLECTOR_OVERLAY = Path("data/research/moomoo_daily_collector_overlay_v2021.json")
-VERSION = "V2.0.2.3"
+VERSION = "V2.0.2.5"
 WINDOWS = {
     "1D": 1,
     "3D": 3,
@@ -414,6 +414,136 @@ def build_fixed_ticker_window_summary(
     }
 
 
+
+def suggested_next_test_for_category(category: str, valid: int) -> str:
+    if valid < 5:
+        return "Collect more samples before threshold tuning"
+    if category == "Strong Inflow":
+        return "Test ticker-specific inflow percentile"
+    if category == "Persistent Inflow":
+        return "Test inflow persistence threshold"
+    if category == "Strong Outflow":
+        return "Test ticker-specific outflow percentile"
+    if category == "Persistent Outflow":
+        return "Test outflow persistence threshold"
+    if category == "Flow Reversal":
+        return "Test reversal confirmation filter"
+    return "Review ticker-specific threshold"
+
+
+def build_per_ticker_signal_diagnostics(
+    common_dates: list[str],
+    features: dict[tuple[str, str], dict[str, Any]],
+    close_by_key: dict[tuple[str, str], float],
+    dates_by_ticker: dict[str, list[str]],
+) -> list[dict[str, Any]]:
+    """Find each fixed ticker's strongest and weakest signal category/window.
+
+    Research only. This does not change production thresholds or actions.
+    Best/weak rows are based on same-day signal-direction match rate.
+    """
+
+    detail_cache: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for category in CATEGORIES:
+        for date in common_dates:
+            detail_cache[(category, date)] = daily_details_for_category(
+                category,
+                date,
+                features,
+                close_by_key,
+                dates_by_ticker,
+            )
+
+    rows: list[dict[str, Any]] = []
+    for ticker in FIXED_LIST:
+        ticker_stats: list[dict[str, Any]] = []
+
+        for category in CATEGORIES:
+            for label, count in WINDOWS.items():
+                window_dates = common_dates[-count:]
+                details = [
+                    row
+                    for date in window_dates
+                    for row in detail_cache.get((category, date), [])
+                    if row["ticker"] == ticker
+                ]
+                summary = summarize_window_details(details)
+                valid = summary["valid"]
+                win_rate = summary["winRate"]
+
+                if valid <= 0 or win_rate is None:
+                    continue
+
+                ticker_stats.append({
+                    "ticker": ticker,
+                    "category": category,
+                    "window": label,
+                    "wins": summary["wins"],
+                    "fails": summary["fails"],
+                    "valid": valid,
+                    "winRate": win_rate,
+                    "daysIncluded": len(window_dates),
+                })
+
+        if not ticker_stats:
+            rows.append({
+                "ticker": ticker,
+                "bestFlowState": "N/A",
+                "bestWindow": "N/A",
+                "bestWinRate": None,
+                "bestWins": 0,
+                "bestValid": 0,
+                "samples": 0,
+                "weakFlowState": "N/A",
+                "weakWindow": "N/A",
+                "weakWinRate": None,
+                "weakWins": 0,
+                "weakValid": 0,
+                "suggestedNextTest": "Missing valid signal-match samples",
+            })
+            continue
+
+        # Prefer diagnostics with at least 5 samples. If unavailable, use any valid sample.
+        preferred = [item for item in ticker_stats if item["valid"] >= 5] or ticker_stats
+
+        best = max(
+            preferred,
+            key=lambda item: (
+                item["winRate"],
+                item["valid"],
+                item["wins"],
+            ),
+        )
+        weak = min(
+            preferred,
+            key=lambda item: (
+                item["winRate"],
+                -item["valid"],
+            ),
+        )
+
+        rows.append({
+            "ticker": ticker,
+            "bestFlowState": best["category"],
+            "bestWindow": best["window"],
+            "bestWinRate": best["winRate"],
+            "bestWins": best["wins"],
+            "bestFails": best["fails"],
+            "bestValid": best["valid"],
+            "samples": best["valid"],
+            "weakFlowState": weak["category"],
+            "weakWindow": weak["window"],
+            "weakWinRate": weak["winRate"],
+            "weakWins": weak["wins"],
+            "weakFails": weak["fails"],
+            "weakValid": weak["valid"],
+            "suggestedNextTest": suggested_next_test_for_category(best["category"], best["valid"]),
+            "allCategoryWindowStats": ticker_stats,
+        })
+
+    return rows
+
+
 def main() -> int:
     xlsx_flow_rows = load_local_xlsx_flow_rows(Path(DEFAULT_XLSX_FILE))
     daily_overlay_rows = load_daily_collector_overlay(DAILY_COLLECTOR_OVERLAY)
@@ -466,6 +596,12 @@ def main() -> int:
         close_by_key,
         dates_by_ticker,
     )
+    per_ticker_signal_diagnostics = build_per_ticker_signal_diagnostics(
+        common_dates,
+        features,
+        close_by_key,
+        dates_by_ticker,
+    )
     payload = {
         "researchOnly": True,
         "productionRuleChanged": False,
@@ -485,6 +621,7 @@ def main() -> int:
         "latestFlowDirectionSummary": latest_summary,
         "categories": category_rows,
         "fixedTickerWindowSummary": fixed_ticker_window_summary,
+        "perTickerSignalDiagnostics": per_ticker_signal_diagnostics,
         "dailyByCategory": daily_by_category,
         "latestDayDetails": latest_flow_details,
         "dataCoverage": {
@@ -613,6 +750,15 @@ samples. The SUM row is not an average of rounded percentages.
 ## Signal Match for Fixed List
 
 {chr(10).join(fixed_window_lines)}
+
+## Per-Ticker Signal Quality Diagnostics
+
+| Ticker | Best Flow State | Best Window | Best Win Rate | Samples | Weak Flow State | Suggested Next Test |
+|---|---|---:|---:|---:|---|---|
+{chr(10).join(
+    f"| {row['ticker']} | {row['bestFlowState']} | {row['bestWindow']} | {pct(row['bestWinRate'])} | {row['samples']} | {row['weakFlowState']} | {row['suggestedNextTest']} |"
+    for row in per_ticker_signal_diagnostics
+)}
 
 ## Latest-Day Flow State Details
 

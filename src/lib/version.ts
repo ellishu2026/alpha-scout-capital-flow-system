@@ -1,4 +1,4 @@
-export const APP_VERSION = "V2.0.2.4";
+export const APP_VERSION = "V2.0.2.5";
 export const APP_NAME = "AlphaScout Capital Flow System";
 export const APP_VERSION_LABEL = `${APP_NAME} ${APP_VERSION}`;
 export const APP_TITLE = APP_VERSION_LABEL;
