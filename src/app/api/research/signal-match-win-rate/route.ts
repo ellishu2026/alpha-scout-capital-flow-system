@@ -8,7 +8,7 @@ export async function GET() {
       process.cwd(),
       "data",
       "research",
-      "signal_match_win_rate_v202.json",
+      "signal_match_win_rate_v2021.json",
     );
     const payload = JSON.parse(await readFile(filePath, "utf-8"));
 
@@ -22,7 +22,7 @@ export async function GET() {
         ok: false,
         researchOnly: true,
         productionRuleChanged: false,
-        version: "V2.0.2",
+        version: "V2.0.2.1",
         error: error instanceof Error ? error.message : "UNKNOWN_ERROR",
       },
       { status: 500 },

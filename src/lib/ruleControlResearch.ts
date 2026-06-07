@@ -60,6 +60,7 @@ type SignalMatchPayload = {
   categories: SignalMatchCategory[];
   latestDayDetails: Array<{
     ticker: string;
+    flowState: string;
     signalDirection: string;
     closeDirection: string;
     result: string;
@@ -77,7 +78,7 @@ type SignalMatchPayload = {
 export type RuleControlResearch = {
   researchOnly: true;
   productionRuleChanged: false;
-  version: "V2.0.2";
+  version: "V2.0.2.1";
   researchVersion: string;
   candidateCount: number;
   watchCount: number;
@@ -138,7 +139,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
     readJson<{ summary: WinRateSummary }>(
       "moomoo_flow_win_rate_v199.json",
     ),
-    readJson<SignalMatchPayload>("signal_match_win_rate_v202.json"),
+    readJson<SignalMatchPayload>("signal_match_win_rate_v2021.json"),
   ]);
 
   if (candidatePayload.status === "rejected") {
@@ -148,7 +149,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
     missingDependencies.push("data/research/moomoo_flow_win_rate_v199.json");
   }
   if (signalMatchPayload.status === "rejected") {
-    missingDependencies.push("data/research/signal_match_win_rate_v202.json");
+    missingDependencies.push("data/research/signal_match_win_rate_v2021.json");
   }
 
   const candidateSummary =
@@ -174,7 +175,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
   return {
     researchOnly: true,
     productionRuleChanged: false,
-    version: "V2.0.2",
+    version: "V2.0.2.1",
     researchVersion: signalMatch?.version ?? candidateSummary?.version ?? "V2.0.0",
     candidateCount: candidateSummary?.candidateCount ?? 0,
     watchCount: candidateSummary?.watchCount ?? 0,
@@ -191,7 +192,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
       latestDate: signalMatch?.latestDate ?? null,
       definition:
         signalMatch?.definition ??
-        "Missing input: data/research/signal_match_win_rate_v202.json",
+        "Missing input: data/research/signal_match_win_rate_v2021.json",
       categories: signalMatch?.categories ?? [],
       latestDayDetails: signalMatch?.latestDayDetails ?? [],
       latestFlowDirectionSummary:

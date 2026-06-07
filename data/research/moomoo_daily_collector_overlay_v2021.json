@@ -1,0 +1,15 @@
+{
+  "source": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+  "description": "Validated latest-day Moomoo daily collector rows uploaded for fixed-list tickers. Used as the daily archive overlay above historical XLSX import for signal-match research.",
+  "rows": [
+    { "ticker": "SOXL", "date": "2026-06-05", "netFlow": -428194973.78, "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" },
+    { "ticker": "SMH", "date": "2026-06-05", "netFlow": -38474775.29, "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" },
+    { "ticker": "NVDA", "date": "2026-06-05", "netFlow": -804469991.93, "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" },
+    { "ticker": "MSFT", "date": "2026-06-05", "netFlow": 96269840.49, "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" },
+    { "ticker": "GOOGL", "date": "2026-06-05", "netFlow": 198893457.63, "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" },
+    { "ticker": "ORCL", "date": "2026-06-05", "netFlow": -85830189.93, "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" },
+    { "ticker": "RKLB", "date": "2026-06-05", "netFlow": -118274812.41, "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" },
+    { "ticker": "LLY", "date": "2026-06-05", "netFlow": -32471678.36, "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" },
+    { "ticker": "IONQ", "date": "2026-06-05", "netFlow": -26102881.67, "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE" }
+  ]
+}

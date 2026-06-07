@@ -1,0 +1,4678 @@
+{
+  "researchOnly": true,
+  "productionRuleChanged": false,
+  "version": "V2.0.2.1",
+  "fixedTickers": [
+    "SOXL",
+    "SMH",
+    "NVDA",
+    "MSFT",
+    "GOOGL",
+    "ORCL",
+    "RKLB",
+    "LLY",
+    "IONQ"
+  ],
+  "fixedTickerCount": 9,
+  "latestDate": "2026-06-05",
+  "definition": "Win = signal direction matches same-day close price direction.",
+  "signalDirectionSource": "Flow State from Moomoo netFlow: Inflow/Bullish, Outflow/Bearish, Flat/Neutral.",
+  "priceDirectionDefinition": "Up if today's close is above previous trading day's close; Down if below.",
+  "latestFlowDirectionSummary": {
+    "checkedTickers": 9,
+    "validSamples": 9,
+    "wins": 6,
+    "fails": 3,
+    "excluded": 0,
+    "dailyWinRate": 0.6666666666666666
+  },
+  "categories": [
+    {
+      "category": "Strong Inflow",
+      "status": "Research",
+      "latestDate": "2026-06-05",
+      "winRate1D": 0.0,
+      "daysIncluded1D": 1,
+      "winRate3D": 0.5,
+      "daysIncluded3D": 2,
+      "winRate5D": 0.75,
+      "daysIncluded5D": 4,
+      "winRate10D": 0.7708333333333334,
+      "daysIncluded10D": 8,
+      "winRate20D": 0.7685185185185186,
+      "daysIncluded20D": 18,
+      "winRate5W": 0.753623188405797,
+      "daysIncluded5W": 23,
+      "winRate6W": 0.75,
+      "daysIncluded6W": 28,
+      "winRate9W": 0.7458333333333333,
+      "daysIncluded9W": 40,
+      "winRate12W": 0.7395833333333334,
+      "daysIncluded12W": 48,
+      "totalWins": 45,
+      "totalFails": 12,
+      "validSamples": 57,
+      "trend": "Weakening"
+    },
+    {
+      "category": "Persistent Inflow",
+      "status": "Research",
+      "latestDate": "2026-06-05",
+      "winRate1D": 0.0,
+      "daysIncluded1D": 1,
+      "winRate3D": 0.3333333333333333,
+      "daysIncluded3D": 3,
+      "winRate5D": 0.48,
+      "daysIncluded5D": 5,
+      "winRate10D": 0.5633333333333334,
+      "daysIncluded10D": 10,
+      "winRate20D": 0.5947619047619048,
+      "daysIncluded20D": 20,
+      "winRate5W": 0.5991428571428571,
+      "daysIncluded5W": 25,
+      "winRate6W": 0.6192857142857143,
+      "daysIncluded6W": 30,
+      "winRate9W": 0.645079365079365,
+      "daysIncluded9W": 45,
+      "winRate12W": 0.594920634920635,
+      "daysIncluded12W": 60,
+      "totalWins": 63,
+      "totalFails": 41,
+      "validSamples": 104,
+      "trend": "Weakening"
+    },
+    {
+      "category": "Strong Outflow",
+      "status": "Research",
+      "latestDate": "2026-06-05",
+      "winRate1D": 1.0,
+      "daysIncluded1D": 1,
+      "winRate3D": 0.8666666666666667,
+      "daysIncluded3D": 3,
+      "winRate5D": 0.8533333333333333,
+      "daysIncluded5D": 5,
+      "winRate10D": 0.8074074074074074,
+      "daysIncluded10D": 9,
+      "winRate20D": 0.7092592592592593,
+      "daysIncluded20D": 18,
+      "winRate5W": 0.7072463768115942,
+      "daysIncluded5W": 23,
+      "winRate6W": 0.725925925925926,
+      "daysIncluded6W": 27,
+      "winRate9W": 0.6722222222222222,
+      "daysIncluded9W": 36,
+      "winRate12W": 0.6604166666666667,
+      "daysIncluded12W": 48,
+      "totalWins": 35,
+      "totalFails": 11,
+      "validSamples": 46,
+      "trend": "Improving"
+    },
+    {
+      "category": "Persistent Outflow",
+      "status": "Research",
+      "latestDate": "2026-06-05",
+      "winRate1D": 0.8571428571428571,
+      "daysIncluded1D": 1,
+      "winRate3D": 0.619047619047619,
+      "daysIncluded3D": 3,
+      "winRate5D": 0.6314285714285715,
+      "daysIncluded5D": 5,
+      "winRate10D": 0.6157142857142857,
+      "daysIncluded10D": 10,
+      "winRate20D": 0.6111904761904762,
+      "daysIncluded20D": 20,
+      "winRate5W": 0.5616190476190476,
+      "daysIncluded5W": 25,
+      "winRate6W": 0.5874603174603175,
+      "daysIncluded6W": 30,
+      "winRate9W": 0.4981481481481482,
+      "daysIncluded9W": 45,
+      "winRate12W": 0.5232142857142857,
+      "daysIncluded12W": 60,
+      "totalWins": 46,
+      "totalFails": 30,
+      "validSamples": 76,
+      "trend": "Weakening"
+    },
+    {
+      "category": "Flow Reversal",
+      "status": "Research",
+      "latestDate": "2026-06-05",
+      "winRate1D": 0.5,
+      "daysIncluded1D": 1,
+      "winRate3D": 0.7000000000000001,
+      "daysIncluded3D": 3,
+      "winRate5D": 0.74,
+      "daysIncluded5D": 5,
+      "winRate10D": 0.6466666666666667,
+      "daysIncluded10D": 10,
+      "winRate20D": 0.6725,
+      "daysIncluded20D": 20,
+      "winRate5W": 0.71,
+      "daysIncluded5W": 25,
+      "winRate6W": 0.7166666666666667,
+      "daysIncluded6W": 30,
+      "winRate9W": 0.6608994708994709,
+      "daysIncluded9W": 45,
+      "winRate12W": 0.6612301587301588,
+      "daysIncluded12W": 60,
+      "totalWins": 57,
+      "totalFails": 30,
+      "validSamples": 87,
+      "trend": "Stable"
+    }
+  ],
+  "dailyByCategory": {
+    "Strong Inflow": [
+      {
+        "date": "2026-01-16",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-20",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-21",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-01-22",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-23",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-26",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-27",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-28",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-29",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-30",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-02",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-03",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-04",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-05",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-06",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-09",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-10",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-11",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-12",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-13",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-17",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-18",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-19",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-20",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-23",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-02-24",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-25",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-26",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-27",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-03-02",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-03",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 0,
+        "fails": 3,
+        "excluded": 6,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-04",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-05",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-06",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-09",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-03-10",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-11",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-12",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-13",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-16",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-17",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-18",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-19",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-03-20",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-23",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-24",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-25",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-26",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-27",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-30",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-31",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-01",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-02",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-06",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-07",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-08",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-09",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-10",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-13",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-14",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-15",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-16",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-17",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-20",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-21",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-22",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-23",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-24",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-27",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-28",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-29",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-30",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 5,
+        "fails": 0,
+        "excluded": 4,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-01",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-04",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-05-05",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-06",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 5,
+        "fails": 0,
+        "excluded": 4,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-07",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-05-08",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-11",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-12",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-13",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-14",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-15",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-05-18",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-19",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 1,
+        "fails": 5,
+        "excluded": 3,
+        "dailyWinRate": 0.16666666666666666
+      },
+      {
+        "date": "2026-05-20",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-21",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-22",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-26",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-05-27",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-05-28",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 5,
+        "fails": 0,
+        "excluded": 4,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-29",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-06-01",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-06-02",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-06-03",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-06-04",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-06-05",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      }
+    ],
+    "Persistent Inflow": [
+      {
+        "date": "2026-01-16",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-20",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-21",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-22",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-23",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-26",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-27",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-01-28",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-29",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-30",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-02",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-03",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-04",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-05",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-06",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-09",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-10",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-11",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-12",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-13",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-17",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-18",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-19",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-20",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-23",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-24",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-02-25",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-02-26",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 1,
+        "fails": 3,
+        "excluded": 5,
+        "dailyWinRate": 0.25
+      },
+      {
+        "date": "2026-02-27",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 1,
+        "fails": 6,
+        "excluded": 2,
+        "dailyWinRate": 0.14285714285714285
+      },
+      {
+        "date": "2026-03-02",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 4,
+        "fails": 3,
+        "excluded": 2,
+        "dailyWinRate": 0.5714285714285714
+      },
+      {
+        "date": "2026-03-03",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 1,
+        "fails": 4,
+        "excluded": 4,
+        "dailyWinRate": 0.2
+      },
+      {
+        "date": "2026-03-04",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-05",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-03-06",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-09",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-10",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-11",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-12",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-13",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-16",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-17",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-18",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-19",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-20",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-23",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-24",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-25",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-03-26",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-27",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 0,
+        "fails": 3,
+        "excluded": 6,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-30",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-31",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-01",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-02",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-06",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 2,
+        "fails": 4,
+        "excluded": 3,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-04-07",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-04-08",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-09",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-04-10",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-13",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 5,
+        "fails": 1,
+        "excluded": 3,
+        "dailyWinRate": 0.8333333333333334
+      },
+      {
+        "date": "2026-04-14",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-15",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-16",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-17",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-04-20",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-04-21",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 4,
+        "fails": 2,
+        "excluded": 3,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-22",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-23",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-04-24",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-04-27",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-28",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-04-29",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-30",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-05-01",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 5,
+        "fails": 0,
+        "excluded": 4,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-04",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 1,
+        "fails": 4,
+        "excluded": 4,
+        "dailyWinRate": 0.2
+      },
+      {
+        "date": "2026-05-05",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-05-06",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-05-07",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 2,
+        "fails": 4,
+        "excluded": 3,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-05-08",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-11",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 5,
+        "fails": 1,
+        "excluded": 3,
+        "dailyWinRate": 0.8333333333333334
+      },
+      {
+        "date": "2026-05-12",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 3,
+        "fails": 4,
+        "excluded": 2,
+        "dailyWinRate": 0.42857142857142855
+      },
+      {
+        "date": "2026-05-13",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 5,
+        "fails": 1,
+        "excluded": 3,
+        "dailyWinRate": 0.8333333333333334
+      },
+      {
+        "date": "2026-05-14",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 5,
+        "fails": 1,
+        "excluded": 3,
+        "dailyWinRate": 0.8333333333333334
+      },
+      {
+        "date": "2026-05-15",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 1,
+        "fails": 5,
+        "excluded": 3,
+        "dailyWinRate": 0.16666666666666666
+      },
+      {
+        "date": "2026-05-18",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 2,
+        "fails": 4,
+        "excluded": 3,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-05-19",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 1,
+        "fails": 5,
+        "excluded": 3,
+        "dailyWinRate": 0.16666666666666666
+      },
+      {
+        "date": "2026-05-20",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 6,
+        "fails": 0,
+        "excluded": 3,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-21",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 4,
+        "fails": 2,
+        "excluded": 3,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-22",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 5,
+        "fails": 1,
+        "excluded": 3,
+        "dailyWinRate": 0.8333333333333334
+      },
+      {
+        "date": "2026-05-26",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 3,
+        "fails": 3,
+        "excluded": 3,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-05-27",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-05-28",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-05-29",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 3,
+        "fails": 3,
+        "excluded": 3,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-06-01",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-06-02",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-06-03",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-06-04",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-06-05",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      }
+    ],
+    "Strong Outflow": [
+      {
+        "date": "2026-01-16",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-20",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-01-21",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-22",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-23",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-26",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-27",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-28",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-29",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-30",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-02",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-03",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-04",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-05",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-06",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-02-09",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-02-10",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-02-11",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-02-12",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-13",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-17",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-18",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-19",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-20",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-23",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-24",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-25",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-26",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-02-27",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-02",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-03",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-04",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-05",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-03-06",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-09",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-10",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-11",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-12",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-13",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-16",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-17",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-18",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-19",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-20",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 6,
+        "fails": 0,
+        "excluded": 3,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-23",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-24",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-03-25",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-26",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-27",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-30",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-31",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-01",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-02",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-06",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-07",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-08",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-09",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-10",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-13",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-14",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 0,
+        "fails": 2,
+        "excluded": 7,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-15",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-16",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-17",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-20",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-21",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-22",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-23",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-04-24",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-27",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-28",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-04-29",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-30",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-01",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-04",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-05-05",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-05-06",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-05-07",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-08",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-11",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-05-12",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-13",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-14",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-05-15",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-18",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-05-19",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-05-20",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-05-21",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-22",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-26",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-05-27",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-05-28",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-05-29",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-06-01",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-06-02",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-06-03",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-06-04",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-06-05",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 5,
+        "fails": 0,
+        "excluded": 4,
+        "dailyWinRate": 1.0
+      }
+    ],
+    "Persistent Outflow": [
+      {
+        "date": "2026-01-16",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-20",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-21",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-22",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-23",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-01-26",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-01-27",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-28",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-01-29",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-01-30",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-02",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-03",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-04",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-05",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-06",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-09",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-10",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-02-11",
+        "checkedTickers": 9,
+        "validSamples": 8,
+        "wins": 5,
+        "fails": 3,
+        "excluded": 1,
+        "dailyWinRate": 0.625
+      },
+      {
+        "date": "2026-02-12",
+        "checkedTickers": 9,
+        "validSamples": 8,
+        "wins": 7,
+        "fails": 1,
+        "excluded": 1,
+        "dailyWinRate": 0.875
+      },
+      {
+        "date": "2026-02-13",
+        "checkedTickers": 9,
+        "validSamples": 9,
+        "wins": 3,
+        "fails": 6,
+        "excluded": 0,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-02-17",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 5,
+        "fails": 2,
+        "excluded": 2,
+        "dailyWinRate": 0.7142857142857143
+      },
+      {
+        "date": "2026-02-18",
+        "checkedTickers": 9,
+        "validSamples": 8,
+        "wins": 1,
+        "fails": 7,
+        "excluded": 1,
+        "dailyWinRate": 0.125
+      },
+      {
+        "date": "2026-02-19",
+        "checkedTickers": 9,
+        "validSamples": 8,
+        "wins": 5,
+        "fails": 3,
+        "excluded": 1,
+        "dailyWinRate": 0.625
+      },
+      {
+        "date": "2026-02-20",
+        "checkedTickers": 9,
+        "validSamples": 8,
+        "wins": 4,
+        "fails": 4,
+        "excluded": 1,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-02-23",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 5,
+        "fails": 2,
+        "excluded": 2,
+        "dailyWinRate": 0.7142857142857143
+      },
+      {
+        "date": "2026-02-24",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 2,
+        "fails": 4,
+        "excluded": 3,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-02-25",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 0,
+        "fails": 5,
+        "excluded": 4,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-26",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-02-27",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-02",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-03",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-04",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-03-05",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-03-06",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 5,
+        "fails": 2,
+        "excluded": 2,
+        "dailyWinRate": 0.7142857142857143
+      },
+      {
+        "date": "2026-03-09",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 1,
+        "fails": 6,
+        "excluded": 2,
+        "dailyWinRate": 0.14285714285714285
+      },
+      {
+        "date": "2026-03-10",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 5,
+        "fails": 2,
+        "excluded": 2,
+        "dailyWinRate": 0.7142857142857143
+      },
+      {
+        "date": "2026-03-11",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 3,
+        "fails": 4,
+        "excluded": 2,
+        "dailyWinRate": 0.42857142857142855
+      },
+      {
+        "date": "2026-03-12",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 7,
+        "fails": 0,
+        "excluded": 2,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-13",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 5,
+        "fails": 2,
+        "excluded": 2,
+        "dailyWinRate": 0.7142857142857143
+      },
+      {
+        "date": "2026-03-16",
+        "checkedTickers": 9,
+        "validSamples": 8,
+        "wins": 0,
+        "fails": 8,
+        "excluded": 1,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-17",
+        "checkedTickers": 9,
+        "validSamples": 8,
+        "wins": 4,
+        "fails": 4,
+        "excluded": 1,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-18",
+        "checkedTickers": 9,
+        "validSamples": 8,
+        "wins": 8,
+        "fails": 0,
+        "excluded": 1,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-19",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 4,
+        "fails": 3,
+        "excluded": 2,
+        "dailyWinRate": 0.5714285714285714
+      },
+      {
+        "date": "2026-03-20",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 7,
+        "fails": 0,
+        "excluded": 2,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-23",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 0,
+        "fails": 7,
+        "excluded": 2,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-03-24",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 6,
+        "fails": 1,
+        "excluded": 2,
+        "dailyWinRate": 0.8571428571428571
+      },
+      {
+        "date": "2026-03-25",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 2,
+        "fails": 4,
+        "excluded": 3,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-03-26",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 7,
+        "fails": 0,
+        "excluded": 2,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-27",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 6,
+        "fails": 0,
+        "excluded": 3,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-30",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 5,
+        "fails": 2,
+        "excluded": 2,
+        "dailyWinRate": 0.7142857142857143
+      },
+      {
+        "date": "2026-03-31",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 0,
+        "fails": 5,
+        "excluded": 4,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-01",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 2,
+        "fails": 5,
+        "excluded": 2,
+        "dailyWinRate": 0.2857142857142857
+      },
+      {
+        "date": "2026-04-02",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 1,
+        "fails": 5,
+        "excluded": 3,
+        "dailyWinRate": 0.16666666666666666
+      },
+      {
+        "date": "2026-04-06",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-04-07",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-08",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 0,
+        "fails": 5,
+        "excluded": 4,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-09",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-04-10",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 1,
+        "fails": 4,
+        "excluded": 4,
+        "dailyWinRate": 0.2
+      },
+      {
+        "date": "2026-04-13",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 0,
+        "fails": 3,
+        "excluded": 6,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-14",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 0,
+        "fails": 7,
+        "excluded": 2,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-15",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 1,
+        "fails": 6,
+        "excluded": 2,
+        "dailyWinRate": 0.14285714285714285
+      },
+      {
+        "date": "2026-04-16",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-04-17",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 0,
+        "fails": 4,
+        "excluded": 5,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-20",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 1,
+        "fails": 3,
+        "excluded": 5,
+        "dailyWinRate": 0.25
+      },
+      {
+        "date": "2026-04-21",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-22",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 0,
+        "fails": 5,
+        "excluded": 4,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-04-23",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-24",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-04-27",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 4,
+        "fails": 2,
+        "excluded": 3,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-28",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 5,
+        "fails": 1,
+        "excluded": 3,
+        "dailyWinRate": 0.8333333333333334
+      },
+      {
+        "date": "2026-04-29",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 5,
+        "fails": 1,
+        "excluded": 3,
+        "dailyWinRate": 0.8333333333333334
+      },
+      {
+        "date": "2026-04-30",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-05-01",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-05-04",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 1,
+        "fails": 3,
+        "excluded": 5,
+        "dailyWinRate": 0.25
+      },
+      {
+        "date": "2026-05-05",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-05-06",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 0,
+        "fails": 4,
+        "excluded": 5,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-05-07",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-08",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-05-11",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-12",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-13",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-05-14",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-05-15",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-18",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-19",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-20",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-05-21",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-22",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-05-26",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-05-27",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-28",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 0,
+        "fails": 4,
+        "excluded": 5,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-05-29",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-06-01",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-06-02",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-06-03",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 4,
+        "fails": 2,
+        "excluded": 3,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-06-04",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 2,
+        "fails": 4,
+        "excluded": 3,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-06-05",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 6,
+        "fails": 1,
+        "excluded": 2,
+        "dailyWinRate": 0.8571428571428571
+      }
+    ],
+    "Flow Reversal": [
+      {
+        "date": "2026-01-16",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-20",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-21",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-22",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-01-23",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-01-26",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-01-27",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-01-28",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-01-29",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-01-30",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-02",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-03",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-04",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-05",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-06",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 0,
+        "fails": 1,
+        "excluded": 8,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-09",
+        "checkedTickers": 9,
+        "validSamples": 0,
+        "wins": 0,
+        "fails": 0,
+        "excluded": 9,
+        "dailyWinRate": null
+      },
+      {
+        "date": "2026-02-10",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-11",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-02-12",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 0,
+        "fails": 4,
+        "excluded": 5,
+        "dailyWinRate": 0.0
+      },
+      {
+        "date": "2026-02-13",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-17",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-02-18",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-02-19",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-02-20",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-02-23",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 1,
+        "fails": 3,
+        "excluded": 5,
+        "dailyWinRate": 0.25
+      },
+      {
+        "date": "2026-02-24",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-02-25",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-02-26",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-02-27",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-03-02",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-03-03",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-03-04",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-03-05",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-06",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-09",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-03-10",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-11",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-12",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-03-13",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-03-16",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-17",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-03-18",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-19",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 1,
+        "fails": 3,
+        "excluded": 5,
+        "dailyWinRate": 0.25
+      },
+      {
+        "date": "2026-03-20",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-03-23",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-24",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-03-25",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-03-26",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-03-27",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-03-30",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-03-31",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-04-01",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 3,
+        "fails": 3,
+        "excluded": 3,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-02",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 1,
+        "fails": 4,
+        "excluded": 4,
+        "dailyWinRate": 0.2
+      },
+      {
+        "date": "2026-04-06",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-07",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 4,
+        "fails": 2,
+        "excluded": 3,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-08",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 1,
+        "fails": 4,
+        "excluded": 4,
+        "dailyWinRate": 0.2
+      },
+      {
+        "date": "2026-04-09",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 1,
+        "fails": 3,
+        "excluded": 5,
+        "dailyWinRate": 0.25
+      },
+      {
+        "date": "2026-04-10",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-13",
+        "checkedTickers": 9,
+        "validSamples": 7,
+        "wins": 6,
+        "fails": 1,
+        "excluded": 2,
+        "dailyWinRate": 0.8571428571428571
+      },
+      {
+        "date": "2026-04-14",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 1,
+        "fails": 3,
+        "excluded": 5,
+        "dailyWinRate": 0.25
+      },
+      {
+        "date": "2026-04-15",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-04-16",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-17",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-04-20",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-04-21",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 1,
+        "fails": 3,
+        "excluded": 5,
+        "dailyWinRate": 0.25
+      },
+      {
+        "date": "2026-04-22",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 2,
+        "fails": 1,
+        "excluded": 6,
+        "dailyWinRate": 0.6666666666666666
+      },
+      {
+        "date": "2026-04-23",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-04-24",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-04-27",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-04-28",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-04-29",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-04-30",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-01",
+        "checkedTickers": 9,
+        "validSamples": 1,
+        "wins": 1,
+        "fails": 0,
+        "excluded": 8,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-04",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-05-05",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-06",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-05-07",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 3,
+        "fails": 1,
+        "excluded": 5,
+        "dailyWinRate": 0.75
+      },
+      {
+        "date": "2026-05-08",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-05-11",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 3,
+        "fails": 0,
+        "excluded": 6,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-12",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-05-13",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 1,
+        "fails": 1,
+        "excluded": 7,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-05-14",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 4,
+        "fails": 0,
+        "excluded": 5,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-15",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 5,
+        "fails": 1,
+        "excluded": 3,
+        "dailyWinRate": 0.8333333333333334
+      },
+      {
+        "date": "2026-05-18",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-19",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 2,
+        "fails": 3,
+        "excluded": 4,
+        "dailyWinRate": 0.4
+      },
+      {
+        "date": "2026-05-20",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 1,
+        "fails": 3,
+        "excluded": 5,
+        "dailyWinRate": 0.25
+      },
+      {
+        "date": "2026-05-21",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-05-22",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-05-26",
+        "checkedTickers": 9,
+        "validSamples": 3,
+        "wins": 1,
+        "fails": 2,
+        "excluded": 6,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-05-27",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 2,
+        "fails": 4,
+        "excluded": 3,
+        "dailyWinRate": 0.3333333333333333
+      },
+      {
+        "date": "2026-05-28",
+        "checkedTickers": 9,
+        "validSamples": 2,
+        "wins": 2,
+        "fails": 0,
+        "excluded": 7,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-05-29",
+        "checkedTickers": 9,
+        "validSamples": 4,
+        "wins": 2,
+        "fails": 2,
+        "excluded": 5,
+        "dailyWinRate": 0.5
+      },
+      {
+        "date": "2026-06-01",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-06-02",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 4,
+        "fails": 1,
+        "excluded": 4,
+        "dailyWinRate": 0.8
+      },
+      {
+        "date": "2026-06-03",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 3,
+        "fails": 2,
+        "excluded": 4,
+        "dailyWinRate": 0.6
+      },
+      {
+        "date": "2026-06-04",
+        "checkedTickers": 9,
+        "validSamples": 5,
+        "wins": 5,
+        "fails": 0,
+        "excluded": 4,
+        "dailyWinRate": 1.0
+      },
+      {
+        "date": "2026-06-05",
+        "checkedTickers": 9,
+        "validSamples": 6,
+        "wins": 3,
+        "fails": 3,
+        "excluded": 3,
+        "dailyWinRate": 0.5
+      }
+    ]
+  },
+  "latestDayDetails": [
+    {
+      "ticker": "SOXL",
+      "date": "2026-06-05",
+      "signalCategory": "Flow State",
+      "flowState": "Outflow",
+      "signalDirection": "Bearish",
+      "closeDirection": "Down",
+      "result": "Win",
+      "netFlow": -428194973.78,
+      "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+      "closePriceToday": 182.5399932861328,
+      "closePricePreviousTradingDay": 262.70001220703125
+    },
+    {
+      "ticker": "SMH",
+      "date": "2026-06-05",
+      "signalCategory": "Flow State",
+      "flowState": "Outflow",
+      "signalDirection": "Bearish",
+      "closeDirection": "Down",
+      "result": "Win",
+      "netFlow": -38474775.29,
+      "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+      "closePriceToday": 569.6900024414062,
+      "closePricePreviousTradingDay": 627.530029296875
+    },
+    {
+      "ticker": "NVDA",
+      "date": "2026-06-05",
+      "signalCategory": "Flow State",
+      "flowState": "Outflow",
+      "signalDirection": "Bearish",
+      "closeDirection": "Down",
+      "result": "Win",
+      "netFlow": -804469991.93,
+      "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+      "closePriceToday": 205.10000610351562,
+      "closePricePreviousTradingDay": 218.66000366210938
+    },
+    {
+      "ticker": "MSFT",
+      "date": "2026-06-05",
+      "signalCategory": "Flow State",
+      "flowState": "Inflow",
+      "signalDirection": "Bullish",
+      "closeDirection": "Down",
+      "result": "Fail",
+      "netFlow": 96269840.49,
+      "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+      "closePriceToday": 416.6700134277344,
+      "closePricePreviousTradingDay": 428.04998779296875
+    },
+    {
+      "ticker": "GOOGL",
+      "date": "2026-06-05",
+      "signalCategory": "Flow State",
+      "flowState": "Inflow",
+      "signalDirection": "Bullish",
+      "closeDirection": "Down",
+      "result": "Fail",
+      "netFlow": 198893457.63,
+      "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+      "closePriceToday": 368.5299987792969,
+      "closePricePreviousTradingDay": 372.19000244140625
+    },
+    {
+      "ticker": "ORCL",
+      "date": "2026-06-05",
+      "signalCategory": "Flow State",
+      "flowState": "Outflow",
+      "signalDirection": "Bearish",
+      "closeDirection": "Down",
+      "result": "Win",
+      "netFlow": -85830189.93,
+      "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+      "closePriceToday": 213.67999267578125,
+      "closePricePreviousTradingDay": 236.33999633789062
+    },
+    {
+      "ticker": "RKLB",
+      "date": "2026-06-05",
+      "signalCategory": "Flow State",
+      "flowState": "Outflow",
+      "signalDirection": "Bearish",
+      "closeDirection": "Down",
+      "result": "Win",
+      "netFlow": -118274812.41,
+      "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+      "closePriceToday": 110.08000183105469,
+      "closePricePreviousTradingDay": 119.94999694824219
+    },
+    {
+      "ticker": "LLY",
+      "date": "2026-06-05",
+      "signalCategory": "Flow State",
+      "flowState": "Outflow",
+      "signalDirection": "Bearish",
+      "closeDirection": "Up",
+      "result": "Fail",
+      "netFlow": -32471678.36,
+      "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+      "closePriceToday": 1131.4200439453125,
+      "closePricePreviousTradingDay": 1125.27001953125
+    },
+    {
+      "ticker": "IONQ",
+      "date": "2026-06-05",
+      "signalCategory": "Flow State",
+      "flowState": "Outflow",
+      "signalDirection": "Bearish",
+      "closeDirection": "Down",
+      "result": "Win",
+      "netFlow": -26102881.67,
+      "provider": "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE",
+      "closePriceToday": 56.779998779296875,
+      "closePricePreviousTradingDay": 65.66000366210938
+    }
+  ],
+  "dataCoverage": {
+    "moomooFlowRows": 762,
+    "priceRows": 963,
+    "flowDateMin": "2026-01-16",
+    "flowDateMax": "2026-06-05",
+    "priceDateMin": "2026-01-02",
+    "priceDateMax": "2026-06-05",
+    "commonDateCount": 97,
+    "xlsxFlowRows": 753,
+    "dailyCollectorOverlayRows": 9
+  },
+  "notes": [
+    "Same-day signal match rate is separate from forward-return research.",
+    "Neutral or missing signal/price directions are excluded from valid samples.",
+    "Research only. No production rule changed."
+  ]
+}

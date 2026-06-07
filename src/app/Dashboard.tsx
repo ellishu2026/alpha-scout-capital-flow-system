@@ -1,6 +1,11 @@
 "use client";
 
 import { APP_TITLE } from "@/lib/version";
+import {
+  FLOW_SIGNAL_CATEGORIES,
+  getFlowStateFromNetFlow,
+  type FlowState,
+} from "@/lib/flowSignalDefinitions";
 import { FIXED_WATCHLIST_SYMBOLS } from "@/lib/marketUniverse";
 import {
   formatCurrency,
@@ -70,6 +75,7 @@ type RuleControlResearch = {
     categories: SignalMatchCategory[];
     latestDayDetails: Array<{
       ticker: string;
+      flowState: string;
       signalDirection: string;
       closeDirection: string;
       result: string;
@@ -136,7 +142,7 @@ const tableHeaders = [
   "Entry Act.",
   "Position Act.",
   "Conf.",
-  "Signal",
+  "Flow State",
   "Data Q",
   "Source",
 ];
@@ -235,36 +241,17 @@ function scoreClass(score: number) {
   return "bg-rose-50 font-semibold text-rose-800 ring-rose-200";
 }
 
-function compactSignal(signal: string) {
-  const labels: Record<string, string> = {
-    "Strong Accumulation": "Strong",
-    Accumulation: "Accum.",
-    Watchlist: "Watch",
-    Watch: "Watch",
-    Neutral: "Neutral",
-    "Weak / Avoid": "Weak",
-  };
-
-  return labels[signal] ?? signal;
-}
-
-function signalClass(signal: string) {
-  const label = compactSignal(signal);
-
-  if (label === "Strong") {
+function flowStateClass(flowState: FlowState) {
+  if (flowState === "Inflow") {
     return "bg-emerald-50 text-emerald-700 ring-emerald-200";
   }
 
-  if (label === "Accum.") {
-    return "bg-blue-50 text-blue-700 ring-blue-200";
-  }
-
-  if (label === "Watch") {
-    return "bg-amber-50 text-amber-800 ring-amber-200";
-  }
-
-  if (label === "Weak") {
+  if (flowState === "Outflow") {
     return "bg-rose-50 text-rose-700 ring-rose-200";
+  }
+
+  if (flowState === "Reversal" || flowState === "Fluctuate") {
+    return "bg-amber-50 text-amber-800 ring-amber-200";
   }
 
   return "bg-slate-100 text-slate-600 ring-slate-200";
@@ -547,6 +534,7 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
   const flow6W = getFlowWindowValue(candidate, "capitalFlow6W");
   const flow9W = getFlowWindowValue(candidate, "capitalFlow9W");
   const flow12W = getFlowWindowValue(candidate, "capitalFlow12W");
+  const flowState = getFlowStateFromNetFlow(flow1D);
 
   return (
     <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50/80">
@@ -703,11 +691,12 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
       </td>
       <td className="px-1.5 py-1.5">
         <span
-          className={`inline-flex rounded px-1 py-0.5 text-[9px] font-semibold ring-1 ${signalClass(
-            candidate.signal,
+          title={`Flow state from 1D net flow. Raw action signal: ${candidate.signal}`}
+          className={`inline-flex rounded px-1 py-0.5 text-[9px] font-semibold ring-1 ${flowStateClass(
+            flowState,
           )}`}
         >
-          {compactSignal(candidate.signal)}
+          {flowState}
         </span>
       </td>
       <td className="px-1.5 py-1.5">
@@ -775,7 +764,7 @@ function ControlStat({
 }
 
 function matchRate(value: number | null | undefined) {
-  return value == null ? "N/A" : formatPercent(value);
+  return value == null ? "N/A" : `${(value * 100).toFixed(1)}%`;
 }
 
 function WinRateSection({
@@ -814,15 +803,13 @@ function WinRateSection({
     : thresholdSummary?.promotionAllowed
       ? "Ready"
       : "Locked / Not Ready";
-  const candidatePills = [
-    "Flow Direction",
-    "Strong Inflow",
-    "Persistent Inflow",
-    "Flow Reversal",
-    "Outflow Risk",
-  ];
+  const candidatePills = FLOW_SIGNAL_CATEGORIES;
+  const selectedCategory = candidatePills[0];
   const bestCandidate = ruleControlResearch?.topCandidates?.[0];
   const signalMatchRows = ruleControlResearch?.signalMatch.categories ?? [];
+  const selectedMatchRow = signalMatchRows.find(
+    (row) => row.category === selectedCategory.label,
+  );
   const flowDirectionSummary =
     ruleControlResearch?.signalMatch.latestFlowDirectionSummary;
   const abSamplesLabel = bestCandidate
@@ -873,7 +860,7 @@ function WinRateSection({
                   <p>Status: Active · Locked</p>
                   <p>Auto Activation: Disabled</p>
                   <p>Risk Gate Required</p>
-                  <p>Research Candidate Set: V2.0.2 Signal Direction Match Rate</p>
+                  <p>Research Candidate Set: V2.0.2.1 Signal Direction Match Rate</p>
                   <p>Candidates: {ruleControlResearch?.candidateCount ?? "N/A"} · Watch: {ruleControlResearch?.watchCount ?? "N/A"} · Rejected: {ruleControlResearch?.rejectedCount ?? "N/A"}</p>
                   <p>Latest Match Date: {ruleControlResearch?.signalMatch.latestDate ?? "N/A"}</p>
                   <p>Production Rule Changed: false</p>
@@ -886,24 +873,27 @@ function WinRateSection({
                   <p className="font-medium text-slate-600">{thresholdStatus}</p>
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {candidatePills.map((label) => (
+                  {candidatePills.map((item) => (
                     <ControlPill
-                      key={label}
-                      label={label}
-                      active={label === "Flow Direction"}
+                      key={item.label}
+                      label={item.label}
+                      active={item.label === selectedCategory.label}
                     />
                   ))}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-                  <ControlStat label="Selected" value="Flow Direction" />
-                  <ControlStat label="1D Match" value={matchRate(flowDirectionSummary?.dailyWinRate)} />
+                  <ControlStat label="Selected" value={selectedCategory.label} />
+                  <ControlStat label="Definition" value={selectedCategory.definition} />
+                  <ControlStat label="1D Match" value={matchRate(selectedMatchRow?.winRate1D)} />
+                  <ControlStat label="3D Avg" value={matchRate(selectedMatchRow?.winRate3D)} />
+                  <ControlStat label="5D Avg" value={matchRate(selectedMatchRow?.winRate5D)} />
                   <ControlStat label="Recommendation" value="Research Ready / Simulation Prep" />
                 </div>
               </div>
 
               <div className="rounded border border-slate-200 bg-white p-2">
                 <p className="font-semibold text-slate-900">A/B Comparison</p>
-                <p className="mt-1 text-slate-600">A: Current Production · B: Flow Direction Match Signal</p>
+                <p className="mt-1 text-slate-600">A: Current Production · B: {selectedCategory.label} Match Signal</p>
                 <div className="mt-1 flex flex-wrap gap-1">
                   <ControlPill label="Simulation Required" disabled />
                 </div>
@@ -965,7 +955,7 @@ function WinRateSection({
                 <thead className="text-[9px] uppercase text-slate-500">
                   <tr>
                     <th className="sticky left-0 top-0 z-30 w-12 min-w-12 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Rank</th>
-                    <th className="sticky left-12 top-0 z-30 min-w-48 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Signal Category</th>
+                    <th className="sticky left-12 top-0 z-30 min-w-48 border-r border-slate-200 bg-slate-50 px-2 py-1 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">Flow Category</th>
                     {forwardColumns.map((label) => (
                       <th key={label} className="sticky top-0 z-20 bg-slate-50 px-2 py-1">{label} Win Rate</th>
                     ))}
@@ -982,7 +972,7 @@ function WinRateSection({
                       </td>
                       <td className="sticky left-12 z-10 min-w-48 border-r border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-900 shadow-[2px_0_3px_rgba(15,23,42,0.05)]">
                         <span className="block max-w-48 truncate">{row.category}</span>
-                        <span className="text-[9px] font-medium text-slate-500">Signal Direction Match</span>
+                        <span className="text-[9px] font-medium text-slate-500">Same-Day Match</span>
                       </td>
                       <td className="px-2 py-1.5 font-semibold text-slate-800">{matchRate(row.winRate1D)}</td>
                       <td className="px-2 py-1.5 text-slate-700">{matchRate(row.winRate3D)}</td>
@@ -1001,7 +991,7 @@ function WinRateSection({
                   {signalMatchRows.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="px-2 py-3 text-slate-500">
-                        Missing research dependency: {ruleControlResearch?.missingDependencies?.join(", ") || "signal_match_win_rate_v202.json"}
+                        Missing research dependency: {ruleControlResearch?.missingDependencies?.join(", ") || "signal_match_win_rate_v2021.json"}
                       </td>
                     </tr>
                   ) : null}
@@ -1013,7 +1003,7 @@ function WinRateSection({
               <div className="mt-2 rounded border border-slate-200 bg-white p-2">
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                   <p className="font-semibold text-slate-900">
-                    Latest Day Details · Flow Direction · {ruleControlResearch.signalMatch.latestDate}
+                    Latest Day Details · Flow State · {ruleControlResearch.signalMatch.latestDate}
                   </p>
                   <p className="text-slate-600">
                     {flowDirectionSummary?.wins ?? 0} wins / {flowDirectionSummary?.validSamples ?? 0} valid
@@ -1024,7 +1014,7 @@ function WinRateSection({
                     <thead className="text-[9px] uppercase text-slate-500">
                       <tr>
                         <th className="px-2 py-1">Ticker</th>
-                        <th className="px-2 py-1">Signal Direction</th>
+                        <th className="px-2 py-1">Flow State / Signal Direction</th>
                         <th className="px-2 py-1">Close Direction</th>
                         <th className="px-2 py-1">Result</th>
                       </tr>
@@ -1033,7 +1023,9 @@ function WinRateSection({
                       {ruleControlResearch.signalMatch.latestDayDetails.map((row) => (
                         <tr key={row.ticker} className="border-t border-slate-100">
                           <td className="px-2 py-1 font-bold text-slate-900">{row.ticker}</td>
-                          <td className="px-2 py-1 text-slate-700">{row.signalDirection}</td>
+                          <td className="px-2 py-1 text-slate-700">
+                            {row.flowState ? `${row.flowState} / ${row.signalDirection}` : row.signalDirection}
+                          </td>
                           <td className="px-2 py-1 text-slate-700">{row.closeDirection}</td>
                           <td className={row.result === "Win" ? "px-2 py-1 font-semibold text-emerald-700" : row.result === "Fail" ? "px-2 py-1 font-semibold text-rose-700" : "px-2 py-1 text-slate-500"}>
                             {row.result}

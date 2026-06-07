@@ -24,10 +24,11 @@ from calculate_moomoo_flow_win_rate import (
 )
 
 
-OUTPUT_JSON = Path("data/research/signal_match_win_rate_v202.json")
-OUTPUT_CSV = Path("data/research/signal_match_win_rate_v202.csv")
-OUTPUT_MD = Path("docs/research/signal-match-win-rate-v202.md")
-VERSION = "V2.0.2"
+OUTPUT_JSON = Path("data/research/signal_match_win_rate_v2021.json")
+OUTPUT_CSV = Path("data/research/signal_match_win_rate_v2021.csv")
+OUTPUT_MD = Path("docs/research/signal-match-win-rate-v2021.md")
+DAILY_COLLECTOR_OVERLAY = Path("data/research/moomoo_daily_collector_overlay_v2021.json")
+VERSION = "V2.0.2.1"
 WINDOWS = {
     "1D": 1,
     "3D": 3,
@@ -40,12 +41,17 @@ WINDOWS = {
     "12W": 60,
 }
 CATEGORIES = [
-    "Flow Direction",
     "Strong Inflow",
     "Persistent Inflow",
+    "Strong Outflow",
+    "Persistent Outflow",
     "Flow Reversal",
-    "Outflow Risk",
 ]
+FLOW_PROVIDER_PRIORITY = {
+    "MOOMOO_CAPITAL_DISTRIBUTION": 3,
+    "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE": 3,
+    "MOOMOO_HISTORICAL_XLSX_IMPORT": 2,
+}
 
 
 def pct(value: float | None) -> str:
@@ -56,6 +62,12 @@ def direction_from_value(value: float | None) -> str:
     if value is None or value == 0:
         return "Neutral"
     return "Bullish" if value > 0 else "Bearish"
+
+
+def flow_state_from_value(value: float | None) -> str:
+    if value is None or value == 0:
+        return "Flat"
+    return "Inflow" if value > 0 else "Outflow"
 
 
 def price_direction(today: float | None, previous: float | None) -> str:
@@ -101,6 +113,7 @@ def build_flow_features(flow_rows: list[FlowRow]) -> dict[tuple[str, str], dict[
             negative5 = sum(1 for value in recent5 if value < 0)
             features[(ticker, row.date)] = {
                 "netFlow": row.net_flow,
+                "provider": row.provider,
                 "flow3D": flow3,
                 "flow5D": flow5,
                 "flow1DPercentile": percentile(sorted_values, row.net_flow),
@@ -117,8 +130,6 @@ def category_signal_direction(category: str, feature: dict[str, Any] | None) -> 
     if not feature:
         return "Neutral"
     net_flow = feature.get("netFlow")
-    if category == "Flow Direction":
-        return direction_from_value(net_flow)
     if category == "Strong Inflow":
         if net_flow is not None and net_flow > 0 and feature.get("flow1DPercentile", 0) >= 0.8:
             return "Bullish"
@@ -127,20 +138,57 @@ def category_signal_direction(category: str, feature: dict[str, Any] | None) -> 
         if feature.get("positiveFlowCountIn5D", 0) >= 3:
             return "Bullish"
         return "Neutral"
+    if category == "Strong Outflow":
+        if net_flow is not None and net_flow < 0 and feature.get("flow1DPercentile", 1) <= 0.2:
+            return "Bearish"
+        return "Neutral"
+    if category == "Persistent Outflow":
+        if feature.get("negativeFlowCountIn5D", 0) >= 3:
+            return "Bearish"
+        return "Neutral"
     if category == "Flow Reversal":
         if net_flow is not None and net_flow > 0 and (feature.get("prior3DFlow") or 0) < 0:
             return "Bullish"
         if net_flow is not None and net_flow < 0 and (feature.get("prior3DFlow") or 0) > 0:
             return "Bearish"
         return "Neutral"
-    if category == "Outflow Risk":
-        if net_flow is not None and net_flow < 0 and (
-            feature.get("flow1DPercentile", 1) <= 0.2
-            or feature.get("negativeFlowCountIn5D", 0) >= 3
-        ):
-            return "Bearish"
-        return "Neutral"
     return "Neutral"
+
+
+def load_daily_collector_overlay(path: Path) -> list[FlowRow]:
+    if not path.exists():
+        return []
+    payload = json.loads(path.read_text())
+    rows: list[FlowRow] = []
+    for item in payload.get("rows", []):
+        ticker = str(item.get("ticker", "")).upper()
+        date = str(item.get("date", ""))
+        if ticker not in FIXED_LIST or not date:
+            continue
+        try:
+            net_flow = float(item["netFlow"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        rows.append(
+            FlowRow(
+                ticker=ticker,
+                date=date,
+                net_flow=net_flow,
+                provider=str(item.get("provider") or payload.get("source") or "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE"),
+            )
+        )
+    return rows
+
+
+def combine_flow_rows_with_priority(*row_sets: list[FlowRow]) -> list[FlowRow]:
+    by_key: dict[tuple[str, str], FlowRow] = {}
+    for row_set in row_sets:
+        for row in row_set:
+            key = (row.ticker, row.date)
+            current = by_key.get(key)
+            if current is None or FLOW_PROVIDER_PRIORITY.get(row.provider, 0) >= FLOW_PROVIDER_PRIORITY.get(current.provider, 0):
+                by_key[key] = row
+    return sorted(by_key.values(), key=lambda row: (row.ticker, row.date))
 
 
 def build_price_maps(price_rows: list[Any]) -> tuple[dict[tuple[str, str], float], dict[str, list[str]]]:
@@ -178,10 +226,48 @@ def daily_details_for_category(
             "ticker": ticker,
             "date": date,
             "signalCategory": category,
+            "flowState": flow_state_from_value(features.get((ticker, date), {}).get("netFlow")),
             "signalDirection": signal_direction,
             "closeDirection": close_direction,
             "result": result,
             "netFlow": features.get((ticker, date), {}).get("netFlow"),
+            "closePriceToday": close_by_key.get((ticker, date)),
+            "closePricePreviousTradingDay": close_by_key.get((ticker, previous_date or "")),
+        })
+    return details
+
+
+def daily_flow_direction_details(
+    date: str,
+    features: dict[tuple[str, str], dict[str, Any]],
+    close_by_key: dict[tuple[str, str], float],
+    dates_by_ticker: dict[str, list[str]],
+) -> list[dict[str, Any]]:
+    details: list[dict[str, Any]] = []
+    for ticker in FIXED_LIST:
+        ticker_dates = dates_by_ticker.get(ticker, [])
+        if date not in ticker_dates:
+            previous_date = None
+        else:
+            index = ticker_dates.index(date)
+            previous_date = ticker_dates[index - 1] if index > 0 else None
+        feature = features.get((ticker, date))
+        net_flow = feature.get("netFlow") if feature else None
+        signal_direction = direction_from_value(net_flow)
+        close_direction = price_direction(
+            close_by_key.get((ticker, date)),
+            close_by_key.get((ticker, previous_date or "")),
+        )
+        details.append({
+            "ticker": ticker,
+            "date": date,
+            "signalCategory": "Flow State",
+            "flowState": flow_state_from_value(net_flow),
+            "signalDirection": signal_direction,
+            "closeDirection": close_direction,
+            "result": result_for(signal_direction, close_direction),
+            "netFlow": net_flow,
+            "provider": feature.get("provider") if feature else None,
             "closePriceToday": close_by_key.get((ticker, date)),
             "closePricePreviousTradingDay": close_by_key.get((ticker, previous_date or "")),
         })
@@ -216,7 +302,9 @@ def trend_for(daily_rates: list[float]) -> str:
 
 
 def main() -> int:
-    flow_rows = load_local_xlsx_flow_rows(Path(DEFAULT_XLSX_FILE))
+    xlsx_flow_rows = load_local_xlsx_flow_rows(Path(DEFAULT_XLSX_FILE))
+    daily_overlay_rows = load_daily_collector_overlay(DAILY_COLLECTOR_OVERLAY)
+    flow_rows = combine_flow_rows_with_priority(xlsx_flow_rows, daily_overlay_rows)
     price_rows = load_local_price_rows(Path(DEFAULT_PRICE_ARCHIVE))
     features = build_flow_features(flow_rows)
     close_by_key, dates_by_ticker = build_price_maps(price_rows)
@@ -226,7 +314,6 @@ def main() -> int:
     latest_date = common_dates[-1] if common_dates else None
 
     category_rows: list[dict[str, Any]] = []
-    latest_day_details: list[dict[str, Any]] = []
     daily_by_category: dict[str, list[dict[str, Any]]] = {}
     for category in CATEGORIES:
         daily_rows: list[dict[str, Any]] = []
@@ -234,10 +321,6 @@ def main() -> int:
             details = daily_details_for_category(category, date, features, close_by_key, dates_by_ticker)
             daily_rows.append({"date": date, **summarize_daily(details)})
         daily_by_category[category] = daily_rows
-        if latest_date:
-            latest_day_details.extend(
-                daily_details_for_category(category, latest_date, features, close_by_key, dates_by_ticker)
-            )
 
         row: dict[str, Any] = {
             "category": category,
@@ -258,10 +341,11 @@ def main() -> int:
         row["trend"] = trend_for([item["dailyWinRate"] for item in latest_window if item["dailyWinRate"] is not None])
         category_rows.append(row)
 
-    latest_flow_details = [
-        row for row in latest_day_details
-        if row["signalCategory"] == "Flow Direction"
-    ]
+    latest_flow_details = (
+        daily_flow_direction_details(latest_date, features, close_by_key, dates_by_ticker)
+        if latest_date
+        else []
+    )
     latest_summary = summarize_daily(latest_flow_details)
     payload = {
         "researchOnly": True,
@@ -271,7 +355,7 @@ def main() -> int:
         "fixedTickerCount": len(FIXED_LIST),
         "latestDate": latest_date,
         "definition": "Win = signal direction matches same-day close price direction.",
-        "signalDirectionSource": "Flow Direction Signal from Moomoo netFlow when historical Entry/Position signal is unavailable.",
+        "signalDirectionSource": "Flow State from Moomoo netFlow: Inflow/Bullish, Outflow/Bearish, Flat/Neutral.",
         "priceDirectionDefinition": "Up if today's close is above previous trading day's close; Down if below.",
         "latestFlowDirectionSummary": latest_summary,
         "categories": category_rows,
@@ -285,6 +369,8 @@ def main() -> int:
             "priceDateMin": min(price_dates) if price_dates else None,
             "priceDateMax": max(price_dates) if price_dates else None,
             "commonDateCount": len(common_dates),
+            "xlsxFlowRows": len(xlsx_flow_rows),
+            "dailyCollectorOverlayRows": len(daily_overlay_rows),
         },
         "notes": [
             "Same-day signal match rate is separate from forward-return research.",
@@ -327,15 +413,15 @@ def main() -> int:
             f"{row['validSamples']} | {row['trend']} |"
         )
     detail_lines = [
-        "| Ticker | Signal Direction | Close Direction | Result |",
+        "| Ticker | Flow State / Signal Direction | Close Direction | Result |",
         "|---|---|---|---|",
     ]
     for row in latest_flow_details:
         detail_lines.append(
-            f"| {row['ticker']} | {row['signalDirection']} | {row['closeDirection']} | {row['result']} |"
+            f"| {row['ticker']} | {row['flowState']} / {row['signalDirection']} | {row['closeDirection']} | {row['result']} |"
         )
     OUTPUT_MD.write_text(
-        f"""# Signal Direction Match Win Rate V2.0.2
+        f"""# Signal Direction Match Win Rate V2.0.2.1
 
 Research only. No production rule changed. No automatic trading action.
 
@@ -357,14 +443,14 @@ averages of daily fixed-list match rates over those windows.
 
 {chr(10).join(table_lines)}
 
-## Latest-Day Flow Direction Details
+## Latest-Day Flow State Details
 
 {chr(10).join(detail_lines)}
 
 ## Limitations
 
 - Fixed List only.
-- Uses Moomoo netFlow direction when historical Entry / Position signals are unavailable.
+- Uses Moomoo netFlow flow state when historical Entry / Position signals are unavailable.
 - Same-day match rate is not forward-return research.
 - Research only. No production rule changed.
 """

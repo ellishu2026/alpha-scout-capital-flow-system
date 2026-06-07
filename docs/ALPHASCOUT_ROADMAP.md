@@ -479,3 +479,13 @@ V2.0.2 adds `scripts/calculate_signal_match_win_rate.py`, `GET /api/research/sig
 The main Candidate Threshold Selection now shows only five categories: Flow Direction, Strong Inflow, Persistent Inflow, Flow Reversal, and Outflow Risk. The Trade Win Rate Leaderboard is simplified to five rows with 1D, 3D, 5D, 10D, and 20D match rates, valid samples, trend, and status. A latest-day detail table shows the nine fixed tickers, signal direction, close direction, and Win/Fail result for Flow Direction.
 
 `/api/research/rule-control-center` now includes the V2.0.2 signal-match summary while keeping forward-return research diagnostics separate. Version guard is advanced to `APP_VERSION=V2.0.2`. This remains research/display only and does not change Entry / Position actions, production scoring, thresholds, Risk Gate logic, rule promotion logic, provider priority, fixed watchlist, ranked scoring, daily collector behavior, import behavior, or trading functionality.
+
+## Signal Match Formula, Latest Date, and Flow Language Fix
+
+V2.0.2.1 fixes the Signal Match Rate display so ratio values are rendered as percentages, for example `wins / validSamples = 0.8889` displays as `88.9%` instead of `+0.9%`. Window values remain average daily same-day match rates over the latest 3D, 5D, 10D, and 20D windows, not forward returns or profit metrics.
+
+The signal-match research output now reads a combined fixed-list Moomoo archive: latest daily collector rows from `MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE` overlay historical rows from `MOOMOO_HISTORICAL_XLSX_IMPORT`. This lets the signal-match endpoint use `2026-06-05` when daily collector rows are present instead of stopping at the XLSX max date `2026-06-04`.
+
+V2.0.2.1 adds `src/lib/flowSignalDefinitions.ts` to centralize flow-state and category language. The main flow categories are now limited to `Strong Inflow`, `Persistent Inflow`, `Strong Outflow`, `Persistent Outflow`, and `Flow Reversal`. Fixed-list table display uses `Flow State` values such as `Inflow`, `Outflow`, `Flat`, `Fluctuate`, and `Reversal`, keeping action labels like Watch/Avoid/Exit separate under Entry / Position actions.
+
+Generated research outputs move to `data/research/signal_match_win_rate_v2021.json`, `.csv`, and `docs/research/signal-match-win-rate-v2021.md`. Version guard is advanced to `APP_VERSION=V2.0.2.1`. This remains research/display only and does not change Entry / Position actions, production scoring, thresholds, Risk Gate logic, rule promotion logic, provider priority, fixed watchlist, ranked scoring, daily collector behavior, or trading functionality.
