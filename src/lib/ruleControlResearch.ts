@@ -100,7 +100,7 @@ type SignalMatchPayload = {
 export type RuleControlResearch = {
   researchOnly: true;
   productionRuleChanged: false;
-  version: "V2.0.2.3";
+  version: "V2.0.2.3.1";
   researchVersion: string;
   candidateCount: number;
   watchCount: number;
@@ -198,7 +198,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
   return {
     researchOnly: true,
     productionRuleChanged: false,
-    version: "V2.0.2.3",
+    version: "V2.0.2.3.1",
     researchVersion: signalMatch?.version ?? candidateSummary?.version ?? "V2.0.0",
     candidateCount: candidateSummary?.candidateCount ?? 0,
     watchCount: candidateSummary?.watchCount ?? 0,

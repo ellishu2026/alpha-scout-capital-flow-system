@@ -4,7 +4,6 @@ import { APP_TITLE } from "@/lib/version";
 import {
   FLOW_SIGNAL_CATEGORIES,
   getFlowStateFromNetFlow,
-  type FlowState,
 } from "@/lib/flowSignalDefinitions";
 import { FIXED_WATCHLIST_SYMBOLS } from "@/lib/marketUniverse";
 import {
@@ -263,7 +262,7 @@ function scoreClass(score: number) {
   return "bg-rose-50 font-semibold text-rose-800 ring-rose-200";
 }
 
-function flowStateClass(flowState: FlowState) {
+function flowStateClass(flowState: string) {
   if (flowState === "Inflow") {
     return "bg-emerald-50 text-emerald-700 ring-emerald-200";
   }
@@ -556,7 +555,10 @@ function TableRow({ candidate }: { candidate: StockCandidate }) {
   const flow6W = getFlowWindowValue(candidate, "capitalFlow6W");
   const flow9W = getFlowWindowValue(candidate, "capitalFlow9W");
   const flow12W = getFlowWindowValue(candidate, "capitalFlow12W");
-  const flowState = getFlowStateFromNetFlow(flow1D);
+  const flowState =
+    ("flowStateOverride" in candidate && typeof candidate.flowStateOverride === "string"
+      ? candidate.flowStateOverride
+      : getFlowStateFromNetFlow(flow1D));
 
   return (
     <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50/80">
@@ -896,7 +898,7 @@ function WinRateSection({
                   <p>Status: Active · Locked</p>
                   <p>Auto Activation: Disabled</p>
                   <p>Risk Gate Required</p>
-                  <p>Research Candidate Set: V2.0.2.3 Per-Ticker Flow Signal Match Rate</p>
+                  <p>Research Candidate Set: V2.0.2.3.1 Per-Ticker Flow Signal Match Rate</p>
                   <p>Candidates: {ruleControlResearch?.candidateCount ?? "N/A"} · Watch: {ruleControlResearch?.watchCount ?? "N/A"} · Rejected: {ruleControlResearch?.rejectedCount ?? "N/A"}</p>
                   <p>Latest Match Date: {ruleControlResearch?.signalMatch.latestDate ?? "N/A"}</p>
                   <p>Production Rule Changed: false</p>
@@ -1687,16 +1689,26 @@ export function Dashboard({
   }).format(new Date(allSnapshot.updatedAt));
   const displayedItems = useMemo(() => {
     if (activeTab === "FIXED_LIST") {
+      const latestFlowStateByTicker = new Map(
+        ruleControlResearch?.signalMatch.latestDayDetails.map((row) => [
+          row.ticker.toUpperCase(),
+          row.flowState,
+        ]) ?? [],
+      );
+
       const fixedItemsByTicker = new Map(
         (fixedSnapshot?.items ?? []).map((candidate) => [
           candidate.ticker.toUpperCase(),
-          candidate,
+          {
+            ...candidate,
+            flowStateOverride: latestFlowStateByTicker.get(candidate.ticker.toUpperCase()),
+          },
         ]),
       );
 
       return FIXED_WATCHLIST_SYMBOLS.map((ticker) =>
         fixedItemsByTicker.get(ticker),
-      ).filter((candidate): candidate is StockCandidate => candidate != null);
+      ).filter(Boolean) as Array<StockCandidate & { flowStateOverride?: string }>;
     }
 
     if (activeTab === "MID_CAP") {
@@ -1712,7 +1724,7 @@ export function Dashboard({
     }
 
     return allSnapshot.items;
-  }, [activeTab, allSnapshot.items, fixedSnapshot?.items]);
+  }, [activeTab, allSnapshot.items, fixedSnapshot?.items, ruleControlResearch?.signalMatch.latestDayDetails]);
   const movementSummary =
     activeTab === "FIXED_LIST"
       ? fixedSnapshot?.movementSummary
