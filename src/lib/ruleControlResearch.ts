@@ -52,12 +52,34 @@ type SignalMatchCategory = {
   trend: string;
 };
 
+type SignalMatchWindowStat = {
+  wins: number;
+  fails: number;
+  valid: number;
+  winRate: number | null;
+  daysIncluded: number;
+};
+
+type FixedTickerWindowSummary = {
+  definition: string;
+  sum: {
+    rank: "SUM";
+    ticker: "Fixed List Total";
+    windows: Record<string, SignalMatchWindowStat>;
+  };
+  tickers: Array<{
+    ticker: string;
+    windows: Record<string, SignalMatchWindowStat>;
+  }>;
+};
+
 type SignalMatchPayload = {
   version: string;
   fixedTickerCount: number;
   latestDate: string | null;
   definition: string;
   categories: SignalMatchCategory[];
+  fixedTickerWindowSummary?: FixedTickerWindowSummary;
   latestDayDetails: Array<{
     ticker: string;
     flowState: string;
@@ -78,7 +100,7 @@ type SignalMatchPayload = {
 export type RuleControlResearch = {
   researchOnly: true;
   productionRuleChanged: false;
-  version: "V2.0.2.1";
+  version: "V2.0.2.2";
   researchVersion: string;
   candidateCount: number;
   watchCount: number;
@@ -95,6 +117,7 @@ export type RuleControlResearch = {
     latestDate: string | null;
     definition: string;
     categories: SignalMatchCategory[];
+    fixedTickerWindowSummary: FixedTickerWindowSummary | null;
     latestDayDetails: SignalMatchPayload["latestDayDetails"];
     latestFlowDirectionSummary: SignalMatchPayload["latestFlowDirectionSummary"] | null;
   };
@@ -139,7 +162,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
     readJson<{ summary: WinRateSummary }>(
       "moomoo_flow_win_rate_v199.json",
     ),
-    readJson<SignalMatchPayload>("signal_match_win_rate_v2021.json"),
+    readJson<SignalMatchPayload>("signal_match_win_rate_v2022.json"),
   ]);
 
   if (candidatePayload.status === "rejected") {
@@ -149,7 +172,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
     missingDependencies.push("data/research/moomoo_flow_win_rate_v199.json");
   }
   if (signalMatchPayload.status === "rejected") {
-    missingDependencies.push("data/research/signal_match_win_rate_v2021.json");
+    missingDependencies.push("data/research/signal_match_win_rate_v2022.json");
   }
 
   const candidateSummary =
@@ -175,7 +198,7 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
   return {
     researchOnly: true,
     productionRuleChanged: false,
-    version: "V2.0.2.1",
+    version: "V2.0.2.2",
     researchVersion: signalMatch?.version ?? candidateSummary?.version ?? "V2.0.0",
     candidateCount: candidateSummary?.candidateCount ?? 0,
     watchCount: candidateSummary?.watchCount ?? 0,
@@ -192,8 +215,10 @@ export async function buildRuleControlResearch(): Promise<RuleControlResearch> {
       latestDate: signalMatch?.latestDate ?? null,
       definition:
         signalMatch?.definition ??
-        "Missing input: data/research/signal_match_win_rate_v2021.json",
+        "Missing input: data/research/signal_match_win_rate_v2022.json",
       categories: signalMatch?.categories ?? [],
+      fixedTickerWindowSummary:
+        signalMatch?.fixedTickerWindowSummary ?? null,
       latestDayDetails: signalMatch?.latestDayDetails ?? [],
       latestFlowDirectionSummary:
         signalMatch?.latestFlowDirectionSummary ?? null,

@@ -24,11 +24,11 @@ from calculate_moomoo_flow_win_rate import (
 )
 
 
-OUTPUT_JSON = Path("data/research/signal_match_win_rate_v2021.json")
-OUTPUT_CSV = Path("data/research/signal_match_win_rate_v2021.csv")
-OUTPUT_MD = Path("docs/research/signal-match-win-rate-v2021.md")
+OUTPUT_JSON = Path("data/research/signal_match_win_rate_v2022.json")
+OUTPUT_CSV = Path("data/research/signal_match_win_rate_v2022.csv")
+OUTPUT_MD = Path("docs/research/signal-match-win-rate-v2022.md")
 DAILY_COLLECTOR_OVERLAY = Path("data/research/moomoo_daily_collector_overlay_v2021.json")
-VERSION = "V2.0.2.1"
+VERSION = "V2.0.2.2"
 WINDOWS = {
     "1D": 1,
     "3D": 3,
@@ -301,6 +301,66 @@ def trend_for(daily_rates: list[float]) -> str:
     return "Stable"
 
 
+def summarize_window_details(details: list[dict[str, Any]]) -> dict[str, Any]:
+    wins = sum(1 for row in details if row["result"] == "Win")
+    fails = sum(1 for row in details if row["result"] == "Fail")
+    valid = wins + fails
+    return {
+        "wins": wins,
+        "fails": fails,
+        "valid": valid,
+        "winRate": wins / valid if valid else None,
+    }
+
+
+def build_fixed_ticker_window_summary(
+    common_dates: list[str],
+    features: dict[tuple[str, str], dict[str, Any]],
+    close_by_key: dict[tuple[str, str], float],
+    dates_by_ticker: dict[str, list[str]],
+) -> dict[str, Any]:
+    details_by_date = {
+        date: daily_flow_direction_details(date, features, close_by_key, dates_by_ticker)
+        for date in common_dates
+    }
+    sum_windows: dict[str, dict[str, Any]] = {}
+    ticker_rows: list[dict[str, Any]] = []
+
+    for label, count in WINDOWS.items():
+        window_dates = common_dates[-count:]
+        details = [
+            row
+            for date in window_dates
+            for row in details_by_date.get(date, [])
+        ]
+        sum_windows[label] = summarize_window_details(details)
+        sum_windows[label]["daysIncluded"] = len(window_dates)
+
+    for ticker in FIXED_LIST:
+        windows: dict[str, dict[str, Any]] = {}
+        for label, count in WINDOWS.items():
+            window_dates = common_dates[-count:]
+            details = [
+                row
+                for date in window_dates
+                for row in details_by_date.get(date, [])
+                if row["ticker"] == ticker
+            ]
+            windows[label] = summarize_window_details(details)
+            windows[label]["daysIncluded"] = len(window_dates)
+        ticker_rows.append({"ticker": ticker, "windows": windows})
+
+    return {
+        "definition": "SUM row uses total wins over total valid samples for the latest window. Ticker rows use each ticker's wins over valid days in the same window.",
+        "sum": {
+            "rank": "SUM",
+            "ticker": "Fixed List Total",
+            "windows": sum_windows,
+        },
+        "tickers": ticker_rows,
+    }
+
+
 def main() -> int:
     xlsx_flow_rows = load_local_xlsx_flow_rows(Path(DEFAULT_XLSX_FILE))
     daily_overlay_rows = load_daily_collector_overlay(DAILY_COLLECTOR_OVERLAY)
@@ -347,6 +407,12 @@ def main() -> int:
         else []
     )
     latest_summary = summarize_daily(latest_flow_details)
+    fixed_ticker_window_summary = build_fixed_ticker_window_summary(
+        common_dates,
+        features,
+        close_by_key,
+        dates_by_ticker,
+    )
     payload = {
         "researchOnly": True,
         "productionRuleChanged": False,
@@ -359,6 +425,7 @@ def main() -> int:
         "priceDirectionDefinition": "Up if today's close is above previous trading day's close; Down if below.",
         "latestFlowDirectionSummary": latest_summary,
         "categories": category_rows,
+        "fixedTickerWindowSummary": fixed_ticker_window_summary,
         "dailyByCategory": daily_by_category,
         "latestDayDetails": latest_flow_details,
         "dataCoverage": {
@@ -385,22 +452,32 @@ def main() -> int:
     OUTPUT_JSON.write_text(json.dumps(payload, indent=2))
     with OUTPUT_CSV.open("w", newline="") as file:
         fieldnames = [
-            "category",
-            "winRate1D",
-            "winRate3D",
-            "winRate5D",
-            "winRate10D",
-            "winRate20D",
-            "validSamples",
-            "totalWins",
-            "totalFails",
-            "trend",
-            "status",
+            "rank",
+            "ticker",
+            *[f"{label}Wins" for label in WINDOWS],
+            *[f"{label}Valid" for label in WINDOWS],
+            *[f"{label}WinRate" for label in WINDOWS],
         ]
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
-        for row in category_rows:
-            writer.writerow({key: row.get(key) for key in fieldnames})
+        fixed_rows = [
+            fixed_ticker_window_summary["sum"],
+            *[
+                {"rank": index + 1, **row}
+                for index, row in enumerate(fixed_ticker_window_summary["tickers"])
+            ],
+        ]
+        for row in fixed_rows:
+            csv_row: dict[str, Any] = {
+                "rank": row["rank"],
+                "ticker": row["ticker"],
+            }
+            for label in WINDOWS:
+                window = row["windows"][label]
+                csv_row[f"{label}Wins"] = window["wins"]
+                csv_row[f"{label}Valid"] = window["valid"]
+                csv_row[f"{label}WinRate"] = window["winRate"]
+            writer.writerow(csv_row)
 
     table_lines = [
         "| Category | 1D | 3D | 5D | 10D | 20D | Valid | Trend |",
@@ -412,6 +489,26 @@ def main() -> int:
             f"{pct(row['winRate5D'])} | {pct(row['winRate10D'])} | {pct(row['winRate20D'])} | "
             f"{row['validSamples']} | {row['trend']} |"
         )
+    fixed_window_lines = [
+        "| Rank | Ticker | 1D | 3D | 5D | 10D | 20D | 5W | 6W | 9W | 12W |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    fixed_rows = [
+        fixed_ticker_window_summary["sum"],
+        *[
+            {"rank": index + 1, **row}
+            for index, row in enumerate(fixed_ticker_window_summary["tickers"])
+        ],
+    ]
+    for row in fixed_rows:
+        fixed_window_lines.append(
+            f"| {row['rank']} | {row['ticker']} | "
+            + " | ".join(
+                f"{row['windows'][label]['wins']} / {row['windows'][label]['valid']} = {pct(row['windows'][label]['winRate'])}"
+                for label in WINDOWS
+            )
+            + " |"
+        )
     detail_lines = [
         "| Ticker | Flow State / Signal Direction | Close Direction | Result |",
         "|---|---|---|---|",
@@ -421,7 +518,7 @@ def main() -> int:
             f"| {row['ticker']} | {row['flowState']} / {row['signalDirection']} | {row['closeDirection']} | {row['result']} |"
         )
     OUTPUT_MD.write_text(
-        f"""# Signal Direction Match Win Rate V2.0.2.1
+        f"""# Signal Direction Match Win Rate V2.0.2.2
 
 Research only. No production rule changed. No automatic trading action.
 
@@ -430,6 +527,9 @@ Neutral or missing signal/price directions are excluded.
 
 1D is the latest common fixed-list trading day. 3D, 5D, 10D, and 20D are
 averages of daily fixed-list match rates over those windows.
+
+The ticker-level fixed-list table uses raw total wins divided by raw valid
+samples. The SUM row is not an average of rounded percentages.
 
 ## Dataset
 
@@ -442,6 +542,10 @@ averages of daily fixed-list match rates over those windows.
 ## Signal Match Rates
 
 {chr(10).join(table_lines)}
+
+## Signal Match for Fixed List
+
+{chr(10).join(fixed_window_lines)}
 
 ## Latest-Day Flow State Details
 

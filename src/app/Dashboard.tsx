@@ -53,6 +53,27 @@ type SignalMatchCategory = {
   trend: string;
 };
 
+type SignalMatchWindowStat = {
+  wins: number;
+  fails: number;
+  valid: number;
+  winRate: number | null;
+  daysIncluded: number;
+};
+
+type FixedTickerWindowSummary = {
+  definition: string;
+  sum: {
+    rank: "SUM";
+    ticker: "Fixed List Total";
+    windows: Record<string, SignalMatchWindowStat>;
+  };
+  tickers: Array<{
+    ticker: string;
+    windows: Record<string, SignalMatchWindowStat>;
+  }>;
+};
+
 type RuleControlResearch = {
   researchOnly: true;
   productionRuleChanged: false;
@@ -73,6 +94,7 @@ type RuleControlResearch = {
     latestDate: string | null;
     definition: string;
     categories: SignalMatchCategory[];
+    fixedTickerWindowSummary: FixedTickerWindowSummary | null;
     latestDayDetails: Array<{
       ticker: string;
       flowState: string;
@@ -767,6 +789,17 @@ function matchRate(value: number | null | undefined) {
   return value == null ? "N/A" : `${(value * 100).toFixed(1)}%`;
 }
 
+function fixedMatchCell(value: SignalMatchWindowStat | undefined) {
+  if (!value) {
+    return "missing input";
+  }
+  if (value.valid === 0 || value.winRate == null) {
+    return "no valid samples";
+  }
+
+  return `${value.wins} / ${value.valid} = ${matchRate(value.winRate)}`;
+}
+
 function WinRateSection({
   report,
   ruleControlResearch,
@@ -816,6 +849,9 @@ function WinRateSection({
     ? String(bestCandidate.sampleSize)
     : `${sampleCount} / ${minSamples}`;
   const forwardColumns = ["1D", "3D", "5D", "10D", "20D"];
+  const fixedWindowColumns = ["1D", "3D", "5D", "10D", "20D", "5W", "6W", "9W", "12W"];
+  const fixedTickerWindowSummary =
+    ruleControlResearch?.signalMatch.fixedTickerWindowSummary;
   const insufficientMetrics =
     ruleControlResearch?.readyStatusSummary?.["Not Ready"] ?? 0;
 
@@ -860,7 +896,7 @@ function WinRateSection({
                   <p>Status: Active · Locked</p>
                   <p>Auto Activation: Disabled</p>
                   <p>Risk Gate Required</p>
-                  <p>Research Candidate Set: V2.0.2.1 Signal Direction Match Rate</p>
+                  <p>Research Candidate Set: V2.0.2.2 Signal Direction Match Rate</p>
                   <p>Candidates: {ruleControlResearch?.candidateCount ?? "N/A"} · Watch: {ruleControlResearch?.watchCount ?? "N/A"} · Rejected: {ruleControlResearch?.rejectedCount ?? "N/A"}</p>
                   <p>Latest Match Date: {ruleControlResearch?.signalMatch.latestDate ?? "N/A"}</p>
                   <p>Production Rule Changed: false</p>
@@ -991,13 +1027,70 @@ function WinRateSection({
                   {signalMatchRows.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="px-2 py-3 text-slate-500">
-                        Missing research dependency: {ruleControlResearch?.missingDependencies?.join(", ") || "signal_match_win_rate_v2021.json"}
+                        Missing research dependency: {ruleControlResearch?.missingDependencies?.join(", ") || "signal_match_win_rate_v2022.json"}
                       </td>
                     </tr>
                   ) : null}
                 </tbody>
               </table>
             </div>
+
+            {fixedTickerWindowSummary ? (
+              <div className="mt-2 rounded border border-slate-200 bg-white p-2">
+                <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-900">Signal Match for Fixed List</p>
+                    <p className="text-slate-500">
+                      Ticker-level match rate across time windows · Win = signal direction matches same-day close direction
+                    </p>
+                  </div>
+                  <p className="text-slate-600">
+                    Latest {ruleControlResearch?.signalMatch.latestDate ?? "N/A"}
+                  </p>
+                </div>
+                <div className="mt-1 max-h-72 overflow-auto rounded border border-slate-200">
+                  <table className="w-full min-w-[900px] text-left text-[10px]">
+                    <thead className="text-[9px] uppercase text-slate-500">
+                      <tr>
+                        <th className="sticky left-0 top-0 z-30 w-16 min-w-16 border-r border-slate-200 bg-slate-50 px-2 py-1">Rank</th>
+                        <th className="sticky left-16 top-0 z-30 min-w-36 border-r border-slate-200 bg-slate-50 px-2 py-1">Ticker</th>
+                        {fixedWindowColumns.map((label) => (
+                          <th key={label} className="sticky top-0 z-20 bg-slate-50 px-2 py-1">{label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        fixedTickerWindowSummary.sum,
+                        ...fixedTickerWindowSummary.tickers.map((row, index) => ({
+                          rank: String(index + 1),
+                          ticker: row.ticker,
+                          windows: row.windows,
+                        })),
+                      ].map((row) => (
+                        <tr key={row.ticker} className="border-t border-slate-100">
+                          <td className="sticky left-0 z-10 w-16 min-w-16 border-r border-slate-200 bg-white px-2 py-1.5 font-bold text-slate-900">
+                            {row.rank}
+                          </td>
+                          <td className="sticky left-16 z-10 min-w-36 border-r border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-900">
+                            {row.ticker}
+                          </td>
+                          {fixedWindowColumns.map((label) => (
+                            <td key={label} className="whitespace-nowrap px-2 py-1.5 text-right font-semibold tabular-nums text-slate-800">
+                              {fixedMatchCell(row.windows[label])}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 text-amber-800">
+                Signal Match for Fixed List missing input: fixedTickerWindowSummary
+              </div>
+            )}
 
             {ruleControlResearch?.signalMatch.latestDayDetails?.length ? (
               <div className="mt-2 rounded border border-slate-200 bg-white p-2">

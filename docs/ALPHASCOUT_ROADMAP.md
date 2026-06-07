@@ -489,3 +489,11 @@ The signal-match research output now reads a combined fixed-list Moomoo archive:
 V2.0.2.1 adds `src/lib/flowSignalDefinitions.ts` to centralize flow-state and category language. The main flow categories are now limited to `Strong Inflow`, `Persistent Inflow`, `Strong Outflow`, `Persistent Outflow`, and `Flow Reversal`. Fixed-list table display uses `Flow State` values such as `Inflow`, `Outflow`, `Flat`, `Fluctuate`, and `Reversal`, keeping action labels like Watch/Avoid/Exit separate under Entry / Position actions.
 
 Generated research outputs move to `data/research/signal_match_win_rate_v2021.json`, `.csv`, and `docs/research/signal-match-win-rate-v2021.md`. Version guard is advanced to `APP_VERSION=V2.0.2.1`. This remains research/display only and does not change Entry / Position actions, production scoring, thresholds, Risk Gate logic, rule promotion logic, provider priority, fixed watchlist, ranked scoring, daily collector behavior, or trading functionality.
+
+## Fixed List Signal Match Table
+
+V2.0.2.2 adds a ticker-level `Signal Match for Fixed List` section between the category-level Signal Match Rate table and Latest Day Details. The new table is numeric-only and uses columns `Rank`, `Ticker`, `1D`, `3D`, `5D`, `10D`, `20D`, `5W`, `6W`, `9W`, and `12W`.
+
+The first row is `SUM / Fixed List Total`. Its formula is raw total wins divided by raw total valid samples across all fixed-list tickers in the window, for example `6 / 9 = 66.7%` for latest 1D. Ticker rows use each ticker's wins divided by valid days over the same windows. The table intentionally excludes Flow State, Status, Trend, and Win/Fail text; those remain in Latest Day Details.
+
+The signal-match payload now includes `fixedTickerWindowSummary`, and generated outputs move to `data/research/signal_match_win_rate_v2022.json`, `.csv`, and `docs/research/signal-match-win-rate-v2022.md`. Version guard is advanced to `APP_VERSION=V2.0.2.2`. This remains research/display only and does not change Entry / Position actions, production scoring, thresholds, Risk Gate logic, rule promotion logic, provider priority, fixed watchlist, ranked scoring, daily collector behavior, Moomoo archive data, close price archive data, or trading functionality.
