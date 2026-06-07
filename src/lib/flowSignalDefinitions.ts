@@ -27,7 +27,7 @@ export const FLOW_SIGNAL_CATEGORIES: Array<{
 }> = [
   {
     label: "Strong Inflow",
-    definition: "netFlow percentile >= 80 or strong positive daily flow",
+    definition: "ticker-level netFlow percentile >= 80",
   },
   {
     label: "Persistent Inflow",
@@ -35,7 +35,7 @@ export const FLOW_SIGNAL_CATEGORIES: Array<{
   },
   {
     label: "Strong Outflow",
-    definition: "netFlow percentile <= 20 or strong negative daily flow",
+    definition: "ticker-level netFlow percentile <= 20",
   },
   {
     label: "Persistent Outflow",
@@ -43,7 +43,7 @@ export const FLOW_SIGNAL_CATEGORIES: Array<{
   },
   {
     label: "Flow Reversal",
-    definition: "latest flow direction differs from recent 3D trend",
+    definition: "latest flow direction differs from recent 3D / 5D trend",
   },
 ];
 

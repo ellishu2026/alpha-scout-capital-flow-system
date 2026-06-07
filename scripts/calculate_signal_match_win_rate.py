@@ -24,11 +24,11 @@ from calculate_moomoo_flow_win_rate import (
 )
 
 
-OUTPUT_JSON = Path("data/research/signal_match_win_rate_v2022.json")
-OUTPUT_CSV = Path("data/research/signal_match_win_rate_v2022.csv")
-OUTPUT_MD = Path("docs/research/signal-match-win-rate-v2022.md")
+OUTPUT_JSON = Path("data/research/signal_match_win_rate_v2023.json")
+OUTPUT_CSV = Path("data/research/signal_match_win_rate_v2023.csv")
+OUTPUT_MD = Path("docs/research/signal-match-win-rate-v2023.md")
 DAILY_COLLECTOR_OVERLAY = Path("data/research/moomoo_daily_collector_overlay_v2021.json")
-VERSION = "V2.0.2.2"
+VERSION = "V2.0.2.3"
 WINDOWS = {
     "1D": 1,
     "3D": 3,
@@ -47,6 +47,11 @@ CATEGORIES = [
     "Persistent Outflow",
     "Flow Reversal",
 ]
+THRESHOLD_MODE = "PER_TICKER_PERCENTILE"
+STRONG_INFLOW_PERCENTILE = 0.8
+STRONG_OUTFLOW_PERCENTILE = 0.2
+PERSISTENT_LOOKBACK_DAYS = 5
+PERSISTENT_MIN_DIRECTIONAL_DAYS = 3
 FLOW_PROVIDER_PRIORITY = {
     "MOOMOO_CAPITAL_DISTRIBUTION": 3,
     "MOOMOO_CAPITAL_DISTRIBUTION_ARCHIVE": 3,
@@ -131,19 +136,19 @@ def category_signal_direction(category: str, feature: dict[str, Any] | None) -> 
         return "Neutral"
     net_flow = feature.get("netFlow")
     if category == "Strong Inflow":
-        if net_flow is not None and net_flow > 0 and feature.get("flow1DPercentile", 0) >= 0.8:
+        if net_flow is not None and net_flow > 0 and feature.get("flow1DPercentile", 0) >= STRONG_INFLOW_PERCENTILE:
             return "Bullish"
         return "Neutral"
     if category == "Persistent Inflow":
-        if feature.get("positiveFlowCountIn5D", 0) >= 3:
+        if feature.get("positiveFlowCountIn5D", 0) >= PERSISTENT_MIN_DIRECTIONAL_DAYS:
             return "Bullish"
         return "Neutral"
     if category == "Strong Outflow":
-        if net_flow is not None and net_flow < 0 and feature.get("flow1DPercentile", 1) <= 0.2:
+        if net_flow is not None and net_flow < 0 and feature.get("flow1DPercentile", 1) <= STRONG_OUTFLOW_PERCENTILE:
             return "Bearish"
         return "Neutral"
     if category == "Persistent Outflow":
-        if feature.get("negativeFlowCountIn5D", 0) >= 3:
+        if feature.get("negativeFlowCountIn5D", 0) >= PERSISTENT_MIN_DIRECTIONAL_DAYS:
             return "Bearish"
         return "Neutral"
     if category == "Flow Reversal":
@@ -152,6 +157,52 @@ def category_signal_direction(category: str, feature: dict[str, Any] | None) -> 
         if net_flow is not None and net_flow < 0 and (feature.get("prior3DFlow") or 0) > 0:
             return "Bearish"
         return "Neutral"
+    return "Neutral"
+
+
+
+def primary_flow_state(feature: dict[str, Any] | None) -> str:
+    """Return unified flow-state label using per-ticker thresholds.
+
+    Priority:
+    1. Flow Reversal
+    2. Strong Inflow / Strong Outflow
+    3. Persistent Inflow / Persistent Outflow
+    4. Flat / Fluctuate
+    """
+    if not feature:
+        return "Flat"
+
+    net_flow = feature.get("netFlow")
+    if net_flow is None or net_flow == 0:
+        return "Flat"
+
+    # Reversal has priority because it describes a regime change.
+    if category_signal_direction("Flow Reversal", feature) != "Neutral":
+        return "Flow Reversal"
+    if category_signal_direction("Strong Inflow", feature) == "Bullish":
+        return "Strong Inflow"
+    if category_signal_direction("Strong Outflow", feature) == "Bearish":
+        return "Strong Outflow"
+    if category_signal_direction("Persistent Inflow", feature) == "Bullish":
+        return "Persistent Inflow"
+    if category_signal_direction("Persistent Outflow", feature) == "Bearish":
+        return "Persistent Outflow"
+
+    prior3 = feature.get("prior3DFlow")
+    if prior3 is not None and ((net_flow > 0 and prior3 < 0) or (net_flow < 0 and prior3 > 0)):
+        return "Flow Reversal"
+
+    return "Flat"
+
+
+def signal_direction_from_flow_state(flow_state: str, net_flow: float | None = None) -> str:
+    if flow_state in {"Strong Inflow", "Persistent Inflow"}:
+        return "Bullish"
+    if flow_state in {"Strong Outflow", "Persistent Outflow"}:
+        return "Bearish"
+    if flow_state == "Flow Reversal":
+        return direction_from_value(net_flow)
     return "Neutral"
 
 
@@ -253,7 +304,8 @@ def daily_flow_direction_details(
             previous_date = ticker_dates[index - 1] if index > 0 else None
         feature = features.get((ticker, date))
         net_flow = feature.get("netFlow") if feature else None
-        signal_direction = direction_from_value(net_flow)
+        flow_state = primary_flow_state(feature)
+        signal_direction = signal_direction_from_flow_state(flow_state, net_flow)
         close_direction = price_direction(
             close_by_key.get((ticker, date)),
             close_by_key.get((ticker, previous_date or "")),
@@ -262,11 +314,12 @@ def daily_flow_direction_details(
             "ticker": ticker,
             "date": date,
             "signalCategory": "Flow State",
-            "flowState": flow_state_from_value(net_flow),
+            "flowState": flow_state,
             "signalDirection": signal_direction,
             "closeDirection": close_direction,
             "result": result_for(signal_direction, close_direction),
             "netFlow": net_flow,
+            "flowPercentileWithinTicker": feature.get("flow1DPercentile") if feature else None,
             "provider": feature.get("provider") if feature else None,
             "closePriceToday": close_by_key.get((ticker, date)),
             "closePricePreviousTradingDay": close_by_key.get((ticker, previous_date or "")),
@@ -417,6 +470,12 @@ def main() -> int:
         "researchOnly": True,
         "productionRuleChanged": False,
         "version": VERSION,
+        "thresholdMode": THRESHOLD_MODE,
+        "strongInflowPercentile": STRONG_INFLOW_PERCENTILE,
+        "strongOutflowPercentile": STRONG_OUTFLOW_PERCENTILE,
+        "persistentLookbackDays": PERSISTENT_LOOKBACK_DAYS,
+        "persistentMinDirectionalDays": PERSISTENT_MIN_DIRECTIONAL_DAYS,
+        "thresholdMethodology": "Each ticker is compared against its own historical Moomoo netFlow distribution. Raw netFlow amounts are not compared globally across tickers.",
         "fixedTickers": FIXED_LIST,
         "fixedTickerCount": len(FIXED_LIST),
         "latestDate": latest_date,
@@ -518,11 +577,11 @@ def main() -> int:
             f"| {row['ticker']} | {row['flowState']} / {row['signalDirection']} | {row['closeDirection']} | {row['result']} |"
         )
     OUTPUT_MD.write_text(
-        f"""# Signal Direction Match Win Rate V2.0.2.2
+        f"""# Signal Direction Match Win Rate V2.0.2.3
 
 Research only. No production rule changed. No automatic trading action.
 
-Win = signal direction matches same-day close price direction. Fail = mismatch.
+Win = signal direction matches same-day close price direction. Fail = mismatch. Strong/weak flow states use per-ticker historical Moomoo netFlow percentiles.
 Neutral or missing signal/price directions are excluded.
 
 1D is the latest common fixed-list trading day. 3D, 5D, 10D, and 20D are
@@ -530,6 +589,14 @@ averages of daily fixed-list match rates over those windows.
 
 The ticker-level fixed-list table uses raw total wins divided by raw valid
 samples. The SUM row is not an average of rounded percentages.
+
+## Methodology
+
+- Threshold mode: PER_TICKER_PERCENTILE
+- Strong Inflow: ticker's own flow percentile >= 80th percentile
+- Strong Outflow: ticker's own flow percentile <= 20th percentile
+- Persistent Inflow/Outflow: directional flow appears in at least 3 of the latest 5 trading days
+- Flow states are calculated per ticker; NVDA is compared with NVDA history, IONQ with IONQ history, etc.
 
 ## Dataset
 

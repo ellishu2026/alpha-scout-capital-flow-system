@@ -896,7 +896,7 @@ function WinRateSection({
                   <p>Status: Active · Locked</p>
                   <p>Auto Activation: Disabled</p>
                   <p>Risk Gate Required</p>
-                  <p>Research Candidate Set: V2.0.2.2 Signal Direction Match Rate</p>
+                  <p>Research Candidate Set: V2.0.2.3 Per-Ticker Flow Signal Match Rate</p>
                   <p>Candidates: {ruleControlResearch?.candidateCount ?? "N/A"} · Watch: {ruleControlResearch?.watchCount ?? "N/A"} · Rejected: {ruleControlResearch?.rejectedCount ?? "N/A"}</p>
                   <p>Latest Match Date: {ruleControlResearch?.signalMatch.latestDate ?? "N/A"}</p>
                   <p>Production Rule Changed: false</p>
@@ -1027,7 +1027,7 @@ function WinRateSection({
                   {signalMatchRows.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="px-2 py-3 text-slate-500">
-                        Missing research dependency: {ruleControlResearch?.missingDependencies?.join(", ") || "signal_match_win_rate_v2022.json"}
+                        Missing research dependency: {ruleControlResearch?.missingDependencies?.join(", ") || "signal_match_win_rate_v2023.json"}
                       </td>
                     </tr>
                   ) : null}
