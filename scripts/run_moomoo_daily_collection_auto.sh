@@ -34,6 +34,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
+if grep -q "End Moomoo daily collection automation status=0" "$LOG_FILE" \
+  && grep -q "PASS latestDayCollectionRowsSaved" "$LOG_FILE" \
+  && grep -q "PASS savedCount" "$LOG_FILE"; then
+  echo "SKIP: Moomoo daily collection already succeeded today."
+  exit 0
+fi
+
 set -a
 if [ -f ".env.local" ]; then
   source ".env.local"
@@ -81,6 +88,19 @@ while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
 
   ATTEMPT=$((ATTEMPT + 1))
 done
+
+if [ "$STATUS" -eq 0 ]; then
+  echo ""
+  echo "---- moomoo archive gap check ----"
+  set +e
+  python3 scripts/check_moomoo_archive_gaps.py --lookback-trading-days 10
+  GAP_STATUS=$?
+  set -e
+  if [ "$GAP_STATUS" -ne 0 ]; then
+    echo "WARN: gap detector failed"
+    echo "GAP_DETECTOR_STATUS=$GAP_STATUS"
+  fi
+fi
 
 echo "============================================================"
 echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] End Moomoo daily collection automation status=$STATUS"

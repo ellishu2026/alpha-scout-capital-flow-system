@@ -77,6 +77,46 @@ cat > "$PLIST_PATH" <<PLIST
       <key>Minute</key>
       <integer>30</integer>
     </dict>
+    <dict>
+      <key>Weekday</key>
+      <integer>2</integer>
+      <key>Hour</key>
+      <integer>10</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key>
+      <integer>3</integer>
+      <key>Hour</key>
+      <integer>10</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key>
+      <integer>4</integer>
+      <key>Hour</key>
+      <integer>10</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key>
+      <integer>5</integer>
+      <key>Hour</key>
+      <integer>10</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key>
+      <integer>6</integer>
+      <key>Hour</key>
+      <integer>10</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
   </array>
 </dict>
 </plist>
@@ -92,4 +132,4 @@ echo
 echo "Useful next commands:"
 echo "launchctl print gui/\$(id -u)/${LABEL} | head -80"
 echo "launchctl kickstart -k gui/\$(id -u)/${LABEL}"
-echo "tail -120 logs/moomoo_daily_collection_\$(date +%Y-%m-%d).log"
+echo "tail -180 logs/moomoo_daily_collection_\$(date +%Y-%m-%d).log"
